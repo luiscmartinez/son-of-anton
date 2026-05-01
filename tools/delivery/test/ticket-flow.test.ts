@@ -688,7 +688,7 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
       },
     });
     await expect(
-      openPullRequest(basePostAuditState, '/tmp/pirate_claw', context, 'P3.01'),
+      openPullRequest(basePostAuditState, '/tmp/test_project', context, 'P3.01'),
     ).rejects.toThrow(/requires Codex preflight before opening a PR/);
   });
 
@@ -701,7 +701,7 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
       },
     });
     await expect(
-      openPullRequest(basePostAuditState, '/tmp/pirate_claw', context, 'P3.01'),
+      openPullRequest(basePostAuditState, '/tmp/test_project', context, 'P3.01'),
     ).rejects.toThrow(/requires Codex preflight before opening a PR/);
   });
 
@@ -714,10 +714,10 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
       },
     });
     await expect(
-      openPullRequest(basePostAuditState, '/tmp/pirate_claw', context, 'P3.01'),
+      openPullRequest(basePostAuditState, '/tmp/test_project', context, 'P3.01'),
     ).rejects.toThrow(/codex-plugin-cc/);
     await expect(
-      openPullRequest(basePostAuditState, '/tmp/pirate_claw', context, 'P3.01'),
+      openPullRequest(basePostAuditState, '/tmp/test_project', context, 'P3.01'),
     ).rejects.toThrow(/codexPreflight.*disabled.*orchestrator\.config\.json/);
   });
 
@@ -747,7 +747,7 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
       ],
     };
 
-    const nextState = openPullRequestFlow(state, '/tmp/pirate_claw', 'P3.01', {
+    const nextState = openPullRequestFlow(state, '/tmp/test_project', 'P3.01', {
       assertReviewerFacingMarkdown: () => {},
       buildPullRequestBody: () => 'body',
       buildPullRequestTitle: () => 'feat: example [P3.01]',
@@ -802,7 +802,7 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
       ],
     };
 
-    const nextState = openPullRequestFlow(state, '/tmp/pirate_claw', 'P3.01', {
+    const nextState = openPullRequestFlow(state, '/tmp/test_project', 'P3.01', {
       assertReviewerFacingMarkdown: () => {},
       buildPullRequestBody: () => 'body',
       buildPullRequestTitle: () => 'feat: example [P3.01]',

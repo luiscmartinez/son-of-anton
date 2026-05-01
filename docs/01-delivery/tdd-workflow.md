@@ -13,13 +13,7 @@ This repo should use red-green-refactor, not horizontal slicing.
 
 ## Public Interfaces To Test
 
-The main public interfaces for phase 01 are:
-
-- CLI commands
-- feed fetch + parse entrypoint
-- matcher entrypoints
-- SQLite-backed repository behavior
-- Transmission adapter
+Test behavior through your project's public interfaces — CLI commands, API endpoints, data layer operations, adapter behaviors. The specific interfaces depend on your project.
 
 Avoid tests that assert:
 
@@ -29,17 +23,16 @@ Avoid tests that assert:
 
 ## Boundary Fakes Allowed
 
-Use fakes or local test servers only at these boundaries:
+Use fakes or local test servers only at true system boundaries:
 
-- HTTP feed source
-- Transmission RPC server
-- SQLite test database
-- time if run timestamps matter
+- external HTTP APIs or feed sources
+- external services (databases, message queues, RPC servers)
+- time, when timestamps are load-bearing
 
 Do not mock:
 
-- internal matcher modules
-- internal normalization helpers
+- internal business logic modules
+- internal normalization or transformation helpers
 - internal orchestration functions
 
 ## Red-Green-Refactor Pattern
@@ -55,16 +48,14 @@ For each ticket:
 
 Good sequence:
 
-1. CLI can load config.
-2. CLI rejects invalid config.
-3. RSS fetch returns parsed items.
-4. Title normalization extracts TV fields.
-5. TV matcher accepts intended release.
+1. Implement the first failing behavior end-to-end.
+2. Add the next observable behavior on top.
+3. Each step touches the full vertical stack.
 
 Bad sequence:
 
 - add all modules first
-- add database later
+- add persistence later
 - add tests after the entire feature works
 
 ## Definition Of Done
@@ -82,18 +73,15 @@ A ticket is done when:
 
 Keep the suite small and behavior-focused:
 
-- integration tests for CLI and end-to-end pipeline
-- focused tests for normalization and matching behavior
-- adapter tests for Transmission handshake and failure paths
+- integration tests for CLI or API entry points and end-to-end pipelines
+- focused tests for core business logic and transformation behavior
+- adapter tests for external service boundaries and failure paths
 
-## Bun Portability Notes
+## Runtime Portability Notes
 
-- prefer Bun-native APIs when they are stable and sufficient for the test
-- use Bun's Node-compat modules for path, fs, and os portability when they produce simpler cross-platform code
-- do not assume browser-style globals such as `DOMParser` exist in every Bun runtime context
-- avoid shelling out to platform-specific tools like BSD `mktemp` in tests
-- prefer path-aware helpers over manual string slicing for executable paths and `PATH` updates
-- run `bun run ci`, not just `typecheck`, before considering a ticket green
+- prefer standard APIs over runtime-specific ones when both are sufficient
+- avoid shelling out to platform-specific system tools in tests
+- run the full CI command (not just typecheck) before considering a ticket green
 
 ## Learning-Oriented Review Prompts
 

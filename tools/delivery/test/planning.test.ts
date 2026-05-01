@@ -14,14 +14,14 @@ describe('planning', () => {
         slug: 'readme-and-real-world-config-example',
       }),
     ).toBe('agents/p2-03-readme-and-real-world-config-example');
-    expect(deriveWorktreePath('/tmp/pirate_claw', 'P2.03')).toBe(
-      '/tmp/pirate_claw_p2_03',
+    expect(deriveWorktreePath('/tmp/test_project', 'P2.03')).toBe(
+      '/tmp/test_project_p2_03',
     );
-    expect(deriveWorktreePath('/tmp/pirate_claw_ee10_04', 'EE10.05')).toBe(
-      '/tmp/pirate_claw_ee10_05',
+    expect(deriveWorktreePath('/tmp/test_project_ee10_04', 'EE10.05')).toBe(
+      '/tmp/test_project_ee10_05',
     );
-    expect(deriveWorktreePath('/tmp/pirate_claw_p2_03', 'P2.04')).toBe(
-      '/tmp/pirate_claw_p2_04',
+    expect(deriveWorktreePath('/tmp/test_project_p2_03', 'P2.04')).toBe(
+      '/tmp/test_project_p2_04',
     );
   });
 

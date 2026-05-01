@@ -12,7 +12,7 @@ That means:
 - the command wrapper lives under `scripts/`
 - tests for the engine live with the tooling code, not with app tests
 
-This keeps the product boundary honest. `src/` remains the Pirate Claw application. The delivery tool is a maintainer workflow helper.
+This keeps the product boundary honest. The delivery tool is a maintainer workflow helper, not app runtime code.
 
 ## Module Structure
 
@@ -117,7 +117,7 @@ Supported `ticketBoundaryMode` values are:
 
 The internal convention below `planRoot` is fixed: `{planRoot}/02-delivery/<phase>/implementation-plan.md`. Only the top-level directory name is configurable.
 
-In Pirate Claw itself, the supported operator entrypoint remains `bun run deliver --plan ...`. This change makes the orchestrator core less repo-specific, but it does not turn this repository into a fully validated multi-runtime CLI package.
+The supported operator entrypoint is `bun run deliver --plan ...`. The orchestrator core is intentionally generic but does not attempt to be a fully validated multi-runtime CLI package.
 
 ## Plan-Driven, Not Phase-Hardcoded
 
@@ -131,7 +131,7 @@ What is phase-specific is:
 
 So the orchestrator takes a plan path:
 
-- `--plan docs/02-delivery/phase-02/implementation-plan.md`
+- `--plan docs/02-delivery/phase-NN/implementation-plan.md`
 
 That is the canonical interface. The tool is primarily AI-facing, so the explicit plan artifact is more important than a phase nickname.
 
@@ -273,11 +273,9 @@ Operator reset guidance in `gated` and `glide` fallback:
 
 That policy applies only to ticket-linked delivery PRs. Standalone manual `ai-review` runs for non-ticket PRs do not have a next-ticket boundary, so there is no analogous look-ahead rule there.
 
-## Existing Phase 02 Work
+## Syncing Existing Work
 
-Phase 02 was already processed once through a more brittle route before this tool existed.
-
-To avoid pretending that work never happened, `sync` can infer progress from the repo when the local state file is absent:
+If a phase was already partially delivered before the orchestrator was introduced, `sync` can infer progress from the repo when the local state file is absent:
 
 - if a ticket branch exists and the next ticket branch also exists, the earlier ticket is inferred as `done`
 - if a ticket branch exists and has an open PR but no next branch yet, it is inferred as `in_review`
@@ -292,9 +290,9 @@ After **build mode** (implementation and automated verification), the agent swit
 
 Use the verification commands with two distinct purposes:
 
-- `bun run verify:quiet` is the fast inner loop while implementing.
-- `bun run ci:quiet` is the pre-`open-pr` gate for code tickets because it matches the pre-push hook / CI shape (`verify` + root tests + web tests).
-- Keep `bun run format:quiet`, `bun run format:web:quiet` when `web/` changed, and any scoped tests the ticket implies in the inner loop as needed.
+- Use your repo's fast verify command for the inner loop while implementing (e.g. `bun run verify:quiet`).
+- Use your repo's full CI command as the pre-`open-pr` gate for code tickets (e.g. `bun run ci:quiet`).
+- Keep format and scoped tests in the inner loop as needed.
 
 The `post-verify-self-audit` command **records** that self-audit mode completed (ticket status, outcome, and timestamp in local delivery state). It does **not** run checks or read the diff; the agent performs verification in build mode and the diff review in self-audit mode, then invokes this command.
 
@@ -353,7 +351,7 @@ If `codex-plugin-cc` is unavailable, set `codexPreflight: "disabled"` in `orches
 Use the supported repo command:
 
 ```bash
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md status
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md status
 ```
 
 Available commands:
@@ -383,43 +381,43 @@ For a fresh phase start, `start` initializes ticket `01` context. Do not expect 
 Default `cook` flow (with repo-default `skip_doc_only` review policy):
 
 ```bash
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md start
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md post-verify-self-audit [clean|patched] [patch-commit-sha ...]
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md start
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md post-verify-self-audit [clean|patched] [patch-commit-sha ...]
 # for code tickets, invoke codex:codex-rescue via Agent tool (subagent_type: "codex:codex-rescue"); Codex patches autonomously, then record:
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md codex-preflight [clean|patched] [patch-commit-sha ...]
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md codex-preflight [clean|patched] [patch-commit-sha ...]
 # for doc-only tickets under skip_doc_only, codex-preflight auto-records skipped
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md open-pr
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md poll-review
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md open-pr
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md poll-review
 # if the triager hook leaves the ticket in needs_patch, follow up and then record the final outcome
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md record-review P2.02 patched "patched the two actionable correctness issues"
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md advance
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md record-review PN.NN patched "patched the two actionable correctness issues"
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md advance
 ```
 
 With `codexPreflight: "required"` in `orchestrator.config.json`, add the Codex preflight step after self-audit:
 
 ```bash
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md start
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md post-verify-self-audit [clean|patched] [patch-commit-sha ...]
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md start
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md post-verify-self-audit [clean|patched] [patch-commit-sha ...]
 # run codex:review skill, apply prudent findings, then record:
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md codex-preflight [clean|patched] [patch-commit-sha ...]
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md open-pr
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md poll-review
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md advance
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md codex-preflight [clean|patched] [patch-commit-sha ...]
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md open-pr
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md poll-review
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md advance
 ```
 
 `gated` flow:
 
 ```bash
-bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md advance
+bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md advance
 # reset context now; prefer /clear and use /compact only when compressed carry-forward is intentional
 # next agent session prompt:
-# Immediately execute `bun run deliver --plan docs/02-delivery/phase-02/implementation-plan.md start`, read the generated handoff artifact as the source of truth for context, and implement P2.03.
+# Immediately execute `bun run deliver --plan docs/02-delivery/phase-NN/implementation-plan.md start`, read the generated handoff artifact as the source of truth for context, and implement PN.NN+1.
 ```
 
 After the developer has reviewed the full stacked PR chain and is ready to merge it, use:
 
 ```bash
-bun run closeout-stack --plan docs/02-delivery/phase-02/implementation-plan.md
+bun run closeout-stack --plan docs/02-delivery/phase-NN/implementation-plan.md
 ```
 
 `closeout-stack` is intentionally separate from `deliver`. It handles stacked PR merge choreography rather than ticket implementation state: for each reviewed slice in ticket order, it runs `git merge --squash` locally (a 3-way merge, robust against parent-branch patches), commits with the PR title, pushes to `main`, closes the PR, and deletes the remote branch. This produces one squash commit per ticket on `main` without rebasing child branches. When squash hits conflicts (often after prior tickets landed as new squash SHAs), it resets to `origin/main` and replays the PR using `gh pr view`’s commit list and sequential `git cherry-pick` instead (merge commits use `-m 1`), which may create more than one commit for that ticket.
@@ -528,7 +526,7 @@ done
 PR descriptions are maintained as delivery metadata, not one-shot text.
 
 - `open-pr` creates the initial PR body
-- `open-pr` uses a human-readable Conventional-Commit-style title plus the delivery ticket suffix, for example `feat: add torrent lifecycle reconciliation [P3.02]`
+- `open-pr` uses a human-readable Conventional-Commit-style title plus the delivery ticket suffix, for example `feat: add user-facing behavior [PN.NN]`
 - rerunning `open-pr` refreshes the existing PR title/body instead of failing on an already-open branch
 - `record-review` stores the triage result and optional note
 - `record-review ... patched` also makes a best-effort attempt to resolve mapped native GitHub inline review threads for patched findings

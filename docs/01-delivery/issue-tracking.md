@@ -68,22 +68,18 @@ Each ticket or PR should include a short rationale section with these prompts:
 
 ## Epic Status
 
-| Epic                                         | Status     | Notes                                                                                                                                                                                            |
-| -------------------------------------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| EE10 — Delivery Tooling Module Decomposition | **closed** | `orchestrator.ts` reduced to a pure re-export barrel; 6 focused modules extracted; `bun test` green throughout                                                                                   |
-| EE11 — Delivery Tooling Context Object       | **closed** | `_config`, `initOrchestratorConfig`, and `getOrchestratorConfig` removed; delivery runtime config now flows through explicit context/config parameters, adapter factory, and local test fixtures |
+Track active and closed epics here as your project evolves.
 
-EE11 closed the direct follow-up from EE10. No follow-up epic is required for
-the context-object boundary itself; any future delivery-tooling work should start
-from the explicit context and adapter-factory model documented in
-`docs/01-delivery/delivery-orchestrator.md`.
+| Epic | Status | Notes |
+|---|---|---|
+| _(none yet)_ | — | — |
 
 ## Source Of Truth
 
-- phase goals live in `docs/01-product/`
+- phase goals live in `docs/01-product/` (create this in your consuming repo)
 - ticket plans live in `docs/02-delivery/`
-- cross-cutting workflow rules live in `docs/03-engineering/`
-- durable decisions live in `docs/04-decisions/`
+- cross-cutting workflow rules live in `docs/01-delivery/` (in this template repo)
+- durable decisions live in `docs/04-decisions/` (create this in your consuming repo)
 
 Do not bury ticket scope only in GitHub issue comments. The matching doc file should remain readable without external context.
 Do not bury implementation rationale only in chat history. Preserve the short learning artifact in the delivery ticket doc.

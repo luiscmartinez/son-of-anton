@@ -285,7 +285,7 @@ describe('delivery orchestrator', () => {
             'docs/02-delivery/phase-02/ticket-02-movie-matcher-allows-missing-codec.md',
         },
       ],
-      '/workspace/pirate_claw',
+      '/workspace/test_project',
       options,
       baseConfig,
     );
@@ -374,11 +374,11 @@ describe('delivery orchestrator', () => {
     expect(
       parseGitWorktreeList(
         [
-          'worktree /Users/cesar/code/pirate_claw',
+          'worktree /Users/cesar/code/test_project',
           'HEAD abc123',
           'branch refs/heads/main',
           '',
-          'worktree /tmp/worktrees/3cc9/pirate_claw',
+          'worktree /tmp/worktrees/3cc9/test_project',
           'HEAD def456',
           'branch refs/heads/agents/ai-code-review-template-boundary',
           '',
@@ -386,11 +386,11 @@ describe('delivery orchestrator', () => {
       ),
     ).toEqual([
       {
-        path: '/Users/cesar/code/pirate_claw',
+        path: '/Users/cesar/code/test_project',
         branch: 'refs/heads/main',
       },
       {
-        path: '/tmp/worktrees/3cc9/pirate_claw',
+        path: '/tmp/worktrees/3cc9/test_project',
         branch: 'refs/heads/agents/ai-code-review-template-boundary',
       },
     ]);
@@ -605,7 +605,7 @@ describe('delivery orchestrator', () => {
 
   it('formats notification messages for milestone events', () => {
     expect(
-      formatNotificationMessage('/tmp/pirate_claw', {
+      formatNotificationMessage('/tmp/test_project', {
         kind: 'ticket_started',
         planKey: 'phase-03',
         ticketId: 'P3.01',
@@ -615,7 +615,7 @@ describe('delivery orchestrator', () => {
       }),
     ).toContain('Son of Anton\nP3.01 underway for phase-03.');
     expect(
-      formatNotificationMessage('/tmp/pirate_claw', {
+      formatNotificationMessage('/tmp/test_project', {
         kind: 'run_blocked',
         planKey: 'phase-03',
         command: 'open-pr',
@@ -623,7 +623,7 @@ describe('delivery orchestrator', () => {
       }),
     ).toContain('Son of Anton\nStopped in phase-03.');
     expect(
-      formatNotificationMessage('/tmp/pirate_claw', {
+      formatNotificationMessage('/tmp/test_project', {
         kind: 'standalone_review_started',
         prNumber: 32,
         prUrl: 'https://example.test/pull/32',
@@ -632,7 +632,7 @@ describe('delivery orchestrator', () => {
       }),
     ).toContain('Son of Anton PR #32\nAI review started.');
     expect(
-      formatNotificationMessage('/tmp/pirate_claw', {
+      formatNotificationMessage('/tmp/test_project', {
         kind: 'standalone_review_recorded',
         prNumber: 32,
         prUrl: 'https://example.test/pull/32',
@@ -994,7 +994,7 @@ describe('delivery orchestrator', () => {
       {
         githubRepo: {
           owner: 'cesarnml',
-          name: 'Pirate-Claw',
+          name: 'Test-Project',
           defaultBranch: 'main',
         },
       },
@@ -1009,10 +1009,10 @@ describe('delivery orchestrator', () => {
     expect(body).toContain('### Self-Audit Patch Commits');
     expect(body).toContain('### Codex Preflight Patch Commits');
     expect(body).toContain(
-      '[`aaaaaaaaaaaa`](https://github.com/cesarnml/Pirate-Claw/commit/aaaaaaaaaaaa1111111111111111111111111111) fix: clarify PR body review state [self-audit]',
+      '[`aaaaaaaaaaaa`](https://github.com/cesarnml/Test-Project/commit/aaaaaaaaaaaa1111111111111111111111111111) fix: clarify PR body review state [self-audit]',
     );
     expect(body).toContain(
-      '[`bbbbbbbbbbbb`](https://github.com/cesarnml/Pirate-Claw/commit/bbbbbbbbbbbb2222222222222222222222222222) fix: surface codex preflight patch commits [codexPreflight]',
+      '[`bbbbbbbbbbbb`](https://github.com/cesarnml/Test-Project/commit/bbbbbbbbbbbb2222222222222222222222222222) fix: surface codex preflight patch commits [codexPreflight]',
     );
   });
 
@@ -1994,7 +1994,7 @@ describe('delivery orchestrator', () => {
     };
 
     await expect(
-      openPullRequest(state, '/tmp/pirate_claw', testContext(), 'P3.01'),
+      openPullRequest(state, '/tmp/test_project', testContext(), 'P3.01'),
     ).rejects.toThrow(
       'Ticket P3.01 must complete post-verify self-audit before opening a PR.',
     );
@@ -2212,7 +2212,7 @@ describe('delivery orchestrator', () => {
 
     const nextState = await pollReview(
       state,
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       testContext(),
       'P3.01',
       {
@@ -2307,7 +2307,7 @@ describe('delivery orchestrator', () => {
 
     const nextState = await pollReview(
       state,
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       testContext(),
       'P3.01',
       {
@@ -2341,7 +2341,7 @@ describe('delivery orchestrator', () => {
     });
     expect(
       await readArtifactJson(
-        '/tmp/pirate_claw',
+        '/tmp/test_project',
         '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
       ),
     ).toMatchObject({
@@ -2383,7 +2383,7 @@ describe('delivery orchestrator', () => {
 
     const nextState = await pollReview(
       state,
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       testContext(),
       'P3.01',
       {
@@ -2413,7 +2413,7 @@ describe('delivery orchestrator', () => {
     });
     expect(
       await readArtifactJson(
-        '/tmp/pirate_claw',
+        '/tmp/test_project',
         '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
       ),
     ).toMatchObject({
@@ -2455,7 +2455,7 @@ describe('delivery orchestrator', () => {
 
     const nextState = await pollReview(
       state,
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       testContext(),
       'P3.01',
       {
@@ -2492,7 +2492,7 @@ describe('delivery orchestrator', () => {
     });
     expect(
       await readArtifactJson(
-        '/tmp/pirate_claw',
+        '/tmp/test_project',
         '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
       ),
     ).toMatchObject({
@@ -2533,7 +2533,7 @@ describe('delivery orchestrator', () => {
 
     const nextState = await pollReview(
       state,
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       testContext(),
       'P3.01',
       {
@@ -2558,7 +2558,7 @@ describe('delivery orchestrator', () => {
     });
     expect(
       await readArtifactJson(
-        '/tmp/pirate_claw',
+        '/tmp/test_project',
         '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
       ),
     ).toMatchObject({
@@ -2618,7 +2618,7 @@ describe('delivery orchestrator', () => {
 
     const nextState = await pollReview(
       state,
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       testContext(),
       'P3.01',
       {
@@ -2630,7 +2630,7 @@ describe('delivery orchestrator', () => {
       },
     );
     const standaloneResult = await runStandaloneAiReview(
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       { kind: 'noop', enabled: false },
       testContext(),
       undefined,
@@ -2702,7 +2702,7 @@ describe('delivery orchestrator', () => {
 
     const nextState = await pollReview(
       state,
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       testContext(),
       'P3.01',
       {
@@ -2713,7 +2713,7 @@ describe('delivery orchestrator', () => {
       },
     );
     const standaloneResult = await runStandaloneAiReview(
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       { kind: 'noop', enabled: false },
       testContext(),
       undefined,
@@ -2788,7 +2788,7 @@ describe('delivery orchestrator', () => {
 
     const nextState = await pollReview(
       state,
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       testContext(),
       'P3.01',
       {
@@ -2799,7 +2799,7 @@ describe('delivery orchestrator', () => {
       },
     );
     const standaloneResult = await runStandaloneAiReview(
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       { kind: 'noop', enabled: false },
       testContext(),
       undefined,
@@ -2834,7 +2834,7 @@ describe('delivery orchestrator', () => {
   it('uses the standalone pull request createdAt to timeout mixed vendor states immediately on late reruns', async () => {
     const sleeps: number[] = [];
     const standaloneResult = await runStandaloneAiReview(
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       { kind: 'noop', enabled: false },
       testContext(),
       undefined,
@@ -2936,7 +2936,7 @@ describe('delivery orchestrator', () => {
     });
 
     const standaloneResult = await runStandaloneAiReview(
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       { kind: 'noop', enabled: false },
       testContext(),
       undefined,
@@ -3003,7 +3003,7 @@ describe('delivery orchestrator', () => {
     });
 
     const standaloneResult = await runStandaloneAiReview(
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       { kind: 'noop', enabled: false },
       testContext(),
       undefined,
@@ -3072,7 +3072,7 @@ describe('delivery orchestrator', () => {
     };
     const sleeps: number[] = [];
 
-    await pollReview(state, '/tmp/pirate_claw', testContext(), 'P3.01', {
+    await pollReview(state, '/tmp/test_project', testContext(), 'P3.01', {
       now: () => Date.parse('2026-04-01T10:00:00.000Z'),
       sleep: async (milliseconds) => {
         sleeps.push(milliseconds);
@@ -3242,7 +3242,7 @@ describe('delivery orchestrator', () => {
     };
 
     await expect(
-      reconcileLateReview(state, '/tmp/pirate_claw', testContext(), 'P3.01', {
+      reconcileLateReview(state, '/tmp/test_project', testContext(), 'P3.01', {
         now: () => Date.parse('2026-04-01T10:00:00.000Z'),
         sleep: async () => {},
         fetcher: () => ({
@@ -3292,7 +3292,7 @@ describe('delivery orchestrator', () => {
 
     const nextState = await reconcileLateReview(
       state,
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       testContext(),
       'P3.01',
       {
@@ -3320,7 +3320,7 @@ describe('delivery orchestrator', () => {
     );
     expect(
       await readArtifactJson(
-        '/tmp/pirate_claw',
+        '/tmp/test_project',
         '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
       ),
     ).toMatchObject({
@@ -3370,7 +3370,7 @@ describe('delivery orchestrator', () => {
 
     const nextState = await recordReview(
       state,
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       testContext(),
       'P3.01',
       'patched',
@@ -3395,7 +3395,7 @@ describe('delivery orchestrator', () => {
     });
     expect(
       await readArtifactJson(
-        '/tmp/pirate_claw',
+        '/tmp/test_project',
         '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
       ),
     ).toMatchObject({
@@ -3441,7 +3441,7 @@ describe('delivery orchestrator', () => {
 
     const nextState = await recordReview(
       state,
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       testContext(),
       'P3.01',
       'clean',
@@ -3458,7 +3458,7 @@ describe('delivery orchestrator', () => {
     });
     expect(
       await readArtifactJson(
-        '/tmp/pirate_claw',
+        '/tmp/test_project',
         '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
       ),
     ).toMatchObject({
@@ -3497,7 +3497,7 @@ describe('delivery orchestrator', () => {
 
     const nextState = await recordReview(
       state,
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       testContext(),
       'P3.01',
       'clean',
@@ -3514,7 +3514,7 @@ describe('delivery orchestrator', () => {
     });
     expect(
       await readArtifactJson(
-        '/tmp/pirate_claw',
+        '/tmp/test_project',
         '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
       ),
     ).toMatchObject({
@@ -3571,7 +3571,7 @@ describe('delivery orchestrator', () => {
 
     const nextState = await recordReview(
       state,
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       testContext(),
       'P3.01',
       'patched',
@@ -3608,7 +3608,7 @@ describe('delivery orchestrator', () => {
 
     const warning = await notifyBestEffort(
       resolveNotifier(),
-      '/tmp/pirate_claw',
+      '/tmp/test_project',
       {
         kind: 'ticket_started',
         planKey: 'phase-03',
@@ -3643,7 +3643,7 @@ describe('delivery orchestrator', () => {
       return new Response('{}', { status: 200 });
     }) as unknown as typeof fetch;
 
-    await notifyBestEffort(resolveNotifier(), '/tmp/pirate_claw', {
+    await notifyBestEffort(resolveNotifier(), '/tmp/test_project', {
       kind: 'standalone_review_started',
       prNumber: 33,
       prUrl: 'https://example.test/pull/33',
