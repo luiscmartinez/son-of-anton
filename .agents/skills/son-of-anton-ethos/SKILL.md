@@ -5,7 +5,7 @@ description: Execute approved multi-ticket phase/epic work or standalone (non-ti
 
 # Son Of Anton Ethos
 
-**Before executing a single command:** Read `docs/03-engineering/delivery-orchestrator.md` in full. Every orchestrator action — for both ticket stacks (`start`, `post-verify-self-audit`, `codex-preflight`, `open-pr`, `poll-review`, `record-review`, `advance`) and standalone PRs (`ai-review`) — is defined there with exact sequencing and policy. That document is the authoritative command surface. Your own reasoning about what the flow "probably" is does not override it.
+**Before executing a single command:** Read `docs/01-delivery/delivery-orchestrator.md` in full. Every orchestrator action — for both ticket stacks (`start`, `post-verify-self-audit`, `codex-preflight`, `open-pr`, `poll-review`, `record-review`, `advance`) and standalone PRs (`ai-review`) — is defined there with exact sequencing and policy. That document is the authoritative command surface. Your own reasoning about what the flow "probably" is does not override it.
 
 Son of Anton drives approved work to completion. How ticket boundaries are handled is governed by `ticketBoundaryMode` in `orchestrator.config.json`. The orchestrator does not seek repeated permission between tickets — but it honors the boundary contract precisely as configured.
 
@@ -49,7 +49,7 @@ Commit the delivery plan and all ticket docs to the default branch before creati
 3. Move one ticket at a time in order.
 4. For each ticket:
    1. Implement
-   2. Build / verify — use `bun run verify:quiet` for the fast inner loop, then `bun run ci:quiet` before `open-pr` on code tickets
+   2. Build / verify — use the repo's fast verify command for the inner loop, then the full CI command before `open-pr` on code tickets
    3. Update ticket rationale for behavior or tradeoff changes
    4. Self-audit — `post-verify-self-audit [clean|patched]`
       - Under `selfAudit: "skip_doc_only"`: doc-only tickets auto-record `skipped`

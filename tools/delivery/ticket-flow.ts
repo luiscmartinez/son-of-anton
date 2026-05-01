@@ -78,7 +78,7 @@ export function buildTicketHandoff(
     'docs/00-overview/start-here.md',
     state.planPath,
     ticket.ticketFile,
-    'docs/03-engineering/delivery-orchestrator.md',
+    'docs/01-delivery/delivery-orchestrator.md',
   ];
   const lines = [
     '# Ticket Handoff',

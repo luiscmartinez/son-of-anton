@@ -76,7 +76,7 @@ Each ticket or PR should include a short rationale section with these prompts:
 EE11 closed the direct follow-up from EE10. No follow-up epic is required for
 the context-object boundary itself; any future delivery-tooling work should start
 from the explicit context and adapter-factory model documented in
-`docs/03-engineering/delivery-orchestrator.md`.
+`docs/01-delivery/delivery-orchestrator.md`.
 
 ## Source Of Truth
 
