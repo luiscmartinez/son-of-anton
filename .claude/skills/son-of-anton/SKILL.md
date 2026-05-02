@@ -54,9 +54,8 @@ Turn a developer feature ideation storm into one or more draft epic/phase plans.
 Take an existing rough plan or the content linked in the argument and run a grill-me session to sharpen it.
 
 1. Read the plan if a file path is given. Otherwise use the inline description.
-2. Challenge every assumption — scope, sequencing, dependencies, risks, success criteria.
-3. Produce a revised plan outline with open questions resolved or explicitly parked.
-4. **Do not write implementation tickets.** That is `decompose`.
+2. **Invoke the `soa-grill-me` skill** passing the plan content as context — do not implement the grill-me protocol yourself.
+3. **Do not write implementation tickets.** That is `decompose`.
 
 ---
 
@@ -66,7 +65,7 @@ Take an existing rough plan or the content linked in the argument and run a gril
 Take an approved phase/epic plan and produce a detailed `implementation-plan.md` with exact ticket decomposition.
 
 1. Read the plan at the given path (or ask for it).
-2. Run a grill-me session focused on: ticket granularity, dependency order, test strategy per ticket, acceptance criteria.
+2. **Invoke the `soa-grill-me` skill** passing the plan content and focus areas (ticket granularity, dependency order, test strategy, acceptance criteria) — do not implement the grill-me protocol yourself.
 3. **Stop and seek developer approval of the ticket list** before writing files.
 4. Once approved, write `implementation-plan.md` and individual ticket files per the format in `docs/02-templates/ticket.template.md`.
 
