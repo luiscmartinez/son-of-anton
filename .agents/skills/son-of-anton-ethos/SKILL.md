@@ -58,7 +58,7 @@ Commit the delivery plan and all ticket docs to the default branch before creati
    6. Open / refresh PR — `open-pr`
    7. Run AI-review polling — `poll-review` (see [External Review](#external-review))
    8. Patch prudent findings
-   9. Record review — `record-review`
+   9. Record review — `record-review` (**skip** when `poll-review` already auto-recorded `clean` or `skipped`; only needed when `poll-review` leaves ticket in `needs_patch` state)
    10. Advance — `advance`
 5. During the external review window, stay idle.
 6. Do not write ahead across ticket boundaries.
@@ -76,6 +76,16 @@ Canonical `gated` resume prompt:
 
 `Immediately execute \`bun run deliver --plan <plan> start\`, read the locally materialized handoff artifact in the started worktree as the source of truth for context, and implement <next-ticket-id>.`
 
+**After `advance` in `gated` mode, you must echo the resume prompt as the final human-visible output — not buried in CLI output, not paraphrased.** Format it exactly like this, substituting the real plan path and next ticket id:
+
+```
+P<N>.<NN> is done. PR: <url>
+
+Reset context (/clear), then resume with:
+
+/soa resume phase-<NN>
+```
+
 ### Codex Preflight
 
 **Role split:**
@@ -91,6 +101,8 @@ Canonical `gated` resume prompt:
 3. Record: `bun run deliver --plan <plan> codex-preflight [clean|patched]`
 
 The CLI is a state recorder only — never invoke Codex from within the CLI.
+
+**Codex scope contract:** Codex reviews and patches implementation code only. Ticket doc files under `docs/02-delivery/` — including `## Rationale` sections written by Claude during implementation — are part of the ticket deliverable and must not be reverted by Codex. Brief the Codex subagent to skip ticket doc files when invoking it.
 
 **When `codexPreflight` is `"skip_doc_only"`** (repo default): code tickets still require the Codex step before `open-pr`; doc-only tickets auto-record `skipped`.
 
