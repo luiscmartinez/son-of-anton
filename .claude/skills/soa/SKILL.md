@@ -26,13 +26,16 @@ If `.son-of-anton` already exists, tell the user to use `update` instead.
 ### `update`
 **Trigger:** `/son-of-anton update` or `/soa update`
 
-Pull the latest changes from son-of-anton:
+Pull the latest changes from son-of-anton, then re-sync skill symlinks:
 
 ```bash
 git subtree pull --prefix .son-of-anton https://github.com/cesarnml/son-of-anton.git main --squash
+bash .son-of-anton/scripts/sync-skills.sh
 ```
 
 Report what changed. If already up to date, say so.
+
+Also run `sync-skills.sh` after `install` to wire up the initial symlinks.
 
 ---
 
@@ -51,23 +54,30 @@ Turn a developer feature ideation storm into one or more draft epic/phase plans.
 ### `plan`
 **Trigger:** `/son-of-anton plan [path-to-plan or inline description]` or `/soa plan`
 
-Take an existing rough plan or the content linked in the argument and run a grill-me session to sharpen it.
+**Output: `docs/01-product/phase-N.md` only — the "what" and "why". No tickets. No implementation details.**
+
+Take an existing rough plan or roadmap section and run a grill-me session scoped to product-level decisions: goals, success criteria, scope, explicit deferrals, and dependencies. The session ends when `docs/01-product/phase-N.md` is written and approved.
 
 1. Read the plan if a file path is given. Otherwise use the inline description.
-2. **Invoke the `soa-grill-me` skill** passing the plan content as context — do not implement the grill-me protocol yourself.
-3. **Do not write implementation tickets.** That is `decompose`.
+2. **Invoke the `soa-grill-me` skill** in **Mode 1 (product plan)** — pass the plan content and instruct grill-me to stay at the product level (scope, goals, success criteria, deferrals, risks). Explicitly tell it: no schema design, no API routes, no ticket breakdown.
+3. After grill-me closes, write `docs/01-product/phase-N.md` using the product-plan template at `.son-of-anton/docs/02-templates/product-plan.template.md`.
+4. **Hard stop.** Ask the developer to approve the product plan. Do not proceed to tickets.
+
+> The next step after approval is `/soa decompose docs/01-product/phase-N.md`.
 
 ---
 
 ### `decompose` (alias: `decomp`, `tickets`)
 **Trigger:** `/son-of-anton decompose [path]` or `/soa decomp` or `/soa tickets`
 
-Take an approved phase/epic plan and produce a detailed `implementation-plan.md` with exact ticket decomposition.
+**Output: `docs/02-delivery/phase-N/implementation-plan.md` + ticket files — the "how". Requires an approved product plan as input.**
 
-1. Read the plan at the given path (or ask for it).
-2. **Invoke the `soa-grill-me` skill** passing the plan content and focus areas (ticket granularity, dependency order, test strategy, acceptance criteria) — do not implement the grill-me protocol yourself.
+Take the approved `docs/01-product/phase-N.md` and produce a detailed delivery plan with exact ticket decomposition.
+
+1. Read the product plan at the given path (or ask for it). Refuse to proceed if no approved product plan exists — send the developer to `/soa plan` first.
+2. **Invoke the `soa-grill-me` skill** in **Mode 2 (delivery decomposition)** — pass the product plan and focus on: schema/migration strategy, API route structure, ticket granularity, PR slice boundaries, dependency order, test strategy, exit conditions per ticket.
 3. **Stop and seek developer approval of the ticket list** before writing files.
-4. Once approved, write `implementation-plan.md` and individual ticket files per the format in `docs/02-templates/ticket.template.md`.
+4. Once approved, write `docs/02-delivery/phase-N/implementation-plan.md` and individual `ticket-NN-*.md` files per the format in `.son-of-anton/docs/02-templates/ticket.template.md`.
 
 ---
 
