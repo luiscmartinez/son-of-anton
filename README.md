@@ -118,7 +118,7 @@ bash .son-of-anton/scripts/sync-skills.sh
 | `son-of-anton-ethos` | "execute / implement / start / continue / deliver / resume" — drives the per-ticket loop |
 | `grill-me` | Plan pressure-testing before any implementation |
 | `ai-code-review` | Triage CodeRabbit, Qodo, Greptile, SonarQube review comments |
-| `enter-worktree` | Bootstrap a fresh git worktree with deps and `.env` |
+| `enter-worktree` | Bootstrap a fresh git worktree with deps and `.env`; runtime-agnostic, not Bun-only |
 | `closeout-stack` | Squash-merge completed stacked PRs onto main |
 | `write-retrospective` | Write phase/epic retrospective to `notes/public/` |
 
