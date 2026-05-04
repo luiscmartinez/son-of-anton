@@ -4,7 +4,7 @@
 
 ## Epic
 
-[docs/01-product/phase-01.md](../../01-product/phase-01.md)
+[docs/product/plans/phase-01.md](../../01-product/phase-01.md)
 
 ## Product contract
 

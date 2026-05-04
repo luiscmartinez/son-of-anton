@@ -9,10 +9,10 @@ Question the plan aggressively until key decisions, dependencies, and tradeoffs 
 
 This skill is invoked in two distinct contexts. **Read the invoking command before asking a single question.**
 
-### Mode 1: `/soa plan` → Product Plan (`docs/01-product/phase-N.md`)
+### Mode 1: `/soa plan` → Product Plan (`docs/product/plans/phase-N.md`)
 
 **What:** Stress-test scope, goals, and success criteria — the *what* and *why*.
-**Output:** A filled-out `docs/01-product/phase-N.md` using the product-plan template.
+**Output:** A filled-out `docs/product/plans/phase-N.md` using the product-plan template.
 **Hard stop:** Do NOT ask about schema design, API routes, ticket breakdown, PR slicing, or implementation details. Those belong in Mode 2. If the developer drifts toward implementation, redirect: *"That's a decompose question — let's lock the product plan first."*
 
 Questions stay at the product level:
@@ -22,7 +22,7 @@ Questions stay at the product level:
 - What are the dependencies on other phases or external systems?
 - What could kill this phase before it ships?
 
-### Mode 2: `/soa decompose` → Delivery Plan (`docs/02-delivery/phase-N/`)
+### Mode 2: `/soa decompose` → Delivery Plan (`docs/product/delivery/phase-N/`)
 
 **What:** Stress-test implementation approach, ticket granularity, and sequencing — the *how*.
 **Output:** An approved ticket breakdown ready to write as `implementation-plan.md` + individual ticket files.

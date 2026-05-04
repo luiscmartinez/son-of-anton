@@ -76,9 +76,9 @@ Track active and closed epics here as your project evolves.
 
 ## Source Of Truth
 
-- phase goals live in `docs/01-product/` (create this in your consuming repo)
-- ticket plans live in `docs/02-delivery/`
-- cross-cutting workflow rules live in `docs/01-delivery/` (in this template repo)
+- phase goals live in `docs/product/plans/` (create this in your consuming repo)
+- ticket plans live in `docs/product/delivery/`
+- cross-cutting workflow rules live in `docs/template/delivery/` (in this template repo)
 - durable decisions live in `docs/04-decisions/` (create this in your consuming repo)
 
 Do not bury ticket scope only in GitHub issue comments. The matching doc file should remain readable without external context.

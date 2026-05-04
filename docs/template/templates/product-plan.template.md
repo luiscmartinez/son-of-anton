@@ -1,6 +1,6 @@
 # Phase N: [Phase Title]
 
-**Delivery status:** Not started — product definition only; no `docs/02-delivery/phase-N/` implementation plan until tickets are approved.
+**Delivery status:** Not started — product definition only; no `docs/product/delivery/phase-N/` implementation plan until tickets are approved.
 
 ## TL;DR
 

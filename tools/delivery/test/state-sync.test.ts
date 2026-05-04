@@ -9,7 +9,7 @@ import { syncStateToPrimaryIfNeeded } from '../cli-runner';
 
 const baseState: DeliveryState = {
   planKey: 'phase-test',
-  planPath: 'docs/02-delivery/phase-test/implementation-plan.md',
+  planPath: 'docs/product/delivery/phase-test/implementation-plan.md',
   statePath: '.agents/delivery/phase-test/state.json',
   reviewsDirPath: '.agents/delivery/phase-test/reviews',
   handoffsDirPath: '.agents/delivery/phase-test/handoffs',
@@ -20,7 +20,7 @@ const baseState: DeliveryState = {
       id: 'PT.01',
       title: 'Test ticket',
       slug: 'test-ticket',
-      ticketFile: 'docs/02-delivery/phase-test/ticket-01-test-ticket.md',
+      ticketFile: 'docs/product/delivery/phase-test/ticket-01-test-ticket.md',
       status: 'done',
       branch: 'agents/pt-01-test-ticket',
       baseBranch: 'main',

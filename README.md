@@ -69,7 +69,7 @@ Edit `AGENTS.md` to reflect your repo's lint, format, verify, and test commands.
 /son-of-anton execute phase-01
 ```
 
-See `docs/00-overview/start-here.md` for the full onboarding flow.
+See `docs/template/overview/start-here.md` for the full onboarding flow.
 
 <details>
 <summary>Manual install (no Claude Code)</summary>

@@ -150,7 +150,7 @@ async function listImplementationPlans(
   cwd: string,
   planRoot: string,
 ): Promise<string[]> {
-  const deliveryRoot = resolve(cwd, planRoot, '02-delivery');
+  const deliveryRoot = resolve(cwd, planRoot, 'product/delivery');
   const entries = await readdir(deliveryRoot, { withFileTypes: true });
 
   return entries

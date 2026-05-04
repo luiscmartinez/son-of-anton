@@ -71,7 +71,7 @@ describe('ticket-flow', () => {
 
       const state: DeliveryState = {
         planKey: 'phase-03',
-        planPath: 'docs/02-delivery/phase-03/implementation-plan.md',
+        planPath: 'docs/product/delivery/phase-03/implementation-plan.md',
         statePath: '.agents/delivery/phase-03/state.json',
         reviewsDirPath: '.agents/delivery/phase-03/reviews',
         handoffsDirPath: '.agents/delivery/phase-03/handoffs',
@@ -172,7 +172,7 @@ describe('ticket-flow', () => {
 
       const state: DeliveryState = {
         planKey: 'phase-03',
-        planPath: 'docs/02-delivery/phase-03/implementation-plan.md',
+        planPath: 'docs/product/delivery/phase-03/implementation-plan.md',
         statePath: '.agents/delivery/phase-03/state.json',
         reviewsDirPath: '.agents/delivery/phase-03/reviews',
         handoffsDirPath: '.agents/delivery/phase-03/handoffs',
@@ -287,7 +287,7 @@ describe('ticket-flow', () => {
 describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
   const baseInProgressState: DeliveryState = {
     planKey: 'phase-03',
-    planPath: 'docs/02-delivery/phase-03/implementation-plan.md',
+    planPath: 'docs/product/delivery/phase-03/implementation-plan.md',
     statePath: '.agents/delivery/phase-03/state.json',
     reviewsDirPath: '.agents/delivery/phase-03/reviews',
     handoffsDirPath: '.agents/delivery/phase-03/handoffs',
@@ -299,7 +299,7 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
         title: 'Persist Transmission Identity For Queued Torrents',
         slug: 'persist-transmission-identity-for-queued-torrents',
         ticketFile:
-          'docs/02-delivery/phase-03/ticket-01-persist-transmission-identity-for-queued-torrents.md',
+          'docs/product/delivery/phase-03/ticket-01-persist-transmission-identity-for-queued-torrents.md',
         status: 'in_progress',
         branch:
           'agents/p3-01-persist-transmission-identity-for-queued-torrents',
@@ -505,7 +505,7 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
 describe('EE8.02 — codex preflight command, status, and gate', () => {
   const basePostAuditState: DeliveryState = {
     planKey: 'phase-03',
-    planPath: 'docs/02-delivery/phase-03/implementation-plan.md',
+    planPath: 'docs/product/delivery/phase-03/implementation-plan.md',
     statePath: '.agents/delivery/phase-03/state.json',
     reviewsDirPath: '.agents/delivery/phase-03/reviews',
     handoffsDirPath: '.agents/delivery/phase-03/handoffs',
@@ -517,7 +517,7 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
         title: 'Persist Transmission Identity For Queued Torrents',
         slug: 'persist-transmission-identity-for-queued-torrents',
         ticketFile:
-          'docs/02-delivery/phase-03/ticket-01-persist-transmission-identity-for-queued-torrents.md',
+          'docs/product/delivery/phase-03/ticket-01-persist-transmission-identity-for-queued-torrents.md',
         status: 'post_verify_self_audit_complete',
         branch:
           'agents/p3-01-persist-transmission-identity-for-queued-torrents',
@@ -640,7 +640,7 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
   it('statusRank orders: post_verify_self_audit_complete < codex_preflight_complete < in_review', () => {
     // Verify via syncStateFromExisting status selection: higher rank wins
     const options = createOptions({
-      planPath: 'docs/02-delivery/phase-03/implementation-plan.md',
+      planPath: 'docs/product/delivery/phase-03/implementation-plan.md',
     });
     const existing: DeliveryState = {
       ...options,
@@ -651,7 +651,7 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
           title: 'Persist Transmission Identity For Queued Torrents',
           slug: 'persist-transmission-identity-for-queued-torrents',
           ticketFile:
-            'docs/02-delivery/phase-03/ticket-01-persist-transmission-identity-for-queued-torrents.md',
+            'docs/product/delivery/phase-03/ticket-01-persist-transmission-identity-for-queued-torrents.md',
           status: 'codex_preflight_complete',
           branch:
             'agents/p3-01-persist-transmission-identity-for-queued-torrents',
@@ -725,7 +725,7 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
     const progress: string[] = [];
     const state: DeliveryState = {
       planKey: 'phase-03',
-      planPath: 'docs/02-delivery/phase-03/implementation-plan.md',
+      planPath: 'docs/product/delivery/phase-03/implementation-plan.md',
       statePath: '.agents/delivery/phase-03/state.json',
       reviewsDirPath: '.agents/delivery/phase-03/reviews',
       handoffsDirPath: '.agents/delivery/phase-03/handoffs',
@@ -737,7 +737,7 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
           title: 'Persist Transmission Identity For Queued Torrents',
           slug: 'persist-transmission-identity-for-queued-torrents',
           ticketFile:
-            'docs/02-delivery/phase-03/ticket-01-persist-transmission-identity-for-queued-torrents.md',
+            'docs/product/delivery/phase-03/ticket-01-persist-transmission-identity-for-queued-torrents.md',
           status: 'codex_preflight_complete',
           branch:
             'agents/p3-01-persist-transmission-identity-for-queued-torrents',
@@ -776,7 +776,7 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
     const progress: string[] = [];
     const state: DeliveryState = {
       planKey: 'phase-03',
-      planPath: 'docs/02-delivery/phase-03/implementation-plan.md',
+      planPath: 'docs/product/delivery/phase-03/implementation-plan.md',
       statePath: '.agents/delivery/phase-03/state.json',
       reviewsDirPath: '.agents/delivery/phase-03/reviews',
       handoffsDirPath: '.agents/delivery/phase-03/handoffs',
@@ -788,7 +788,7 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
           title: 'Persist Transmission Identity For Queued Torrents',
           slug: 'persist-transmission-identity-for-queued-torrents',
           ticketFile:
-            'docs/02-delivery/phase-03/ticket-01-persist-transmission-identity-for-queued-torrents.md',
+            'docs/product/delivery/phase-03/ticket-01-persist-transmission-identity-for-queued-torrents.md',
           status: 'in_review',
           branch:
             'agents/p3-01-persist-transmission-identity-for-queued-torrents',

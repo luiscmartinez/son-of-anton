@@ -271,7 +271,7 @@ describe('orchestrator config', () => {
       defaultBranch: 'develop',
     };
     const options = createOptions({
-      planPath: 'docs/02-delivery/phase-03/implementation-plan.md',
+      planPath: 'docs/product/delivery/phase-03/implementation-plan.md',
     });
 
     const synced = syncStateFromScratch(
@@ -280,7 +280,7 @@ describe('orchestrator config', () => {
           id: 'P3.01',
           title: 'First Ticket',
           slug: 'first-ticket',
-          ticketFile: 'docs/02-delivery/phase-03/ticket-01-first-ticket.md',
+          ticketFile: 'docs/product/delivery/phase-03/ticket-01-first-ticket.md',
         },
       ],
       '/workspace/test',

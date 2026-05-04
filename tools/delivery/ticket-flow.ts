@@ -75,10 +75,10 @@ export function buildTicketHandoff(
   );
   const previous = ticketIndex > 0 ? state.tickets[ticketIndex - 1] : undefined;
   const requiredReads = [
-    'docs/00-overview/start-here.md',
+    'docs/template/overview/start-here.md',
     state.planPath,
     ticket.ticketFile,
-    'docs/01-delivery/delivery-orchestrator.md',
+    'docs/template/delivery/delivery-orchestrator.md',
   ];
   const lines = [
     '# Ticket Handoff',

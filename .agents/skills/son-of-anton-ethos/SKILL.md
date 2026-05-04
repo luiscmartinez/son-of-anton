@@ -5,7 +5,7 @@ description: Execute approved multi-ticket phase/epic work or standalone (non-ti
 
 # Son Of Anton Ethos
 
-**Before executing a single command:** Read `docs/01-delivery/delivery-orchestrator.md` in full. Every orchestrator action — for both ticket stacks (`start`, `post-verify-self-audit`, `codex-preflight`, `open-pr`, `poll-review`, `record-review`, `advance`) and standalone PRs (`ai-review`) — is defined there with exact sequencing and policy. That document is the authoritative command surface. Your own reasoning about what the flow "probably" is does not override it.
+**Before executing a single command:** Read `docs/template/delivery/delivery-orchestrator.md` in full. Every orchestrator action — for both ticket stacks (`start`, `post-verify-self-audit`, `codex-preflight`, `open-pr`, `poll-review`, `record-review`, `advance`) and standalone PRs (`ai-review`) — is defined there with exact sequencing and policy. That document is the authoritative command surface. Your own reasoning about what the flow "probably" is does not override it.
 
 Son of Anton drives approved work to completion. How ticket boundaries are handled is governed by `ticketBoundaryMode` in `orchestrator.config.json`. The orchestrator does not seek repeated permission between tickets — but it honors the boundary contract precisely as configured.
 
@@ -102,7 +102,7 @@ Reset context (/clear), then resume with:
 
 The CLI is a state recorder only — never invoke Codex from within the CLI.
 
-**Codex scope contract:** Codex reviews and patches implementation code only. Ticket doc files under `docs/02-delivery/` — including `## Rationale` sections written by Claude during implementation — are part of the ticket deliverable and must not be reverted by Codex. Brief the Codex subagent to skip ticket doc files when invoking it.
+**Codex scope contract:** Codex reviews and patches implementation code only. Ticket doc files under `docs/product/delivery/` — including `## Rationale` sections written by Claude during implementation — are part of the ticket deliverable and must not be reverted by Codex. Brief the Codex subagent to skip ticket doc files when invoking it.
 
 **When `codexPreflight` is `"skip_doc_only"`** (repo default): code tickets still require the Codex step before `open-pr`; doc-only tickets auto-record `skipped`.
 

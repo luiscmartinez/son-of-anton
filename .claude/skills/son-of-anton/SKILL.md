@@ -44,7 +44,7 @@ Turn a developer feature ideation storm into one or more draft epic/phase plans.
 1. Ask the developer open-ended questions to surface goals, constraints, and unknowns. Be relentless — this is the grill-me stage for ideas, not plans.
 2. Synthesize the conversation into a concise draft epic/phase summary (title, goal, proposed phases or epics, open questions).
 3. **Stop and seek developer approval of the summary before writing any files.**
-4. Once approved, write the draft to `docs/02-templates/` or the path the developer specifies.
+4. Once approved, write the draft to `docs/template/templates/` or the path the developer specifies.
 
 ---
 
@@ -67,7 +67,7 @@ Take an approved phase/epic plan and produce a detailed `implementation-plan.md`
 1. Read the plan at the given path (or ask for it).
 2. **Invoke the `soa-grill-me` skill** passing the plan content and focus areas (ticket granularity, dependency order, test strategy, acceptance criteria) — do not implement the grill-me protocol yourself.
 3. **Stop and seek developer approval of the ticket list** before writing files.
-4. Once approved, write `implementation-plan.md` and individual ticket files per the format in `docs/02-templates/ticket.template.md`.
+4. Once approved, write `implementation-plan.md` and individual ticket files per the format in `docs/template/templates/ticket.template.md`.
 
 ---
 
@@ -77,9 +77,9 @@ Take an approved phase/epic plan and produce a detailed `implementation-plan.md`
 Begin orchestrated delivery of the named phase or epic.
 
 Read these files before doing anything else — they are gospel:
-- `.son-of-anton/docs/00-overview/start-here.md`
-- `.son-of-anton/docs/01-delivery/delivery-orchestrator.md`
-- `.son-of-anton/docs/01-delivery/son-of-anton.md`
+- `.son-of-anton/docs/template/overview/start-here.md`
+- `.son-of-anton/docs/template/delivery/delivery-orchestrator.md`
+- `.son-of-anton/docs/template/delivery/son-of-anton.md`
 - `.son-of-anton/orchestrator.config.json`
 
 Then:
@@ -96,7 +96,7 @@ Then:
 
 Resume delivery after a stopping point.
 
-1. Read `.son-of-anton/docs/01-delivery/delivery-orchestrator.md` and `orchestrator.config.json`.
+1. Read `.son-of-anton/docs/template/delivery/delivery-orchestrator.md` and `orchestrator.config.json`.
 2. Check `state.json` for the last recorded position, or run `git worktree list` to identify active worktrees.
 3. Read the handoff notes from the last stopping point.
 4. Continue from exactly where delivery left off — do not restart, do not re-plan.

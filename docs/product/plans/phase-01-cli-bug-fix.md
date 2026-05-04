@@ -1,6 +1,6 @@
 # Phase 01: CLI Bug Fixes
 
-**Delivery status:** Not started — product definition only; no `docs/02-delivery/phase-01/` implementation plan until tickets are approved.
+**Delivery status:** Not started — product definition only; no `docs/product/delivery/phase-01/` implementation plan until tickets are approved.
 
 ## TL;DR
 

@@ -12,9 +12,9 @@ Every phase requires **two explicit planning stages** before any code is written
 
 **Grill-me focus:** scope boundaries, product goals, what stays deferred, success criteria.
 
-**Output:** `docs/01-product/phase-N-[slug].md` — written to the product plans directory and committed to `main` before Stage 2 begins.
+**Output:** `docs/product/plans/phase-N-[slug].md` — written to the product plans directory and committed to `main` before Stage 2 begins.
 
-**Template:** `.son-of-anton/docs/02-templates/product-plan.template.md`
+**Template:** `.son-of-anton/docs/template/templates/product-plan.template.md`
 
 **Gate:** Developer approves the product plan before decomposition starts.
 
@@ -24,9 +24,9 @@ Every phase requires **two explicit planning stages** before any code is written
 
 **Grill-me focus:** ticket granularity, dependency order, test strategy per ticket, acceptance criteria.
 
-**Output:** `docs/02-delivery/phase-N/implementation-plan.md` + `ticket-NN-*.md` files — committed to `main` before the orchestrator creates any branches.
+**Output:** `docs/product/delivery/phase-N/implementation-plan.md` + `ticket-NN-*.md` files — committed to `main` before the orchestrator creates any branches.
 
-**Template:** `.son-of-anton/docs/02-templates/implementation-plan.template.md`
+**Template:** `.son-of-anton/docs/template/templates/implementation-plan.template.md`
 
 **Gate:** Developer approves the ticket breakdown before execution starts.
 
@@ -39,7 +39,7 @@ Collapsing them into one pass produces implementation plans that drift from prod
 
 ## Developer Control Points (in order)
 
-1. **Product plan approval** — developer reviews and approves `docs/01-product/phase-N-[slug].md`
+1. **Product plan approval** — developer reviews and approves `docs/product/plans/phase-N-[slug].md`
 2. **Ticket approval** — developer reviews and approves the full ticket stack
 3. **Slice review** — developer reviews and approves each delivered PR before it advances
 
