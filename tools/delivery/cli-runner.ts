@@ -673,6 +673,8 @@ async function startTicket(
     copyLocalBootstrapFilesIfPresent,
     materializeTicketContext,
     relativeToRepo,
+    subagentReviewPolicy: context.config.reviewPolicy.subagentReview,
+    ticketBoundaryMode: context.config.ticketBoundaryMode,
   });
 }
 
