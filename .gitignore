@@ -5,6 +5,5 @@ node_modules/
 .env.*
 !.env.example
 notes/private
-docs/01-product/
 .vscode/settings.json
 .env
