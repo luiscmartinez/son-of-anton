@@ -11,7 +11,9 @@ Size: 2 points
 
 - [Write a failing test that proves the behavior is missing]
 - [Tests should be behavior-first, not implementation-first]
-- [Commit the failing test before writing any implementation]
+- Run the test suite and confirm the new test fails
+- Commit with suffix `[red]`: `test(PN.NN): <description> [red]`
+- Do not write any implementation until this commit exists on the branch
 
 ## Green
 
@@ -28,6 +30,7 @@ Size: 2 points
 - [What a reviewer should pay attention to]
 - [Public API shape, error ergonomics, edge cases]
 - [What was intentionally deferred and why]
+- For tickets that build a client-side helper constructing an API URL: verify the server-side handler reads and uses the params that `<helper>` sends — check both sides of the boundary, not just each in isolation.
 
 ## Rationale
 
