@@ -7,3 +7,4 @@ node_modules/
 notes/private
 docs/01-product/
 .vscode/settings.json
+.env
