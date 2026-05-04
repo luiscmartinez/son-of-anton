@@ -1,0 +1,49 @@
+# P1.01 Fix state.json sync in advance
+
+Size: 1 point
+Scope: cli
+
+## Outcome
+
+- After `advance` completes, `state.json` is written to both the active worktree path and the primary checkout path
+- `closeout-stack` reads current ticket state from the primary checkout without manual intervention
+- No change when `cwd` is already the primary checkout (no double-write)
+
+## Red
+
+- Write a failing test that `saveState` is called with the primary checkout path after `advance` when the primary differs from `cwd`
+- Run the test suite and confirm the new test fails
+- Commit with suffix `[red]`: `test(P1.01): verify advance syncs state.json to primary checkout [red]`
+- Do not write any implementation until this commit exists on the branch
+
+## Green
+
+In `cli-runner.ts` advance case (around line 450), after `await saveState(cwd, nextState)`:
+
+```ts
+const primaryPath = findPrimaryWorktreePath(cwd, context.config);
+if (primaryPath && resolve(primaryPath) !== resolve(cwd)) {
+  await saveState(primaryPath, nextState);
+}
+```
+
+`findPrimaryWorktreePath` is already exported from `cli-runner.ts`. No new dependencies.
+
+## Refactor
+
+- Extract the primary-sync logic to a named helper `syncStateToPrimaryIfNeeded(cwd, state, config)` if the inline form feels noisy — only if it improves readability, not as a reflex.
+
+## Review Focus
+
+- Confirm the `resolve()` comparison is correct across symlinked paths and trailing-slash variations
+- Confirm `findPrimaryWorktreePath` returns `undefined` (not throws) when run from the primary checkout itself — the guard must be a no-op in that case
+- No risk of double-write corrupting state: both calls write the same `nextState` object
+
+## Rationale
+
+> Append here (do not edit above) when behavior or trade-offs change during implementation.
+
+Red first: [what test failed first]
+Why this path: [why this implementation was the smallest acceptable]
+Alternative considered: [one rejected alternative and why]
+Deferred: [what was intentionally left out of this ticket]
