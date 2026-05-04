@@ -93,7 +93,7 @@ import {
   advanceToNextTicket,
   materializeTicketContext,
   openPullRequest as openPullRequestImpl,
-  recordCodexPreflight as recordCodexPreflightImpl,
+  recordSubagentReview as recordSubagentReviewImpl,
   recordPostVerifySelfAudit as recordPostVerifySelfAuditImpl,
   restackTicket as restackTicketImpl,
   startTicket as startTicketImpl,
@@ -756,7 +756,7 @@ export function recordSubagentReview(
     throw new Error('recordSubagentReview requires an explicit policy.');
   }
 
-  return recordCodexPreflightImpl(
+  return recordSubagentReviewImpl(
     state,
     outcome,
     isDocOnly,
@@ -767,9 +767,6 @@ export function recordSubagentReview(
     ticketId,
   );
 }
-
-/** @deprecated Use recordSubagentReview. */
-export const recordCodexPreflight = recordSubagentReview;
 
 export function shouldAutoRecordReviewSkippedForPollReview(
   policy: ReviewPolicyStageValue,

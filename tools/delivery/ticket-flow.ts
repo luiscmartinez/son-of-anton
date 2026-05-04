@@ -451,12 +451,6 @@ export function recordSubagentReview(
   };
 }
 
-/** @deprecated Use recordPostVerifySelfAudit (transitional alias). */
-export const recordCodexPreflight = recordSubagentReview;
-
-/** @deprecated Use recordPostVerifySelfAudit (transitional alias). */
-export const recordInternalReview = recordPostVerifySelfAudit;
-
 export function openPullRequest(
   state: DeliveryState,
   cwd: string,
