@@ -1,6 +1,6 @@
 # Phase 02: subagentCodeReview Architecture
 
-**Delivery status:** Not started — product definition only; no `docs/product/delivery/phase-02/` implementation plan until tickets are approved.
+**Delivery status:** Tickets approved — `docs/product/delivery/phase-02/` implementation plan committed to main.
 
 ## TL;DR
 
