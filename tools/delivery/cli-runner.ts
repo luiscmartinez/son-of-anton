@@ -551,7 +551,7 @@ export function resolveReviewFetcher(): string {
     return process.env.AI_CODE_REVIEW_FETCHER;
   }
 
-  return '.agents/skills/ai-code-review/scripts/fetch_ai_pr_comments.sh';
+  return '.agents/skills/pr-review/scripts/fetch_pr_review_comments.sh';
 }
 
 export function resolveReviewTriager(): string {
@@ -559,7 +559,7 @@ export function resolveReviewTriager(): string {
     return process.env.AI_CODE_REVIEW_TRIAGER;
   }
 
-  return '.agents/skills/ai-code-review/scripts/triage_ai_review.sh';
+  return '.agents/skills/pr-review/scripts/triage_pr_review.sh';
 }
 
 export function createOptions(input: {
