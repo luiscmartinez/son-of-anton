@@ -1,7 +1,8 @@
 # P4.01 Stable workflow contracts and DI safety
 
 Size: 3 points
-Scope: delivery tooling / tests
+Type: fix
+Scope: delivery-tooling
 
 ## Outcome
 
@@ -77,3 +78,5 @@ Why this path: the phase exists to harden a boundary, not to create a general-pu
 Alternative considered: patching tests and call sites individually with no shared primitive. Rejected because it relies on contributor memory rather than establishing a durable extension rule in code.
 
 Deferred: migrating low-level config/platform/runtime failures into the same contract. Those errors are intentionally out of scope for this phase and would inflate the ticket.
+
+Contract note: this ticket originally omitted `Type:` and used the free-form scope `delivery tooling / tests`, which is not conventional-commit compliant. That happened because the active ticket template still documented only an optional `Scope:` line and did not require normalized commit metadata. The ticket now records `Type: fix` and `Scope: delivery-tooling` so the contract is explicit and machine-usable.

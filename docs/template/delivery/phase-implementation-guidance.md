@@ -94,3 +94,13 @@ Every new phase plan should include `## Phase Closeout`:
 - whether a retrospective is `required` or `skip`
 - where the artifact goes if required (`notes/public/<phase>-retrospective.md`)
 - whether the final docs/phase-exit ticket must include retrospective writing in scope
+
+## Ticket Metadata Contract
+
+Every ticket doc should declare commit metadata directly under `Size:`:
+
+- `Type:` is required and must be a conventional-commit type such as `feat`, `fix`, `docs`, `refactor`, `test`, or `chore`
+- `Scope:` is optional, but when present it must already be conventional-commit compliant: lowercase, concise, and safe inside `type(scope): ...`
+- Avoid free-form scopes like `delivery tooling / tests` or `CLI / format / platform`; use a single normalized token such as `delivery-tooling` or split the work differently
+
+If a ticket ships with missing or malformed metadata, append the explanation under `## Rationale` rather than silently correcting history in chat.

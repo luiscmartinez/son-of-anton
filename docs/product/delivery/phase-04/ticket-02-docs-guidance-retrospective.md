@@ -1,7 +1,8 @@
 # P4.02 Docs, guidance, and retrospective
 
 Size: 1 point
-Scope: docs
+Type: docs
+Scope: delivery-docs
 
 ## Outcome
 
@@ -61,3 +62,5 @@ Why this path: the implementation ticket establishes the boundary in code; this 
 Alternative considered: allowing small cleanup code changes here if documentation surfaced inconsistencies. Rejected because the second ticket is intentionally zero-code so reviewers can validate the contract documentation without hidden behavior drift.
 
 Deferred: any broader cleanup to CLI wording or non-workflow error surfaces discovered while documenting the boundary.
+
+Contract note: this ticket originally omitted `Type:` because the template did not require it when Phase 04 was decomposed. `Scope:` already pointed at docs work, but it is now normalized to `delivery-docs` so the metadata can flow directly into a conventional-commit subject.

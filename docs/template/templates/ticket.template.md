@@ -1,7 +1,8 @@
 # PN.NN [Ticket Title]
 
 Size: 2 points
-Scope: <codebase-area> (optional — omit if scope is unclear)
+Type: <feat|fix|docs|refactor|test|chore>
+Scope: <conventional-commit-scope> (optional — lowercase letters, digits, and hyphens only)
 
 ## Outcome
 
@@ -41,3 +42,4 @@ Red first: [what test failed first]
 Why this path: [why this implementation was the smallest acceptable]
 Alternative considered: [one rejected alternative and why]
 Deferred: [what was intentionally left out of this ticket]
+Contract note: record any deviation from the ticket metadata contract here, including missing/incorrect `Type:` or non-compliant `Scope:` fields, and why it happened.
