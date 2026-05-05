@@ -5,6 +5,12 @@
 # Works in two modes:
 #   source repo  — run from the son-of-anton repo itself (.agents/skills/ exists at root)
 #   consumer repo — run from a repo that has done `git subtree add` (.son-of-anton/ exists)
+#
+# Naming convention:
+#   The skill named "soa" is linked as "soa" (not "soa-soa") — it is the entry point.
+#   All other skills are linked with the "soa-" prefix.
+#
+# Idempotent: removes stale soa-* symlinks before relinking so reruns don't leave ghosts.
 set -euo pipefail
 
 REPO_ROOT="$(git rev-parse --show-toplevel)"
@@ -24,12 +30,24 @@ fi
 
 mkdir -p "$SKILLS_DEST"
 
+# Remove stale soa-* symlinks and the bare "soa" symlink before relinking.
+for stale in "$SKILLS_DEST"/soa-* "$SKILLS_DEST/soa"; do
+  [ -L "$stale" ] && rm "$stale"
+done
+
 for skill_dir in "$SKILLS_SRC"/*/; do
   name="$(basename "$skill_dir")"
-  link="$SKILLS_DEST/soa-$name"
   target="$LINK_TARGET_PREFIX/$name"
+
+  # "soa" is the entry point — link as "soa", not "soa-soa"
+  if [ "$name" = "soa" ]; then
+    link="$SKILLS_DEST/soa"
+  else
+    link="$SKILLS_DEST/soa-$name"
+  fi
+
   ln -sf "$target" "$link"
-  echo "  linked: .claude/skills/soa-$name"
+  echo "  linked: .claude/skills/$(basename "$link")"
 done
 
 # Ensure repo-root symlinks required by the delivery orchestrator exist (consumer only).
