@@ -1,4 +1,4 @@
-import { realpathSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { realpath } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { getUsage, parseCliArgs, resolveOptionsForCommand } from './cli';
@@ -615,7 +615,9 @@ export function resolveReviewFetcher(): string {
     return process.env.AI_CODE_REVIEW_FETCHER;
   }
 
-  return '.agents/skills/pr-review/scripts/fetch_pr_review_comments.sh';
+  return resolveSonOfAntonSkillScript(
+    'pr-review/scripts/fetch_pr_review_comments.sh',
+  );
 }
 
 export function resolveReviewTriager(): string {
@@ -623,7 +625,16 @@ export function resolveReviewTriager(): string {
     return process.env.AI_CODE_REVIEW_TRIAGER;
   }
 
-  return '.agents/skills/pr-review/scripts/triage_pr_review.sh';
+  return resolveSonOfAntonSkillScript('pr-review/scripts/triage_pr_review.sh');
+}
+
+function resolveSonOfAntonSkillScript(scriptPath: string): string {
+  const subtreePath = `.son-of-anton/.agents/skills/${scriptPath}`;
+  if (existsSync(resolve(process.cwd(), subtreePath))) {
+    return subtreePath;
+  }
+
+  return `.agents/skills/${scriptPath}`;
 }
 
 export function createOptions(input: {

@@ -7,31 +7,36 @@ description: Son-of-Anton canonical entrypoint. Use for /soa plan, /soa decompos
 
 Manages son-of-anton installation, updates, and the full delivery lifecycle.
 
-Shorthand: `soa` is accepted anywhere `son-of-anton` appears in arguments.
+Public slash-command entrypoint: `/soa`.
 
 ## Commands
 
-Dispatch on the first word of `$ARGUMENTS`. Accept `soa` as an alias for `son-of-anton`.
+Dispatch on the first word of `$ARGUMENTS`.
 
 ---
 
 ### `install`
 
-**Trigger:** `/son-of-anton install` or `/soa install`
+**Trigger:** `/soa install`
 
 Add son-of-anton to the current repo for the first time:
 
 ```bash
 git subtree add --prefix .son-of-anton https://github.com/cesarnml/son-of-anton.git main --squash
+bash .son-of-anton/scripts/sync-skills.sh
 ```
 
 If `.son-of-anton` already exists, tell the user to use `update` instead.
+
+`sync-skills.sh` wires the Claude Code adapter as `/soa` plus `soa-*` helper
+skills. The prefixed helper names are intentional so existing user skills named
+`grill-me`, `pr-review`, `enter-worktree`, etc. are not shadowed.
 
 ---
 
 ### `update`
 
-**Trigger:** `/son-of-anton update` or `/soa update`
+**Trigger:** `/soa update`
 
 Pull the latest changes from son-of-anton, then re-sync skill symlinks:
 
@@ -42,17 +47,18 @@ bash .son-of-anton/scripts/sync-skills.sh
 
 Report what changed. If already up to date, say so.
 
-Also run `sync-skills.sh` after `install` to wire up the initial symlinks.
+The sync step is required after every update. It refreshes `/soa` and removes
+stale `soa-*` helper symlinks before relinking the current helper set.
 
 ---
 
 ### `ideate`
 
-**Trigger:** `/son-of-anton ideate [topic]` or `/soa ideate [topic]`
+**Trigger:** `/soa ideate [topic]`
 
 Turn a developer feature ideation storm into one or more draft epic/phase plans.
 
-1. Ask the developer open-ended questions to surface goals, constraints, and unknowns. Be relentless — this is the grill-me stage for ideas, not plans.
+1. Ask the developer open-ended questions to surface goals, constraints, and unknowns. Be relentless — this is the `soa-grill-me` stage for ideas, not plans.
 2. Synthesize the conversation into a concise draft epic/phase summary (title, goal, proposed phases or epics, open questions).
 3. **Stop and seek developer approval of the summary before writing any files.**
 4. Once approved, write the draft to `docs/template/templates/` or the path the developer specifies.
@@ -61,15 +67,15 @@ Turn a developer feature ideation storm into one or more draft epic/phase plans.
 
 ### `plan`
 
-**Trigger:** `/son-of-anton plan [path-to-plan or inline description]` or `/soa plan`
+**Trigger:** `/soa plan [path-to-plan or inline description]`
 
 **Output: `docs/product/plans/phase-N.md` only — the "what" and "why". No tickets. No implementation details.**
 
-Take an existing rough plan or roadmap section and run a grill-me session scoped to product-level decisions: goals, success criteria, scope, explicit deferrals, and dependencies. The session ends when `docs/product/plans/phase-N.md` is written and approved.
+Take an existing rough plan or roadmap section and run an `soa-grill-me` session scoped to product-level decisions: goals, success criteria, scope, explicit deferrals, and dependencies. The session ends when `docs/product/plans/phase-N.md` is written and approved.
 
 1. Read the plan if a file path is given. Otherwise use the inline description.
-2. **Invoke the `soa-grill-me` skill** in **Mode 1 (product plan)** — pass the plan content and instruct grill-me to stay at the product level (scope, goals, success criteria, deferrals, risks). Explicitly tell it: no schema design, no API routes, no ticket breakdown.
-3. After grill-me closes, write `docs/product/plans/phase-N.md` using the product-plan template at `.son-of-anton/docs/template/templates/product-plan.template.md`.
+2. **Invoke the `soa-grill-me` skill** in **Mode 1 (product plan)** — pass the plan content and instruct it to stay at the product level (scope, goals, success criteria, deferrals, risks). Explicitly tell it: no schema design, no API routes, no ticket breakdown.
+3. After `soa-grill-me` closes, write `docs/product/plans/phase-N.md` using the product-plan template at `.son-of-anton/docs/template/templates/product-plan.template.md`.
 4. **Hard stop.** Ask the developer to approve the product plan. Do not proceed to tickets.
 
 > The next step after approval is `/soa decompose docs/product/plans/phase-N.md`.
@@ -78,7 +84,7 @@ Take an existing rough plan or roadmap section and run a grill-me session scoped
 
 ### `decompose` (alias: `decomp`, `tickets`)
 
-**Trigger:** `/son-of-anton decompose [path]` or `/soa decomp` or `/soa tickets`
+**Trigger:** `/soa decompose [path]` or `/soa decomp` or `/soa tickets`
 
 **Output: `docs/product/delivery/phase-N/implementation-plan.md` + ticket files — the "how". Requires an approved product plan as input.**
 
@@ -93,7 +99,7 @@ Take the approved `docs/product/plans/phase-N.md` and produce a detailed deliver
 
 ### `execute`
 
-**Trigger:** `/son-of-anton execute <phase-XX|epic-XX>` or `/soa execute <phase-XX|epic-XX>`
+**Trigger:** `/soa execute <phase-XX|epic-XX>`
 
 Begin orchestrated delivery of the named phase or epic.
 
@@ -110,13 +116,13 @@ Then:
 2. Identify the first unstarted ticket.
 3. Execute via the orchestrator path — **do not ad-hoc implement**.
 4. Valid stopping points are defined in `delivery-orchestrator.md` and `orchestrator.config.json`. Respect them.
-5. At each stopping point, surface the canonical resume prompt so the developer can continue with `/son-of-anton resume`.
+5. At each stopping point, surface the canonical resume prompt so the developer can continue with `/soa resume`.
 
 ---
 
 ### `resume`
 
-**Trigger:** `/son-of-anton resume <phase-XX|epic-XX>` or `/soa resume <phase-XX|epic-XX>`
+**Trigger:** `/soa resume <phase-XX|epic-XX>`
 
 Resume delivery after a stopping point.
 
@@ -130,7 +136,7 @@ Resume delivery after a stopping point.
 
 ### `closeout` (alias: `closeout-stack`)
 
-**Trigger:** `/son-of-anton closeout <stack-name-or-number>` or `/soa closeout XX`
+**Trigger:** `/soa closeout XX`
 
 Squash-merge a completed stacked PR set onto main.
 

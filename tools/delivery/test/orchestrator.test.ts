@@ -3758,6 +3758,94 @@ describe('delivery orchestrator', () => {
     }
   });
 
+  it('prefers subtree review hooks when the repo also has its own .agents directory', async () => {
+    const repoRoot = await mkdtemp(join(tmpdir(), 'review-hooks-'));
+    const originalCwd = process.cwd();
+    const originalFetcher = process.env.AI_CODE_REVIEW_FETCHER;
+    const originalTriager = process.env.AI_CODE_REVIEW_TRIAGER;
+
+    try {
+      delete process.env.AI_CODE_REVIEW_FETCHER;
+      delete process.env.AI_CODE_REVIEW_TRIAGER;
+      await mkdir(join(repoRoot, '.agents/skills/pr-review/scripts'), {
+        recursive: true,
+      });
+      await mkdir(
+        join(repoRoot, '.son-of-anton/.agents/skills/pr-review/scripts'),
+        { recursive: true },
+      );
+      await writeFile(
+        join(
+          repoRoot,
+          '.son-of-anton/.agents/skills/pr-review/scripts/fetch_pr_review_comments.sh',
+        ),
+        '#!/usr/bin/env bash\n',
+      );
+      await writeFile(
+        join(
+          repoRoot,
+          '.son-of-anton/.agents/skills/pr-review/scripts/triage_pr_review.sh',
+        ),
+        '#!/usr/bin/env bash\n',
+      );
+
+      process.chdir(repoRoot);
+
+      expect(resolveReviewFetcher()).toBe(
+        '.son-of-anton/.agents/skills/pr-review/scripts/fetch_pr_review_comments.sh',
+      );
+      expect(resolveReviewTriager()).toBe(
+        '.son-of-anton/.agents/skills/pr-review/scripts/triage_pr_review.sh',
+      );
+    } finally {
+      process.chdir(originalCwd);
+      if (typeof originalFetcher === 'undefined') {
+        delete process.env.AI_CODE_REVIEW_FETCHER;
+      } else {
+        process.env.AI_CODE_REVIEW_FETCHER = originalFetcher;
+      }
+      if (typeof originalTriager === 'undefined') {
+        delete process.env.AI_CODE_REVIEW_TRIAGER;
+      } else {
+        process.env.AI_CODE_REVIEW_TRIAGER = originalTriager;
+      }
+      await rm(repoRoot, { recursive: true, force: true });
+    }
+  });
+
+  it('falls back to source-repo review hooks when no subtree exists', async () => {
+    const repoRoot = await mkdtemp(join(tmpdir(), 'source-review-hooks-'));
+    const originalCwd = process.cwd();
+    const originalFetcher = process.env.AI_CODE_REVIEW_FETCHER;
+    const originalTriager = process.env.AI_CODE_REVIEW_TRIAGER;
+
+    try {
+      delete process.env.AI_CODE_REVIEW_FETCHER;
+      delete process.env.AI_CODE_REVIEW_TRIAGER;
+      process.chdir(repoRoot);
+
+      expect(resolveReviewFetcher()).toBe(
+        '.agents/skills/pr-review/scripts/fetch_pr_review_comments.sh',
+      );
+      expect(resolveReviewTriager()).toBe(
+        '.agents/skills/pr-review/scripts/triage_pr_review.sh',
+      );
+    } finally {
+      process.chdir(originalCwd);
+      if (typeof originalFetcher === 'undefined') {
+        delete process.env.AI_CODE_REVIEW_FETCHER;
+      } else {
+        process.env.AI_CODE_REVIEW_FETCHER = originalFetcher;
+      }
+      if (typeof originalTriager === 'undefined') {
+        delete process.env.AI_CODE_REVIEW_TRIAGER;
+      } else {
+        process.env.AI_CODE_REVIEW_TRIAGER = originalTriager;
+      }
+      await rm(repoRoot, { recursive: true, force: true });
+    }
+  });
+
   it('renders npm deliver invocations with a separator', () => {
     expect(generateRunDeliverInvocation('npm')).toBe('npm run deliver --');
     expect(generateRunDeliverInvocation('bun')).toBe('bun run deliver');

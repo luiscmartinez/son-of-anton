@@ -1,6 +1,9 @@
 #!/usr/bin/env bash
 # Creates soa-prefixed symlinks in .claude/skills/ for each son-of-anton agent skill.
-# Also ensures .agents and tools symlinks exist at the repo root (consumer repos only).
+# Also ensures tools symlink exists at the repo root (consumer repos only).
+# The .agents symlink is created only when the consumer repo has no .agents path.
+# Delivery hooks prefer .son-of-anton/.agents directly so existing repo-local skills
+# with overlapping directory names cannot shadow Son-of-Anton helper scripts.
 #
 # Works in two modes:
 #   source repo  — run from the son-of-anton repo itself (.agents/skills/ exists at root)
@@ -63,6 +66,8 @@ if [ "$IS_SOURCE_REPO" = false ]; then
     if [ ! -e "$link" ] && [ ! -L "$link" ]; then
       ln -s "$target" "$link"
       echo "  linked: $link_name -> $target"
+    elif [ "$link_name" = ".agents" ]; then
+      echo "  kept: .agents already exists; Son-of-Anton skills remain under .son-of-anton/.agents"
     fi
   done
 fi

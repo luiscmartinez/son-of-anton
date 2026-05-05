@@ -102,16 +102,16 @@ These are not decorative process leftovers. They are the session bridge.
 
 They make it possible to stop, resume later, switch threads, or recover from drift without pretending the AI will perfectly remember the earlier context.
 
-## Planning Passes And `grill-me`
+## Planning Passes And `soa-grill-me`
 
 For new product-scope expansion, Son-of-Anton requires an explicit planning pass before implementation.
 
 That planning pass should:
 
-- use `grill-me` to pressure-test scope and decomposition
+- use `soa-grill-me` to pressure-test scope and decomposition
 - end with a developer-approved set of thin, reviewable tickets
 
-Plan Mode can be a useful way to run that conversation, but Son-of-Anton does not require it as a repo policy. The durable requirement is the planning pass plus `grill-me`, not the conversation mode label.
+Plan Mode can be a useful way to run that conversation, but Son-of-Anton does not require it as a repo policy. The durable requirement is the planning pass plus `soa-grill-me`, not the conversation mode label.
 
 This is an intentional control surface, not optional ceremony.
 
@@ -151,7 +151,7 @@ When a change is smaller, bounded, and still reviewable as one standalone PR, th
 
 The distinction is:
 
-- new product-scope expansion should go through an explicit planning pass, `grill-me`, and approved decomposition
+- new product-scope expansion should go through an explicit planning pass, `soa-grill-me`, and approved decomposition
 - smaller bounded product, ergonomics, docs, or tooling changes may still use a standalone PR path when the review surface stays human-sized
 
 Standalone does not mean "skip internal review discipline." It means the orchestrator does not track ticket-state checkpoints for that PR shape.

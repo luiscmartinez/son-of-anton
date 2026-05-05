@@ -1,9 +1,9 @@
 # Repo Rules
 
-- If the user says `triage`, use `.agents/skills/pr-review/SKILL.md`.
+- If the user says `triage`, use the `soa-pr-review` skill at `.agents/skills/pr-review/SKILL.md`.
 - For phase work, read `docs/template/overview/start-here.md` and `docs/template/delivery/delivery-orchestrator.md` first, then surface the orchestrator path before coding.
-- Use `.agents/skills/son-of-anton-ethos/SKILL.md` automatically when executing any approved multi-ticket phase/epic or standalone (non-ticketed) PR — including when the user says execute, begin, start, deliver, implement, continue, resume, run, drive, carry, work on, or explicitly mentions `son of anton` / `son-of-anton ethos`. That skill owns execution mechanics, stop conditions, polling, and review outcome recording.
-- For new product feature-set expansion, phase shaping, or epic decomposition: run a planning pass and use `grill-me` before accepting any plan. Developer approval of ticket decomposition is required before implementation.
+- Use the `soa-son-of-anton-ethos` skill at `.agents/skills/son-of-anton-ethos/SKILL.md` automatically when executing any approved multi-ticket phase/epic or standalone (non-ticketed) PR — including when the user says execute, begin, start, deliver, implement, continue, resume, run, drive, carry, work on, or explicitly mentions `son of anton` / `son-of-anton ethos`. That skill owns execution mechanics, stop conditions, polling, and review outcome recording.
+- For new product feature-set expansion, phase shaping, or epic decomposition: run a planning pass and use `soa-grill-me` before accepting any plan. Developer approval of ticket decomposition is required before implementation.
 - Prefer `bun run deliver --plan ...` over ad hoc implementation. The delivery orchestrator reads `orchestrator.config.json` at repo root; see `docs/template/delivery/delivery-orchestrator.md`. For orchestrated ticket work, the handoff under `.agents/delivery/<plan-key>/handoffs/` is required input alongside plan and ticket docs.
 - New product phase/epic starts only after developer-approved ticket decomposition. Docs-only, cleanup-only, and tooling-only changes skip this. Smaller bounded changes may ship as standalone PRs using the orchestrator's `ai-review` path.
 - Final merge of stacked PR slices requires developer approval. Close completed phases with `bun run closeout-stack --plan <plan-path>`.
@@ -25,4 +25,4 @@ Before closing a delivery ticket:
 
 ## On Phase or Epic Completion
 
-Write `notes/public/<plan-path>-retrospective.md` using `.agents/skills/write-retrospective/SKILL.md` for section structure and placement conventions.
+Write `notes/public/<plan-path>-retrospective.md` using the `soa-write-retrospective` skill at `.agents/skills/write-retrospective/SKILL.md` for section structure and placement conventions.

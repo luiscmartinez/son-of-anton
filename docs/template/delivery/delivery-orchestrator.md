@@ -163,7 +163,7 @@ The orchestrator owns process mechanics:
 
 The orchestrator does **not** own AI-review detection heuristics or triage judgment.
 
-That boundary is intentional. The repo-local `pr-review` skill under `.agents/skills/pr-review/` already defines the repo stance for AI review:
+That boundary is intentional. The repo-local `soa-pr-review` skill under `.agents/skills/pr-review/` already defines the repo stance for AI review:
 
 - comments are advisory, not gospel
 - weak or mis-scoped comments should be pushed back on
@@ -180,6 +180,12 @@ So the orchestrator only consumes the skill hook contracts:
   - returns the final note plus concise action and non-action summaries
   - may be overridden with `AI_CODE_REVIEW_TRIAGER` without changing orchestrator code
 
+In consumer repos, the default hook lookup prefers
+`.son-of-anton/.agents/skills/pr-review/scripts/...` when the subtree is
+present, then falls back to `.agents/skills/pr-review/scripts/...` for the
+source repo. This avoids collisions when a consumer repo already has its own
+`.agents/skills/pr-review` directory.
+
 In this repo, supported external AI-review vendors are currently:
 
 - `coderabbit`
@@ -187,7 +193,7 @@ In this repo, supported external AI-review vendors are currently:
 - `greptile`
 - `sonarqube`
 
-Other vendors are out of scope unless the repo-local `pr-review` skill is deliberately expanded.
+Other vendors are out of scope unless the repo-local `soa-pr-review` skill is deliberately expanded.
 
 For `sonarqube`, the repo-local fetcher reads GitHub check-run annotations rather than native PR review threads and intentionally keeps only failed-check annotations in the normalized fetch artifact. Lower-severity warning annotations remain available in SonarQube itself but do not enter the orchestrator triage loop by default.
 

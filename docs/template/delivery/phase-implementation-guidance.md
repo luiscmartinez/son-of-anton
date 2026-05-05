@@ -4,7 +4,7 @@ This note defines the default stance for planning and delivering a phase. Use it
 
 ## The Two-Stage Planning Contract
 
-Every phase requires **two explicit planning stages** before any code is written. These are separate artifacts with separate grill-me passes. Do not collapse them.
+Every phase requires **two explicit planning stages** before any code is written. These are separate artifacts with separate `soa-grill-me` passes. Do not collapse them.
 
 ### Stage 1 — Product Plan (`/soa plan`)
 
@@ -53,19 +53,19 @@ Between control points 2 and 3, the agent runs autonomously through the bounded 
 - avoid side quests; record useful refactors as follow-ups rather than widening the current ticket
 - end multi-ticket product phases with a docs/phase-exit slice unless the phase is itself docs-only or there is a good reason not to
 
-## Using `grill-me`
+## Using `soa-grill-me`
 
-If a phase or ticket still feels vague, stop and pressure-test it before implementation. That is what `grill-me` is for. Run it for both Stage 1 and Stage 2 — they surface different problems.
+If a phase or ticket still feels vague, stop and pressure-test it before implementation. That is what `soa-grill-me` is for. Run it for both Stage 1 and Stage 2 — they surface different problems.
 
 Enforce this proportionally. The two-stage planning gate applies to new product-scope expansion. Docs-only, cleanup-only, and tooling-only changes that do not expand the product surface can skip Stage 1 and go straight to decompose.
 
-Use Stage 1 grill-me to force clarity on:
+Use Stage 1 `soa-grill-me` to force clarity on:
 
 - the real product problem being solved
 - what is in scope vs. explicitly deferred
 - success criteria a non-technical observer could verify
 
-Use Stage 2 grill-me to force clarity on:
+Use Stage 2 `soa-grill-me` to force clarity on:
 
 - the smallest acceptable ticket slice
 - key tradeoffs and decision points

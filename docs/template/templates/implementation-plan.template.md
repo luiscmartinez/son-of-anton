@@ -12,7 +12,7 @@
 
 ## Grill-Me decisions locked
 
-[Key decisions resolved during grill-me that are now locked. Format: decision → rationale.]
+[Key decisions resolved during soa-grill-me that are now locked. Format: decision → rationale.]
 
 ## Ticket Order
 
