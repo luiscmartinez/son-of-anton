@@ -39,13 +39,14 @@ Targeted delivery-tool workflow/state-guard failures expose a stable machine-rea
 
 ## CI Baseline
 
-> Baseline recorded: 2026-05-05 - `bun test` on `main` -> 211 pass, 0 fail, 442 expect() calls. Note: this repo currently does not define `ci:quiet`; `bun test` is the current equivalent verification snapshot for this phase.
+> Baseline recorded: 2026-05-05 - `bun test` on `main` -> 211 pass, 0 fail, 442 expect() calls. Repo verification surface now includes `bun run verify:quiet` and `bun run ci:quiet`; use those gates during delivery in addition to scoped test runs as needed.
 
 ## Review Rules
 
 - Tickets must be merged in order.
 - Each ticket PR must pass repo verification before the next ticket starts.
 - Pre-existing verification failures documented in **CI Baseline** do not block a ticket; newly introduced failures do.
+- Current execution-environment note: this repo leaves `reviewSubagentOverride` pointed at `codex:codex-rescue`, but `reviewPolicy.subagentReview` is intentionally `disabled` for now because the Codex execution agent in this repo cannot yet honor that override with a true fallback subagent path.
 - `P4.01` may touch only the targeted delivery-tool workflow/state-guard surfaces plus the tests needed to prove the boundary.
 - `P4.02` is doc-only - reviewer should confirm zero `.ts` behavior changes.
 

@@ -5,7 +5,7 @@
   "packageManager": "bun",
   "ticketBoundaryMode": "cook",
   "reviewPolicy": {
-    "subagentReview": "skip_doc_only",
+    "subagentReview": "disabled",
     "prReview": "skip_doc_only"
   },
   "reviewSubagentOverride": "codex:codex-rescue",
