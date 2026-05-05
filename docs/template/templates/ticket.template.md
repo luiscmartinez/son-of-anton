@@ -1,7 +1,7 @@
 # PN.NN [Ticket Title]
 
 Size: 2 points
-Scope: <codebase-area>  (optional — omit if scope is unclear)
+Scope: <codebase-area> (optional — omit if scope is unclear)
 
 ## Outcome
 

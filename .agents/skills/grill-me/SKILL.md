@@ -11,11 +11,12 @@ This skill is invoked in two distinct contexts. **Read the invoking command befo
 
 ### Mode 1: `/soa plan` → Product Plan (`docs/product/plans/phase-N.md`)
 
-**What:** Stress-test scope, goals, and success criteria — the *what* and *why*.
+**What:** Stress-test scope, goals, and success criteria — the _what_ and _why_.
 **Output:** A filled-out `docs/product/plans/phase-N.md` using the product-plan template.
-**Hard stop:** Do NOT ask about schema design, API routes, ticket breakdown, PR slicing, or implementation details. Those belong in Mode 2. If the developer drifts toward implementation, redirect: *"That's a decompose question — let's lock the product plan first."*
+**Hard stop:** Do NOT ask about schema design, API routes, ticket breakdown, PR slicing, or implementation details. Those belong in Mode 2. If the developer drifts toward implementation, redirect: _"That's a decompose question — let's lock the product plan first."_
 
 Questions stay at the product level:
+
 - What problem does this phase solve?
 - What does success look like to a user?
 - What is explicitly out of scope?
@@ -24,11 +25,12 @@ Questions stay at the product level:
 
 ### Mode 2: `/soa decompose` → Delivery Plan (`docs/product/delivery/phase-N/`)
 
-**What:** Stress-test implementation approach, ticket granularity, and sequencing — the *how*.
+**What:** Stress-test implementation approach, ticket granularity, and sequencing — the _how_.
 **Output:** An approved ticket breakdown ready to write as `implementation-plan.md` + individual ticket files.
 **Hard stop:** Do NOT write any files or invoke the orchestrator until the developer explicitly approves the breakdown.
 
 Questions go deep on implementation:
+
 - Schema design and migration strategy
 - API route structure and failure modes
 - Ticket sequencing and PR slice boundaries

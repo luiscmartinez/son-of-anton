@@ -73,7 +73,7 @@ Do not write any implementation until this commit exists on the branch.
 
 - After `loadState`, before the `switch`, insert worktree guard:
   ```ts
-  const WORKTREE_EXEMPT = new Set(["status", "sync", "start"]);
+  const WORKTREE_EXEMPT = new Set(['status', 'sync', 'start']);
   if (!WORKTREE_EXEMPT.has(parsed.command)) {
     assertWorktreeGuard(cwd, parsed.command, state, context.config);
   }

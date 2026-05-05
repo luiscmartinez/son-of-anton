@@ -12,6 +12,7 @@
 ## Pre-Commit
 
 Before committing: run the repo's format and verify commands for touched files. Run a spellcheck when docs, Markdown, config examples, PR text, or user-facing copy changed.
+Current commands: `bun run format`, `bun run verify`, `bun run verify:quiet`, `bun run ci`, `bun run ci:quiet`.
 
 ## Ticket Completion Checklist
 

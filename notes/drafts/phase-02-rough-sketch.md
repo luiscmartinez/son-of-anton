@@ -32,19 +32,21 @@ After: `implement → verify → post-verify → subagent-code-review → open-p
 
 ### CLI command renames
 
-| Old | New |
-|-----|-----|
-| `post-verify-self-audit` | `post-verify` |
-| `codex-preflight` | `subagent-code-review` |
+| Old                      | New                    |
+| ------------------------ | ---------------------- |
+| `post-verify-self-audit` | `post-verify`          |
+| `codex-preflight`        | `subagent-code-review` |
 
 ### subagentCodeReview step behavior (agent-agnostic)
 
 Default resolution: execution agent spawns a subagent of its own type.
+
 - Claude execution agent → spawns Claude subagent (via `claudeReviewSubagentType` config, defaults to `"codex:codex-rescue"`)
 - Codex execution agent → spawns Codex subagent
 - Other agents → use whatever native subagent spawning the platform supports
 
 The subagent receives:
+
 - The diff (ticket branch vs. base)
 - The ticket's `## Review Focus` section verbatim
 - Instruction: find correctness issues, patch what you find, commit with `[subagentReview]` suffix
@@ -62,12 +64,14 @@ Remove hardcoded author login patterns. Read `ai_review_agents` from config, bui
 Remove: `selfAuditOutcome`, `selfAuditCompletedAt`, `selfAuditPatchCommits`, `codexPreflightOutcome`, `codexPreflightCompletedAt`, `codexPreflightNote`, `codexPreflightPatchCommits`
 
 Add:
+
 - `subagentReviewOutcome: "clean" | "patched" | "needs_patch"`
 - `subagentReviewCompletedAt`
 - `subagentReviewPatchCommits`
 - `subagentReviewAgent` (resolved subagent type — audit trail)
 
 Ticket status progression:
+
 - Remove: `post_verify_self_audit_complete`, `codex_preflight_complete`
 - Add: `verified`, `subagent_review_complete`
 - New full sequence: `pending → in_progress → verified → subagent_review_complete → in_review → reviewed → done`

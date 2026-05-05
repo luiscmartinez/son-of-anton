@@ -25,7 +25,8 @@ const gatedState: DeliveryState = {
         'docs/product/delivery/phase-02/ticket-02-docs-scripts-skill-rename-example-config.md',
       status: 'in_progress',
       branch: 'agents/p2-02-docs-shell-scripts-skill-rename-example-config',
-      baseBranch: 'agents/p2-01-core-orchestrator-schema-cli-state-machine-tests',
+      baseBranch:
+        'agents/p2-01-core-orchestrator-schema-cli-state-machine-tests',
       worktreePath: '/tmp/p2-02-worktree',
     },
   ],
@@ -49,10 +50,15 @@ describe('P2.02 — delivery-orchestrator.md cleanliness and gated handoff RESUM
   });
 
   it('gated handoff with subagentReview disabled contains RESUME COMMAND pointing to open-pr', () => {
-    const handoff = buildTicketHandoff(gatedState, gatedState.tickets[0]!, undefined, {
-      ticketBoundaryMode: 'gated',
-      subagentReviewPolicy: 'disabled',
-    });
+    const handoff = buildTicketHandoff(
+      gatedState,
+      gatedState.tickets[0]!,
+      undefined,
+      {
+        ticketBoundaryMode: 'gated',
+        subagentReviewPolicy: 'disabled',
+      },
+    );
     expect(handoff).toContain('## RESUME COMMAND');
     expect(handoff).toContain(
       'bun run deliver --plan docs/product/delivery/phase-02/implementation-plan.md open-pr',
@@ -60,10 +66,15 @@ describe('P2.02 — delivery-orchestrator.md cleanliness and gated handoff RESUM
   });
 
   it('gated handoff with subagentReview required contains RESUME COMMAND pointing to subagent-review', () => {
-    const handoff = buildTicketHandoff(gatedState, gatedState.tickets[0]!, undefined, {
-      ticketBoundaryMode: 'gated',
-      subagentReviewPolicy: 'required',
-    });
+    const handoff = buildTicketHandoff(
+      gatedState,
+      gatedState.tickets[0]!,
+      undefined,
+      {
+        ticketBoundaryMode: 'gated',
+        subagentReviewPolicy: 'required',
+      },
+    );
     expect(handoff).toContain('## RESUME COMMAND');
     expect(handoff).toContain(
       'bun run deliver --plan docs/product/delivery/phase-02/implementation-plan.md subagent-review',
@@ -71,9 +82,14 @@ describe('P2.02 — delivery-orchestrator.md cleanliness and gated handoff RESUM
   });
 
   it('cook mode handoff does not contain ## RESUME COMMAND section', () => {
-    const handoff = buildTicketHandoff(gatedState, gatedState.tickets[0]!, undefined, {
-      ticketBoundaryMode: 'cook',
-    });
+    const handoff = buildTicketHandoff(
+      gatedState,
+      gatedState.tickets[0]!,
+      undefined,
+      {
+        ticketBoundaryMode: 'cook',
+      },
+    );
     expect(handoff).not.toContain('## RESUME COMMAND');
   });
 

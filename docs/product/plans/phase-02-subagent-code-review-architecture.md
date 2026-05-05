@@ -7,6 +7,7 @@
 **Goal:** Replace the low-value `selfAudit` + `codexPreflight` duality with a single, agent-agnostic `subagentCodeReview` step that structurally eliminates self-review bias by context-isolating the reviewer.
 
 **Ships:**
+
 - `subagentCodeReview` step: execution agent spawns a context-isolated subagent of the same type to review the diff against the ticket's `## Review Focus` and patch what it finds
 - `reviewSubagentOverride` config key: when present, overrides the default same-type subagent (Claude→`codex:codex-rescue` is the only supported cross-agent pairing today)
 - Renamed CLI command: `post-verify` replaces `post-verify-self-audit`; `subagent-code-review` replaces `codex-preflight`
@@ -15,6 +16,7 @@
 - Hard startup error if `selfAudit` or `codexPreflight` keys are present in any config
 
 **Defers:**
+
 - Consumer repo config updates (`pirate-claw`, `coding-stats`) — handled separately via `/soa update` when the operator is ready
 - Support for additional cross-agent pairings beyond Claude→`codex:codex-rescue`
 - Subagent reachability validation at startup

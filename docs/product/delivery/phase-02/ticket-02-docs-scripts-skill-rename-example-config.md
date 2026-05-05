@@ -24,7 +24,7 @@ Scope: docs/template/delivery, .agents/skills
 ## Green
 
 - `delivery-orchestrator.md`: rewrite flow diagram section, command reference entries for `post-verify` and `subagent-review`, config schema section; remove all old references
-- `ticket-flow.ts`: add RESUME COMMAND block to gated handoff artifact — format: `## RESUME COMMAND\n\`bun run deliver --plan <planPath> subagent-review\`` (or `open-pr` depending on state position); guard fires only in `gated` boundary mode
+- `ticket-flow.ts`: add RESUME COMMAND block to gated handoff artifact — format: `## RESUME COMMAND\n\`bun run deliver --plan <planPath> subagent-review\``(or`open-pr`depending on state position); guard fires only in`gated` boundary mode
 - Rename `.agents/skills/ai-code-review/` → `.agents/skills/pr-review/` via `git mv`
 - Rename script files via `git mv`
 - `fetch_pr_review_comments.sh`: replace `looks_like_supported_ai_identity` function body with `jq`-based login set built from `(.prReviewAgents // []) | map(.login) | map(ascii_downcase)`; replace `vendor_name` hardcoded login branches with a dynamic lookup against the same set (map login → name from config); add early-exit block: read `reviewPolicy.prReview` from config, if `"disabled"` print empty result JSON and exit 0

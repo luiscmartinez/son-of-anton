@@ -602,7 +602,9 @@ describe('delivery orchestrator', () => {
         ticketFile: 'ticket-02-feat-torrent-lifecycle.md',
         scope: 'transmission',
       }),
-    ).toBe('feat(transmission): reconcile torrent lifecycle from transmission [P3.02]');
+    ).toBe(
+      'feat(transmission): reconcile torrent lifecycle from transmission [P3.02]',
+    );
   });
 
   it('derives PR title from ticket filename type and scope field', () => {
@@ -1017,7 +1019,8 @@ describe('delivery orchestrator', () => {
     const body = buildPullRequestBody(
       {
         planKey: 'engineering-epic-08',
-        planPath: 'docs/product/delivery/engineering-epic-08/implementation-plan.md',
+        planPath:
+          'docs/product/delivery/engineering-epic-08/implementation-plan.md',
         statePath: '.agents/delivery/engineering-epic-08/state.json',
         reviewsDirPath: '.agents/delivery/engineering-epic-08/reviews',
         handoffsDirPath: '.agents/delivery/engineering-epic-08/handoffs',
@@ -1108,7 +1111,8 @@ describe('delivery orchestrator', () => {
     const body = buildPullRequestBody(
       {
         planKey: 'engineering-epic-08',
-        planPath: 'docs/product/delivery/engineering-epic-08/implementation-plan.md',
+        planPath:
+          'docs/product/delivery/engineering-epic-08/implementation-plan.md',
         statePath: '.agents/delivery/engineering-epic-08/state.json',
         reviewsDirPath: '.agents/delivery/engineering-epic-08/reviews',
         handoffsDirPath: '.agents/delivery/engineering-epic-08/handoffs',
@@ -1921,9 +1925,7 @@ describe('delivery orchestrator', () => {
       baseConfig,
     );
 
-    expect(nextState.tickets[0]?.status).toBe(
-      'verified',
-    );
+    expect(nextState.tickets[0]?.status).toBe('verified');
     expect(nextState.tickets[0]?.verifiedAt).toBeTruthy();
   });
 
@@ -1952,9 +1954,7 @@ describe('delivery orchestrator', () => {
     };
     const next = normalizeDeliveryStateFromPersisted(raw);
     expect(next.tickets[0]?.status).toBe('verified');
-    expect(next.tickets[0]?.verifiedAt).toBe(
-      '2026-01-01T00:00:00.000Z',
-    );
+    expect(next.tickets[0]?.verifiedAt).toBe('2026-01-01T00:00:00.000Z');
   });
 
   it('rejects pr bodies that contain literal escaped newlines', () => {
@@ -3929,7 +3929,8 @@ describe('delivery orchestrator', () => {
   describe('applyAdvanceBoundaryMode (EE7 cook continuation)', () => {
     const baseState: DeliveryState = {
       planKey: 'engineering-epic-07',
-      planPath: 'docs/product/delivery/engineering-epic-07/implementation-plan.md',
+      planPath:
+        'docs/product/delivery/engineering-epic-07/implementation-plan.md',
       statePath: '.agents/delivery/engineering-epic-07/state.json',
       reviewsDirPath: '.agents/delivery/engineering-epic-07/reviews',
       handoffsDirPath: '.agents/delivery/engineering-epic-07/handoffs',

@@ -316,9 +316,7 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
       baseConfig,
     );
     expect(nextState.tickets[0]?.verifyOutcome).toBe('clean');
-    expect(nextState.tickets[0]?.status).toBe(
-      'verified',
-    );
+    expect(nextState.tickets[0]?.status).toBe('verified');
   });
 
   it('records verifyOutcome: patched when outcome arg is "patched"', async () => {
@@ -342,9 +340,7 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
         subject: 'fix: tighten self-audit evidence [self-audit]',
       },
     ]);
-    expect(nextState.tickets[0]?.status).toBe(
-      'verified',
-    );
+    expect(nextState.tickets[0]?.status).toBe('verified');
   });
 
   it('defaults verifyOutcome to clean when no outcome arg is passed', async () => {
@@ -355,9 +351,7 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
       baseConfig,
     );
     expect(nextState.tickets[0]?.verifyOutcome).toBe('clean');
-    expect(nextState.tickets[0]?.status).toBe(
-      'verified',
-    );
+    expect(nextState.tickets[0]?.status).toBe('verified');
   });
 
   it('auto-skips self-audit for doc-only tickets when policy is skip_doc_only', async () => {
@@ -372,9 +366,7 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
       },
     );
     expect(nextState.tickets[0]?.verifyOutcome).toBe('skipped');
-    expect(nextState.tickets[0]?.status).toBe(
-      'verified',
-    );
+    expect(nextState.tickets[0]?.status).toBe('verified');
   });
 
   it('requires an explicit self-audit outcome for doc-only tickets when policy is required', async () => {
@@ -407,9 +399,7 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
       ],
     );
     const output = formatStatus(state, baseConfig);
-    expect(output).toMatch(
-      /post_verify=completed at .+ \(patched\)/,
-    );
+    expect(output).toMatch(/post_verify=completed at .+ \(patched\)/);
   });
 
   it('rejects patched self-audit outcomes without recorded patch commits', async () => {
@@ -731,7 +721,12 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
       },
     });
     await expect(
-      openPullRequest(basePostAuditState, '/tmp/test_project', context, 'P3.01'),
+      openPullRequest(
+        basePostAuditState,
+        '/tmp/test_project',
+        context,
+        'P3.01',
+      ),
     ).rejects.toThrow(/requires subagent-review before opening a PR/);
   });
 
@@ -743,7 +738,12 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
       },
     });
     await expect(
-      openPullRequest(basePostAuditState, '/tmp/test_project', context, 'P3.01'),
+      openPullRequest(
+        basePostAuditState,
+        '/tmp/test_project',
+        context,
+        'P3.01',
+      ),
     ).rejects.toThrow(/requires subagent-review before opening a PR/);
   });
 
@@ -755,10 +755,20 @@ describe('EE8.02 — codex preflight command, status, and gate', () => {
       },
     });
     await expect(
-      openPullRequest(basePostAuditState, '/tmp/test_project', context, 'P3.01'),
+      openPullRequest(
+        basePostAuditState,
+        '/tmp/test_project',
+        context,
+        'P3.01',
+      ),
     ).rejects.toThrow(/subagent-review/);
     await expect(
-      openPullRequest(basePostAuditState, '/tmp/test_project', context, 'P3.01'),
+      openPullRequest(
+        basePostAuditState,
+        '/tmp/test_project',
+        context,
+        'P3.01',
+      ),
     ).rejects.toThrow(/subagentReview.*disabled.*orchestrator\.config\.json/);
   });
 

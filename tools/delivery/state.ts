@@ -41,7 +41,10 @@ function pickVerifiedAt(
 }
 
 function normalizeLegacyTicketStatus(status: string | undefined): TicketStatus {
-  if (status === 'internally_reviewed' || status === 'post_verify_self_audit_complete') {
+  if (
+    status === 'internally_reviewed' ||
+    status === 'post_verify_self_audit_complete'
+  ) {
     return 'verified';
   }
 
@@ -305,14 +308,10 @@ function syncStateWithPlan(
           previous?.handoffGeneratedAt ?? inferredTicket?.handoffGeneratedAt,
         verifiedAt:
           pickVerifiedAt(previous) ??
-          pickVerifiedAt(
-            inferredTicket as PersistedTicketFields | undefined,
-          ),
-        verifyOutcome:
-          previous?.verifyOutcome ?? inferredTicket?.verifyOutcome,
+          pickVerifiedAt(inferredTicket as PersistedTicketFields | undefined),
+        verifyOutcome: previous?.verifyOutcome ?? inferredTicket?.verifyOutcome,
         verifyPatchCommits:
-          previous?.verifyPatchCommits ??
-          inferredTicket?.verifyPatchCommits,
+          previous?.verifyPatchCommits ?? inferredTicket?.verifyPatchCommits,
         docOnly: (previous?.docOnly ?? inferredTicket?.docOnly) || undefined,
         subagentReviewOutcome:
           previous?.subagentReviewOutcome ??

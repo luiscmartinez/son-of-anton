@@ -7,6 +7,7 @@
 **Goal:** Fix three known bugs in the current delivery CLI that have caused real failures across multiple phases.
 
 **Ships:**
+
 - `closeout-stack` runs after multi-worktree delivery without manual `state.json` edits
 - PR title format is `type(scope): <ticket-derived subject> [PXX.XX]` — never the red test commit subject
 

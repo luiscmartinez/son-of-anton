@@ -9,6 +9,7 @@
 ## Product contract
 
 After this phase ships:
+
 - `closeout-stack` runs cleanly after a multi-worktree gated delivery without manual `state.json` edits
 - Every PR opened by the orchestrator has a title in the form `type(scope): subject [PXX.XX]` derived from the ticket, never from the red test commit
 

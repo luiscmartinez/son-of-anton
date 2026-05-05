@@ -278,7 +278,8 @@ describe('orchestrator config', () => {
           id: 'P3.01',
           title: 'First Ticket',
           slug: 'first-ticket',
-          ticketFile: 'docs/product/delivery/phase-03/ticket-01-first-ticket.md',
+          ticketFile:
+            'docs/product/delivery/phase-03/ticket-01-first-ticket.md',
         },
       ],
       '/workspace/test',

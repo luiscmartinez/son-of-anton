@@ -155,9 +155,7 @@ export function buildTicketHandoff(
         ? 'open-pr'
         : 'subagent-review';
     lines.push('', '## RESUME COMMAND', '');
-    lines.push(
-      `\`bun run deliver --plan ${state.planPath} ${nextCommand}\``,
-    );
+    lines.push(`\`bun run deliver --plan ${state.planPath} ${nextCommand}\``);
   }
 
   return lines.join('\n') + '\n';
@@ -345,9 +343,7 @@ export function recordPostVerifySelfAudit(
     undefined;
 
   if (!target) {
-    throw new Error(
-      'No in-progress ticket found to mark verified.',
-    );
+    throw new Error('No in-progress ticket found to mark verified.');
   }
 
   if (target.status === 'verified') {
@@ -505,9 +501,7 @@ export function openPullRequest(
       : (state.tickets.find(
           (ticket) => ticket.status === 'subagent_review_complete',
         ) ??
-        state.tickets.find(
-          (ticket) => ticket.status === 'verified',
-        ) ??
+        state.tickets.find((ticket) => ticket.status === 'verified') ??
         state.tickets.find((ticket) => ticket.status === 'in_review'))) ??
     undefined;
 

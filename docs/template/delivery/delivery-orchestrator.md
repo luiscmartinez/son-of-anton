@@ -89,7 +89,7 @@ behavior, and review policy are not hardcoded:
   "reviewSubagentOverride": "codex:codex-rescue",
   "prReviewAgents": [
     { "login": "coderabbitai", "name": "coderabbit" },
-    { "login": "qodo-merge",   "name": "qodo" }
+    { "login": "qodo-merge", "name": "qodo" }
   ]
 }
 ```

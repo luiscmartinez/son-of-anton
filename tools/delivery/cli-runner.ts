@@ -142,7 +142,9 @@ export function assertWorktreeGuard(
       state.planPath,
       activeTicket.id,
     );
-    const nextCommandHint = nextCommand ? `\nNext command from worktree: ${nextCommand}` : '';
+    const nextCommandHint = nextCommand
+      ? `\nNext command from worktree: ${nextCommand}`
+      : '';
     throw new Error(
       `Command '${command}' for ticket ${activeTicket.id} must be run from its worktree.\n` +
         `Current directory: ${resolvedCwd}\n` +
@@ -231,7 +233,13 @@ export async function runDeliveryOrchestrator(
     const state = await loadState(cwd, options, context.config);
 
     const resolvedCwd = await realpath(cwd).catch(() => cwd);
-    assertWorktreeGuard(resolvedCwd, parsed.command, parsed.positionals, state, context.config);
+    assertWorktreeGuard(
+      resolvedCwd,
+      parsed.command,
+      parsed.positionals,
+      state,
+      context.config,
+    );
 
     switch (parsed.command) {
       case 'sync': {
@@ -304,8 +312,7 @@ export async function runDeliveryOrchestrator(
         const subagentTarget =
           (subagentTicketId
             ? state.tickets.find((t) => t.id === subagentTicketId)
-            : state.tickets.find((t) => t.status === 'verified')) ??
-          undefined;
+            : state.tickets.find((t) => t.status === 'verified')) ?? undefined;
         const isDocOnly = subagentTarget
           ? isPlatformLocalBranchDocOnly(
               subagentTarget.worktreePath,
@@ -492,10 +499,8 @@ export async function runDeliveryOrchestrator(
           context,
         );
         await saveState(cwd, nextState);
-        await syncStateToPrimaryIfNeeded(
-          cwd,
-          nextState,
-          (wt) => findPrimaryWorktreePath(wt, context.config),
+        await syncStateToPrimaryIfNeeded(cwd, nextState, (wt) =>
+          findPrimaryWorktreePath(wt, context.config),
         );
         console.log(formatStatus(nextState, context.config));
         const boundaryGuidance = formatAdvanceBoundaryGuidance(
@@ -804,7 +809,11 @@ export async function recordPostVerifySelfAudit(
     return recordPostVerifySelfAuditImpl(state, ticketId, 'skipped', undefined);
   }
 
-  if (subagentReviewPolicy === 'required' && isDocOnly && outcome === undefined) {
+  if (
+    subagentReviewPolicy === 'required' &&
+    isDocOnly &&
+    outcome === undefined
+  ) {
     throw new Error(
       `Ticket ${target.id} requires an explicit self-audit outcome. Pass \`clean\` or \`patched\`.`,
     );

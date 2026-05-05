@@ -14,6 +14,7 @@ Scope: pr-metadata
 ## Red
 
 Write failing tests for `buildPullRequestTitle` asserting:
+
 - `{ ticketFile: 'ticket-01-fix-state-sync.md', scope: 'cli', id: 'P1.01', title: 'Fix state.json sync in advance' }` → `fix(cli): fix state.json sync in advance [P1.01]`
 - Same ticket without `scope` → `fix: fix state.json sync in advance [P1.01]`
 - Filename with unrecognized type token → falls back to `feat: <title lowercase> [P1.01]`
@@ -32,7 +33,7 @@ export type TicketDefinition = {
   id: string;
   title: string;
   slug: string;
-  scope?: string;   // parsed from "Scope: <area>" metadata line in ticket doc
+  scope?: string; // parsed from "Scope: <area>" metadata line in ticket doc
   ticketFile: string;
 };
 ```
@@ -60,15 +61,18 @@ export function buildPullRequestTitle(
 **4. `ticket-flow.ts` — remove `readFirstCommitSubject` from `openPullRequest` call**
 
 At line ~521, replace:
+
 ```ts
 dependencies.buildPullRequestTitle(
   target,
   dependencies.readFirstCommitSubject(target.worktreePath, target.baseBranch),
-)
+);
 ```
+
 With:
+
 ```ts
-dependencies.buildPullRequestTitle(target)
+dependencies.buildPullRequestTitle(target);
 ```
 
 Remove `readFirstCommitSubject` from the `dependencies` type for `openPullRequest` if it is no longer used elsewhere.

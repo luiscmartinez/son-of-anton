@@ -58,7 +58,15 @@ Add to `package.json`:
 {
   "scripts": {
     "deliver": "bun run ./scripts/deliver.ts",
-    "closeout-stack": "bun run ./scripts/closeout-stack.ts"
+    "closeout-stack": "bun run ./scripts/closeout-stack.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "lint": "eslint .",
+    "lint:quiet": "eslint . --quiet",
+    "verify": "bun run format:check && bun run lint",
+    "verify:quiet": "prettier --check . --log-level warn && bun run lint:quiet",
+    "ci": "bun run verify && bun test",
+    "ci:quiet": "bun run verify:quiet && bun test"
   }
 }
 ```

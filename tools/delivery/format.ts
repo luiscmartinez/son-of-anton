@@ -27,7 +27,8 @@ export function resolveNextCommand(
   ticketId?: string,
 ): string | null {
   const invoke = generateRunDeliverInvocation(config.packageManager);
-  const cmd = (subcommand: string) => `${invoke} --plan ${planPath} ${subcommand}`;
+  const cmd = (subcommand: string) =>
+    `${invoke} --plan ${planPath} ${subcommand}`;
 
   switch (status) {
     case 'in_progress':
@@ -43,7 +44,9 @@ export function resolveNextCommand(
     case 'needs_patch':
       return cmd(`record-review ${ticketId ?? '<ticket-id>'} patched`);
     case 'operator_input_needed':
-      return cmd(`record-review ${ticketId ?? '<ticket-id>'} operator_input_needed`);
+      return cmd(
+        `record-review ${ticketId ?? '<ticket-id>'} operator_input_needed`,
+      );
     case 'reviewed':
       return cmd('advance');
     case 'done':

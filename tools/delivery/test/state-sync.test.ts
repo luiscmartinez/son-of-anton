@@ -41,7 +41,10 @@ describe('syncStateToPrimaryIfNeeded (P1.01)', () => {
       const stateFile = join(primaryWt, baseState.statePath);
       expect(existsSync(stateFile)).toBe(true);
 
-      const written = JSON.parse(await readFile(stateFile, 'utf8')) as Record<string, unknown>;
+      const written = JSON.parse(await readFile(stateFile, 'utf8')) as Record<
+        string,
+        unknown
+      >;
       expect(written['planKey']).toBe('phase-test');
     } finally {
       await rm(ticketWt, { recursive: true, force: true });

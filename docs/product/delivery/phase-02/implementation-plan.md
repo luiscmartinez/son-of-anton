@@ -9,6 +9,7 @@
 ## Product contract
 
 After this phase ships:
+
 - Any execution agent that can spawn a subagent gets real internal review value on every ticket delivery via `subagent-review` — one CLI command, one state field, one commit suffix
 - `orchestrator.config.json` with `selfAudit` or `codexPreflight` keys hard-errors at startup — no silent misconfiguration
 - PR review bot detection reads `prReviewAgents[].login` from config, not hardcoded vendor strings in shell scripts

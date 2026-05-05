@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'bun:test';
-import { mkdtempSync, mkdirSync, realpathSync, rmSync, symlinkSync } from 'node:fs';
+import {
+  mkdtempSync,
+  mkdirSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -24,7 +30,8 @@ const baseTicket: TicketState = {
   id: 'P3.01',
   title: 'Guards, signals, and dead code cleanup',
   slug: 'guards-signals-and-dead-code-cleanup',
-  ticketFile: 'docs/product/delivery/phase-03/ticket-01-guards-signals-dead-code.md',
+  ticketFile:
+    'docs/product/delivery/phase-03/ticket-01-guards-signals-dead-code.md',
   status: 'in_progress',
   branch: 'agents/p3-01-guards-signals-and-dead-code-cleanup',
   baseBranch: 'main',
@@ -49,22 +56,46 @@ const baseState: DeliveryState = {
 describe('assertWorktreeGuard (P3.01)', () => {
   it('throws when a guarded command is run from outside the ticket worktree', () => {
     expect(() =>
-      assertWorktreeGuard('/wrong/path', 'post-verify', [], baseState, baseConfig),
+      assertWorktreeGuard(
+        '/wrong/path',
+        'post-verify',
+        [],
+        baseState,
+        baseConfig,
+      ),
     ).toThrow(/P3\.01/);
     expect(() =>
-      assertWorktreeGuard('/wrong/path', 'post-verify', [], baseState, baseConfig),
+      assertWorktreeGuard(
+        '/wrong/path',
+        'post-verify',
+        [],
+        baseState,
+        baseConfig,
+      ),
     ).toThrow(/son-of-anton_p3_01/);
   });
 
   it('includes the recovery cd command in the error message', () => {
     expect(() =>
-      assertWorktreeGuard('/wrong/path', 'post-verify', [], baseState, baseConfig),
+      assertWorktreeGuard(
+        '/wrong/path',
+        'post-verify',
+        [],
+        baseState,
+        baseConfig,
+      ),
     ).toThrow(/cd .* && bun run deliver/);
   });
 
   it('includes positional args in the recovery command', () => {
     expect(() =>
-      assertWorktreeGuard('/wrong/path', 'post-verify', ['patched', 'abc123'], baseState, baseConfig),
+      assertWorktreeGuard(
+        '/wrong/path',
+        'post-verify',
+        ['patched', 'abc123'],
+        baseState,
+        baseConfig,
+      ),
     ).toThrow(/post-verify patched abc123/);
   });
 
@@ -123,7 +154,10 @@ const minimalDeps = {
   assertReviewerFacingMarkdown: () => {},
   buildPullRequestBody: () => '## PR body',
   buildPullRequestTitle: () => 'feat: ticket [P3.01]',
-  createPullRequest: () => ({ number: 1, url: 'https://github.com/r/p/pull/1' }),
+  createPullRequest: () => ({
+    number: 1,
+    url: 'https://github.com/r/p/pull/1',
+  }),
   editPullRequest: () => {},
   ensureBranchPushed: () => {},
   findOpenPullRequest: () => undefined,
@@ -166,7 +200,9 @@ describe('wrong-state error messages (P3.01)', () => {
 
   it('advance on in_progress ticket: error contains in_progress and the next valid command', async () => {
     await expect(
-      advanceToNextTicket(baseState, '/cwd', { updatePullRequestBody: () => {} }),
+      advanceToNextTicket(baseState, '/cwd', {
+        updatePullRequestBody: () => {},
+      }),
     ).rejects.toThrow(/in_progress/);
   });
 });
@@ -178,16 +214,10 @@ describe('wrong-state error messages (P3.01)', () => {
 describe('doc-only early failure (P3.01)', () => {
   it('post-verify on doc-only ticket with no branch commits throws immediately', async () => {
     await expect(
-      recordPostVerifySelfAudit(
-        baseState,
-        undefined,
-        'clean',
-        baseConfig,
-        {
-          isLocalBranchDocOnly: () => true,
-          hasLocalBranchCommits: () => false,
-        },
-      ),
+      recordPostVerifySelfAudit(baseState, undefined, 'clean', baseConfig, {
+        isLocalBranchDocOnly: () => true,
+        hasLocalBranchCommits: () => false,
+      }),
     ).rejects.toThrow(/No commits on branch for doc-only ticket P3\.01/);
   });
 
