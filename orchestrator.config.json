@@ -5,9 +5,8 @@
   "packageManager": "bun",
   "ticketBoundaryMode": "cook",
   "reviewPolicy": {
-    "subagentReview": "disabled",
+    "subagentReview": "skip_doc_only",
     "prReview": "skip_doc_only"
   },
-  "reviewSubagentOverride": "codex:codex-rescue",
   "prReviewAgents": [{ "login": "coderabbitai", "name": "coderabbit" }]
 }

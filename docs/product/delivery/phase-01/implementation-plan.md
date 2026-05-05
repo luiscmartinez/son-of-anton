@@ -36,7 +36,7 @@ Both tickets merged to main with passing CI. `closeout-stack` runs end-to-end on
 
 ## CI Baseline
 
-> Baseline recorded: pending — run `pnpm test` on `main` before starting P1.01 and record result here.
+> Baseline recorded: historical placeholder — this repo uses Bun, not pnpm. For new baselines, run `bun test` or the repo's current verification gate instead of `pnpm test`.
 
 ## Review Rules
 

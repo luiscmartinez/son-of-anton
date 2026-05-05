@@ -9,7 +9,7 @@ import {
   createOptions,
   openPullRequest,
   recordSubagentReview,
-  recordPostVerifySelfAudit,
+  recordPostVerify,
   shouldAutoRecordReviewSkippedForPollReview,
   syncStateFromExisting,
 } from '../cli-runner';
@@ -283,7 +283,7 @@ describe('ticket-flow', () => {
     }
   });
 });
-describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
+describe('EE8.01 — post-verify observability and reviewPolicy config', () => {
   const baseInProgressState: DeliveryState = {
     planKey: 'phase-03',
     planPath: 'docs/product/delivery/phase-03/implementation-plan.md',
@@ -309,7 +309,7 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
   };
 
   it('records verifyOutcome: clean when outcome arg is "clean"', async () => {
-    const nextState = await recordPostVerifySelfAudit(
+    const nextState = await recordPostVerify(
       baseInProgressState,
       undefined,
       'clean',
@@ -320,7 +320,7 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
   });
 
   it('records verifyOutcome: patched when outcome arg is "patched"', async () => {
-    const nextState = await recordPostVerifySelfAudit(
+    const nextState = await recordPostVerify(
       baseInProgressState,
       undefined,
       'patched',
@@ -329,7 +329,7 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
       [
         {
           sha: 'aaaaaaaaaaaa1111111111111111111111111111',
-          subject: 'fix: tighten self-audit evidence [self-audit]',
+          subject: 'fix: tighten post-verify evidence [post-verify]',
         },
       ],
     );
@@ -337,14 +337,14 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
     expect(nextState.tickets[0]?.verifyPatchCommits).toEqual([
       {
         sha: 'aaaaaaaaaaaa1111111111111111111111111111',
-        subject: 'fix: tighten self-audit evidence [self-audit]',
+        subject: 'fix: tighten post-verify evidence [post-verify]',
       },
     ]);
     expect(nextState.tickets[0]?.status).toBe('verified');
   });
 
   it('defaults verifyOutcome to clean when no outcome arg is passed', async () => {
-    const nextState = await recordPostVerifySelfAudit(
+    const nextState = await recordPostVerify(
       baseInProgressState,
       undefined,
       undefined,
@@ -354,38 +354,32 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
     expect(nextState.tickets[0]?.status).toBe('verified');
   });
 
-  it('auto-skips self-audit for doc-only tickets when policy is skip_doc_only', async () => {
-    const nextState = await recordPostVerifySelfAudit(
+  it('auto-skips post-verify for doc-only tickets when policy is skip_doc_only', async () => {
+    const nextState = await recordPostVerify(
       baseInProgressState,
       undefined,
       undefined,
       baseConfig,
       {
         isLocalBranchDocOnly: () => true,
-        selfAuditPolicy: 'skip_doc_only',
+        postVerifyPolicy: 'skip_doc_only',
       },
     );
     expect(nextState.tickets[0]?.verifyOutcome).toBe('skipped');
     expect(nextState.tickets[0]?.status).toBe('verified');
   });
 
-  it('requires an explicit self-audit outcome for doc-only tickets when policy is required', async () => {
+  it('requires an explicit post-verify outcome for doc-only tickets when policy is required', async () => {
     await expect(
-      recordPostVerifySelfAudit(
-        baseInProgressState,
-        undefined,
-        undefined,
-        baseConfig,
-        {
-          isLocalBranchDocOnly: () => true,
-          selfAuditPolicy: 'required',
-        },
-      ),
-    ).rejects.toThrow(/requires an explicit self-audit outcome/);
+      recordPostVerify(baseInProgressState, undefined, undefined, baseConfig, {
+        isLocalBranchDocOnly: () => true,
+        postVerifyPolicy: 'required',
+      }),
+    ).rejects.toThrow(/requires an explicit post-verify outcome/);
   });
 
-  it('renders selfAuditOutcome in formatStatus alongside timestamp', async () => {
-    const state = await recordPostVerifySelfAudit(
+  it('renders verifyOutcome in formatStatus alongside timestamp', async () => {
+    const state = await recordPostVerify(
       baseInProgressState,
       undefined,
       'patched',
@@ -394,7 +388,7 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
       [
         {
           sha: 'aaaaaaaaaaaa1111111111111111111111111111',
-          subject: 'fix: tighten self-audit evidence [self-audit]',
+          subject: 'fix: tighten post-verify evidence [post-verify]',
         },
       ],
     );
@@ -402,16 +396,11 @@ describe('EE8.01 — self-audit observability and reviewPolicy config', () => {
     expect(output).toMatch(/post_verify=completed at .+ \(patched\)/);
   });
 
-  it('rejects patched self-audit outcomes without recorded patch commits', async () => {
+  it('rejects patched post-verify outcomes without recorded patch commits', async () => {
     await expect(
-      recordPostVerifySelfAudit(
-        baseInProgressState,
-        undefined,
-        'patched',
-        baseConfig,
-      ),
+      recordPostVerify(baseInProgressState, undefined, 'patched', baseConfig),
     ).rejects.toThrow(
-      /Self-audit recorded as patched requires at least one patch commit/,
+      /Post-verify recorded as patched requires at least one patch commit/,
     );
   });
 
@@ -959,7 +948,7 @@ describe('P2.01 — post-verify transitions to verified; subagent-review transit
   };
 
   it('in_progress → verified via post-verify', async () => {
-    const nextState = await recordPostVerifySelfAudit(
+    const nextState = await recordPostVerify(
       baseInProgressState2,
       undefined,
       'clean',

@@ -1,6 +1,6 @@
 # Phase 04: Orchestrator Contract Stability
 
-**Delivery status:** Not started — product definition only; no `docs/product/delivery/phase-04/` implementation plan until tickets are approved.
+**Delivery status:** Decomposed and approved — `docs/product/delivery/phase-04/` exists and Phase 04 is ready to start.
 
 ## TL;DR
 

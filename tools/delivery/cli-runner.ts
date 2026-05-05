@@ -96,7 +96,7 @@ import {
   materializeTicketContext,
   openPullRequest as openPullRequestImpl,
   recordSubagentReview as recordSubagentReviewImpl,
-  recordPostVerifySelfAudit as recordPostVerifySelfAuditImpl,
+  recordPostVerify as recordPostVerifyImpl,
   restackTicket as restackTicketImpl,
   startTicket as startTicketImpl,
 } from './ticket-flow';
@@ -269,7 +269,7 @@ export async function runDeliveryOrchestrator(
       }
       case 'post-verify': {
         const { auditOutcome, auditTicketId, auditPatchCommitArgs } =
-          parseSelfAuditArgs(parsed.positionals);
+          parsePostVerifyArgs(parsed.positionals);
         if (auditOutcome !== 'patched' && auditPatchCommitArgs.length > 0) {
           throw new Error(
             'Post-verify patch commits are only allowed when outcome is `patched`.',
@@ -287,11 +287,11 @@ export async function runDeliveryOrchestrator(
                 )?.worktreePath ?? cwd,
                 context,
                 auditPatchCommitArgs,
-                '[self-audit]',
-                'Self-audit',
+                '[post-verify]',
+                'Post-verify',
               )
             : undefined;
-        const nextState = await recordPostVerifySelfAudit(
+        const nextState = await recordPostVerify(
           state,
           auditTicketId,
           auditOutcome,
@@ -308,7 +308,7 @@ export async function runDeliveryOrchestrator(
           auditOutcome: subagentOutcome,
           auditPatchCommitArgs: subagentPatchCommitArgs,
           auditTicketId: subagentTicketId,
-        } = parseSelfAuditArgs(parsed.positionals);
+        } = parsePostVerifyArgs(parsed.positionals);
         const subagentTarget =
           (subagentTicketId
             ? state.tickets.find((t) => t.id === subagentTicketId)
@@ -757,7 +757,7 @@ export async function copyLocalEnvIfPresent(
   await copyPlatformEnvIfPresent(sourceWorktreePath, targetWorktreePath);
 }
 
-export async function recordPostVerifySelfAudit(
+export async function recordPostVerify(
   state: DeliveryState,
   ticketId?: string,
   outcome?: ReviewOutcome,
@@ -769,12 +769,12 @@ export async function recordPostVerifySelfAudit(
       runtime: Runtime,
     ) => boolean;
     hasLocalBranchCommits?: (cwd: string, baseBranch: string) => boolean;
-    selfAuditPolicy?: ReviewPolicyStageValue;
+    postVerifyPolicy?: ReviewPolicyStageValue;
   } = {},
   patchCommits?: InternalReviewPatchCommit[],
 ): Promise<DeliveryState> {
   if (!config) {
-    throw new Error('recordPostVerifySelfAudit requires explicit config.');
+    throw new Error('recordPostVerify requires explicit config.');
   }
 
   const target =
@@ -783,7 +783,7 @@ export async function recordPostVerifySelfAudit(
       : state.tickets.find((ticket) => ticket.status === 'in_progress')) ??
     undefined;
   const subagentReviewPolicy =
-    dependencies.selfAuditPolicy ?? config.reviewPolicy.subagentReview;
+    dependencies.postVerifyPolicy ?? config.reviewPolicy.subagentReview;
   const isDocOnly =
     target &&
     subagentReviewPolicy !== 'disabled' &&
@@ -806,7 +806,7 @@ export async function recordPostVerifySelfAudit(
   }
 
   if (subagentReviewPolicy === 'skip_doc_only' && isDocOnly) {
-    return recordPostVerifySelfAuditImpl(state, ticketId, 'skipped', undefined);
+    return recordPostVerifyImpl(state, ticketId, 'skipped', undefined);
   }
 
   if (
@@ -815,11 +815,11 @@ export async function recordPostVerifySelfAudit(
     outcome === undefined
   ) {
     throw new Error(
-      `Ticket ${target.id} requires an explicit self-audit outcome. Pass \`clean\` or \`patched\`.`,
+      `Ticket ${target.id} requires an explicit post-verify outcome. Pass \`clean\` or \`patched\`.`,
     );
   }
 
-  return recordPostVerifySelfAuditImpl(state, ticketId, outcome, patchCommits);
+  return recordPostVerifyImpl(state, ticketId, outcome, patchCommits);
 }
 
 export function recordSubagentReview(
@@ -861,7 +861,7 @@ function normalizeUniquePatchCommitShas(rawShas: string[]): string[] {
   return [...new Set(rawShas.map((sha) => sha.trim()).filter(Boolean))];
 }
 
-function parseSelfAuditArgs(positionals: string[]): {
+function parsePostVerifyArgs(positionals: string[]): {
   auditOutcome?: ReviewOutcome;
   auditPatchCommitArgs: string[];
   auditTicketId?: string;
@@ -888,7 +888,7 @@ function resolveInternalReviewPatchCommits(
   cwd: string,
   context: DeliveryOrchestratorContext,
   rawShas: string[],
-  suffix: '[self-audit]' | '[subagent-review]',
+  suffix: '[post-verify]' | '[subagent-review]',
   stageLabel: string,
 ): InternalReviewPatchCommit[] {
   const platform = context.platform;

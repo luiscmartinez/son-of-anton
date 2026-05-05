@@ -329,7 +329,7 @@ export async function startTicket(
   return nextState;
 }
 
-export function recordPostVerifySelfAudit(
+export function recordPostVerify(
   state: DeliveryState,
   ticketId?: string,
   outcome?: ReviewOutcome,
@@ -361,7 +361,7 @@ export function recordPostVerifySelfAudit(
   validateInternalReviewPatchCommits({
     outcome: resolvedOutcome,
     patchCommits,
-    stageLabel: 'Self-audit',
+    stageLabel: 'Post-verify',
   });
 
   return {

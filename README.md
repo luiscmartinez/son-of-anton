@@ -63,8 +63,10 @@ Add to `package.json`:
     "format:check": "prettier --check .",
     "lint": "eslint .",
     "lint:quiet": "eslint . --quiet",
-    "verify": "bun run format:check && bun run lint",
-    "verify:quiet": "prettier --check . --log-level warn && bun run lint:quiet",
+    "spellcheck": "cspell --no-progress \"**/*\"",
+    "spellcheck:quiet": "cspell --no-progress --no-summary \"**/*\"",
+    "verify": "bun run format:check && bun run lint && bun run spellcheck",
+    "verify:quiet": "prettier --check . --log-level warn && bun run lint:quiet && bun run spellcheck:quiet",
     "ci": "bun run verify && bun test",
     "ci:quiet": "bun run verify:quiet && bun test"
   }

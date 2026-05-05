@@ -1,6 +1,6 @@
 # Phase 01: CLI Bug Fixes
 
-**Delivery status:** Not started — product definition only; no `docs/product/delivery/phase-01/` implementation plan until tickets are approved.
+**Delivery status:** Decomposed and delivered — `docs/product/delivery/phase-01/` exists and the phase tickets have already shipped.
 
 ## TL;DR
 

@@ -46,7 +46,7 @@ Targeted delivery-tool workflow/state-guard failures expose a stable machine-rea
 - Tickets must be merged in order.
 - Each ticket PR must pass repo verification before the next ticket starts.
 - Pre-existing verification failures documented in **CI Baseline** do not block a ticket; newly introduced failures do.
-- Current execution-environment note: this repo leaves `reviewSubagentOverride` pointed at `codex:codex-rescue`, but `reviewPolicy.subagentReview` is intentionally `disabled` for now because the Codex execution agent in this repo cannot yet honor that override with a true fallback subagent path.
+- Current execution-environment note: this repo uses `subagentReview: "skip_doc_only"` with no `reviewSubagentOverride` configured. Doc-only tickets auto-skip the subagent step; code tickets still require an explicit subagent-review result before `open-pr`.
 - `P4.01` may touch only the targeted delivery-tool workflow/state-guard surfaces plus the tests needed to prove the boundary.
 - `P4.02` is doc-only - reviewer should confirm zero `.ts` behavior changes.
 

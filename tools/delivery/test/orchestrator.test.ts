@@ -14,7 +14,7 @@ import {
   parsePlan,
   pollReview,
   reconcileLateReview,
-  recordPostVerifySelfAudit,
+  recordPostVerify,
   recordReview,
   resolvePlanPathForBranch,
   resolveReviewFetcher,
@@ -995,7 +995,7 @@ describe('delivery orchestrator', () => {
       '- delivery ticket: `E2.05 Shared Review Metadata Refresh Adapter`',
     );
     expect(ticketBody).toContain(
-      '- self-audit: outcome `clean` completed at 2026-04-07 00:00 UTC',
+      '- post-verify: outcome `clean` completed at 2026-04-07 00:00 UTC',
     );
     expect(ticketBody).toContain(expectedReviewSection);
     expect(standaloneBody).toContain('- preserve this author-owned context');
@@ -1039,7 +1039,7 @@ describe('delivery orchestrator', () => {
         verifyPatchCommits: [
           {
             sha: 'aaaaaaaaaaaa1111111111111111111111111111',
-            subject: 'fix: clarify PR body review state [self-audit]',
+            subject: 'fix: clarify PR body review state [post-verify]',
           },
         ],
         subagentReviewCompletedAt: '2026-04-14T08:48:00.000Z',
@@ -1063,15 +1063,15 @@ describe('delivery orchestrator', () => {
     );
 
     expect(body).toContain(
-      '- self-audit: outcome `patched` completed at 2026-04-14 08:33 UTC',
+      '- post-verify: outcome `patched` completed at 2026-04-14 08:33 UTC',
     );
     expect(body).toContain(
       '- subagentReview: outcome `patched` completed at 2026-04-14 08:48 UTC',
     );
-    expect(body).toContain('### Self-Audit Patch Commits');
+    expect(body).toContain('### Post-Verify Patch Commits');
     expect(body).toContain('### Subagent Review Patch Commits');
     expect(body).toContain(
-      '[`aaaaaaaaaaaa`](https://github.com/cesarnml/Test-Project/commit/aaaaaaaaaaaa1111111111111111111111111111) fix: clarify PR body review state [self-audit]',
+      '[`aaaaaaaaaaaa`](https://github.com/cesarnml/Test-Project/commit/aaaaaaaaaaaa1111111111111111111111111111) fix: clarify PR body review state [post-verify]',
     );
     expect(body).toContain(
       '[`bbbbbbbbbbbb`](https://github.com/cesarnml/Test-Project/commit/bbbbbbbbbbbb2222222222222222222222222222) fix: surface subagent review patch commits [subagent-review]',
@@ -1104,7 +1104,7 @@ describe('delivery orchestrator', () => {
           status: 'verified',
         },
       ),
-    ).toThrow(/Self-audit PR metadata requires recorded patch commits/);
+    ).toThrow(/Post-verify PR metadata requires recorded patch commits/);
   });
 
   it('tolerates legacy patched internal review states with no recorded patch commits', () => {
@@ -1133,9 +1133,9 @@ describe('delivery orchestrator', () => {
     );
 
     expect(body).toContain(
-      '- self-audit: outcome `patched` completed at 2026-04-14 08:33 UTC',
+      '- post-verify: outcome `patched` completed at 2026-04-14 08:33 UTC',
     );
-    expect(body).not.toContain('### Self-Audit Patch Commits');
+    expect(body).not.toContain('### Post-Verify Patch Commits');
   });
 
   it('does not include external summary-only noise in the ticket pr body', () => {
@@ -1893,7 +1893,7 @@ describe('delivery orchestrator', () => {
     });
   });
 
-  it('records post-verify self-audit before opening a PR', async () => {
+  it('records post-verify before opening a PR', async () => {
     const state: DeliveryState = {
       planKey: 'phase-03',
       planPath: 'docs/product/delivery/phase-03/implementation-plan.md',
@@ -1918,7 +1918,7 @@ describe('delivery orchestrator', () => {
       ],
     };
 
-    const nextState = await recordPostVerifySelfAudit(
+    const nextState = await recordPostVerify(
       state,
       'P3.01',
       undefined,
@@ -2027,7 +2027,7 @@ describe('delivery orchestrator', () => {
     ).not.toThrow();
   });
 
-  it('requires post-verify self-audit before opening a ticket-linked PR', async () => {
+  it('requires post-verify before opening a ticket-linked PR', async () => {
     const state: DeliveryState = {
       planKey: 'phase-03',
       planPath: 'docs/product/delivery/phase-03/implementation-plan.md',

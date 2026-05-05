@@ -117,7 +117,7 @@ export {
   pollReview,
   reconcileLateReview,
   recordSubagentReview,
-  recordPostVerifySelfAudit,
+  recordPostVerify,
   recordReview,
   resolvePlanPathForBranch,
   resolveReviewFetcher,

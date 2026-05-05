@@ -97,7 +97,7 @@ behavior, and review policy are not hardcoded:
 All fields are optional. When the file is absent, the orchestrator infers sensible defaults:
 
 - `defaultBranch`: `"main"`
-- `planRoot`: `"docs"` (plans live at `{planRoot}/02-delivery/<phase>/implementation-plan.md`)
+- `planRoot`: `"docs"` (plans live at `{planRoot}/product/delivery/<phase>/implementation-plan.md`)
 - `runtime`: `"bun"` (`"bun"` uses `Bun.spawnSync`, `"node"` uses `child_process.spawnSync` inside the orchestrator implementation)
 - `packageManager`: inferred from lockfile (`bun.lock` → `"bun"`, `pnpm-lock.yaml` → `"pnpm"`, `yarn.lock` → `"yarn"`, `package-lock.json` → `"npm"`, fallback `"npm"`) for worktree bootstrap behavior
 - `ticketBoundaryMode`: `"cook"`
@@ -120,7 +120,7 @@ Supported `ticketBoundaryMode` values are:
 - `gated`
 - `glide`
 
-The internal convention below `planRoot` is fixed: `{planRoot}/02-delivery/<phase>/implementation-plan.md`. Only the top-level directory name is configurable.
+The internal convention below `planRoot` is fixed: `{planRoot}/product/delivery/<phase>/implementation-plan.md`. Only the top-level directory name is configurable.
 
 The supported operator entrypoint is `bun run deliver --plan ...`. The orchestrator core is intentionally generic but does not attempt to be a fully validated multi-runtime CLI package.
 
@@ -291,7 +291,7 @@ That inference is intentionally conservative. It reconstructs enough state to re
 
 ## Post-verify (ticket stacks)
 
-After **build mode** (implementation and automated verification), the agent switches to **self-audit mode**: a deliberate pass over the diff and ticket acceptance before publishing the branch for external AI code review. Stay in the same implementation session — this is a mode switch, not a handoff.
+After **build mode** (implementation and automated verification), the agent switches to **post-verify review mode**: a deliberate pass over the diff and ticket acceptance before publishing the branch for external AI code review. Stay in the same implementation session — this is a mode switch, not a handoff.
 
 Use the verification commands with two distinct purposes:
 
@@ -299,7 +299,7 @@ Use the verification commands with two distinct purposes:
 - Use your repo's full CI command as the pre-`open-pr` gate for code tickets (e.g. `bun run ci:quiet`).
 - Keep format and scoped tests in the inner loop as needed.
 
-The `post-verify` command **records** that self-audit mode completed (ticket status, outcome, and timestamp in local delivery state). It does **not** run checks or read the diff; the agent performs verification in build mode and the diff review in self-audit mode, then invokes this command.
+The `post-verify` command **records** that the post-verify review pass completed (ticket status, outcome, and timestamp in local delivery state). It does **not** run checks or read the diff; the agent performs verification in build mode and the diff review in post-verify mode, then invokes this command.
 
 The command accepts an optional outcome argument. When the outcome is `patched`,
 record one or more patch-commit SHAs so the PR body can link the exact
@@ -307,8 +307,8 @@ post-verify follow-up commits:
 
 ```bash
 bun run deliver --plan <plan> post-verify          # defaults to "clean"
-bun run deliver --plan <plan> post-verify clean    # no changes during self-audit
-bun run deliver --plan <plan> post-verify patched <sha...>  # self-audit found and fixed issues
+bun run deliver --plan <plan> post-verify clean    # no changes during post-verify review
+bun run deliver --plan <plan> post-verify patched <sha...>  # post-verify review found and fixed issues
 ```
 
 When omitted, outcome defaults to `clean`. The `status` command renders the outcome alongside the completion timestamp. A recorded post-verify patch commit must use a subject suffix of `[post-verify]`.
@@ -317,7 +317,7 @@ When omitted, outcome defaults to `clean`. The `status` command renders the outc
 
 - The diff matches the ticket and handoff; no unrelated scope crept in.
 - Automated verification for this change is green, with `bun run ci:quiet` completed for code tickets before publishing.
-- Higher-risk areas changed in the diff (data shape, migrations, auth, API contracts) got a second read in self-audit mode.
+- Higher-risk areas changed in the diff (data shape, migrations, auth, API contracts) got a second read in post-verify mode.
 - The delivery ticket doc has an updated **Rationale** when behavior or trade-offs changed (repo policy).
 
 Then run `post-verify`, then (if `subagentReview` is enabled) `subagent-review`, then `open-pr`.
@@ -497,13 +497,13 @@ For standalone PRs, the internal review contract is behavior-first, not state-re
 - implement
 - use `verify:quiet` for the fast inner loop
 - run `ci:quiet` before publication for non-doc code changes so the final local gate matches the pre-push hook
-- self-audit the diff and risky areas
+- run the post-verify diff review and re-check risky areas
 - for non-trivial code changes, run `codex:codex-rescue` informally before `ai-review`
 - run standalone `ai-review` as the orchestrator-visible external review gate
 
 In standalone mode, `post-verify` and `subagent-review` are expected preflight discipline, not orchestrator gates. The orchestrator can tell the agent to do them, but without standalone state it cannot verify, audit, or block on them. Only standalone `ai-review` is an orchestrator-visible gate today.
 
-The ticket-only commands `post-verify`, `subagent-review`, `open-pr`, `poll-review`, `record-review`, and `advance` do not apply to standalone PRs because there is no ticket state to update. That architectural constraint does not remove the underlying review discipline; it does mean the self-audit and optional subagent pass remain guided discretion in standalone mode rather than durable workflow state.
+The ticket-only commands `post-verify`, `subagent-review`, `open-pr`, `poll-review`, `record-review`, and `advance` do not apply to standalone PRs because there is no ticket state to update. That architectural constraint does not remove the underlying review discipline; it does mean the post-verify review pass and optional subagent pass remain guided discretion in standalone mode rather than durable workflow state.
 
 If standalone delivery ever needs true post-verify or subagent-review gate semantics, add a lightweight standalone state artifact first. Do not present soft preflight discipline as a hard gate without durable evidence.
 

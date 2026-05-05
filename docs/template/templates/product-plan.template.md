@@ -1,6 +1,6 @@
 # Phase N: [Phase Title]
 
-**Delivery status:** Not started — product definition only; no `docs/product/delivery/phase-N/` implementation plan until tickets are approved.
+**Delivery status:** Product plan approved state goes here. Update this line when decomposition starts or completes so it matches repo reality.
 
 ## TL;DR
 

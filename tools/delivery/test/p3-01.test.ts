@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
 import { assertWorktreeGuard } from '../cli-runner';
-import { recordPostVerifySelfAudit } from '../cli-runner';
+import { recordPostVerify } from '../cli-runner';
 import { advanceToNextTicket, openPullRequest } from '../ticket-flow';
 import type { ResolvedOrchestratorConfig } from '../runtime-config';
 import type { DeliveryState, TicketState } from '../types';
@@ -214,7 +214,7 @@ describe('wrong-state error messages (P3.01)', () => {
 describe('doc-only early failure (P3.01)', () => {
   it('post-verify on doc-only ticket with no branch commits throws immediately', async () => {
     await expect(
-      recordPostVerifySelfAudit(baseState, undefined, 'clean', baseConfig, {
+      recordPostVerify(baseState, undefined, 'clean', baseConfig, {
         isLocalBranchDocOnly: () => true,
         hasLocalBranchCommits: () => false,
       }),
@@ -222,7 +222,7 @@ describe('doc-only early failure (P3.01)', () => {
   });
 
   it('post-verify on doc-only ticket with branch commits proceeds normally', async () => {
-    const nextState = await recordPostVerifySelfAudit(
+    const nextState = await recordPostVerify(
       baseState,
       undefined,
       undefined,

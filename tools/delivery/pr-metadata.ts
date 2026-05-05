@@ -980,7 +980,7 @@ export function buildPullRequestBody(
   assertPatchedStageHasCommitEvidence({
     outcome: ticket.verifyOutcome,
     patchCommits: ticket.verifyPatchCommits,
-    stageLabel: 'Self-audit',
+    stageLabel: 'Post-verify',
   });
   assertPatchedStageHasCommitEvidence({
     outcome: ticket.subagentReviewOutcome,
@@ -1005,13 +1005,13 @@ export function buildPullRequestBody(
 
   lines.push(`- stacked base branch: \`${ticket.baseBranch}\``);
 
-  const selfAuditLine = buildInternalReviewStageLine({
+  const postVerifyLine = buildInternalReviewStageLine({
     completedAt: ticket.verifiedAt,
     outcome: ticket.verifyOutcome,
-    stageLabel: 'self-audit',
+    stageLabel: 'post-verify',
   });
-  if (selfAuditLine) {
-    lines.push(selfAuditLine);
+  if (postVerifyLine) {
+    lines.push(postVerifyLine);
   }
 
   const subagentReviewLine = buildInternalReviewStageLine({
@@ -1023,16 +1023,16 @@ export function buildPullRequestBody(
     lines.push(subagentReviewLine);
   }
 
-  const selfAuditPatchCommitBullets = buildRecordedPatchCommitBullets(
+  const postVerifyPatchCommitBullets = buildRecordedPatchCommitBullets(
     ticket.verifyPatchCommits,
     options.githubRepo,
   );
-  if (selfAuditPatchCommitBullets.length > 0) {
+  if (postVerifyPatchCommitBullets.length > 0) {
     lines.push(
       '',
-      '### Self-Audit Patch Commits',
+      '### Post-Verify Patch Commits',
       '',
-      ...selfAuditPatchCommitBullets,
+      ...postVerifyPatchCommitBullets,
     );
   }
 
