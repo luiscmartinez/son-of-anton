@@ -6,7 +6,7 @@
   "ticketBoundaryMode": "cook",
   "reviewPolicy": {
     "subagentReview": "skip_doc_only",
-    "prReview": "enabled"
+    "prReview": "skip_doc_only"
   },
   "reviewSubagentOverride": "codex:codex-rescue",
   "prReviewAgents": [{ "login": "coderabbitai", "name": "coderabbit" }]
