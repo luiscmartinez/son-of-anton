@@ -1,5 +1,5 @@
 ---
-name: son-of-anton-ethos
+name: soa-son-of-anton-ethos
 description: Execute approved multi-ticket phase/epic work or standalone (non-ticketed) PR delivery through the repo orchestrator with strong continuation bias. Use automatically when a user asks to execute, begin, start, deliver, implement, continue, resume, run, drive, carry, or work on a phase, epic, or standalone PR, or explicitly mentions son of anton or son-of-anton ethos.
 ---
 

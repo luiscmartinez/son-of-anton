@@ -30,9 +30,13 @@ fi
 
 mkdir -p "$SKILLS_DEST"
 
-# Remove stale soa-* symlinks and the bare "soa" symlink before relinking.
+# Remove stale soa-* symlinks/directories and the bare "soa" entry before relinking.
 for stale in "$SKILLS_DEST"/soa-* "$SKILLS_DEST/soa"; do
-  [ -L "$stale" ] && rm "$stale"
+  if [ -L "$stale" ]; then
+    rm "$stale"
+  elif [ -d "$stale" ]; then
+    rm -rf "$stale"
+  fi
 done
 
 for skill_dir in "$SKILLS_SRC"/*/; do

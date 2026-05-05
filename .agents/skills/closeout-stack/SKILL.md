@@ -1,5 +1,5 @@
 ---
-name: closeout-stack
+name: soa-closeout-stack
 description: Merge a completed stacked PR phase onto main. Use when the developer approves closeout after a multi-ticket delivery is fully reviewed.
 ---
 

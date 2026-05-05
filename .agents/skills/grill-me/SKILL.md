@@ -1,5 +1,5 @@
 ---
-name: grill-me
+name: soa-grill-me
 description: Stress-test a plan or design by questioning every key assumption until the decision tree is resolved.
 ---
 

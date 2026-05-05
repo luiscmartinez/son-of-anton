@@ -1,5 +1,5 @@
 ---
-name: enter-worktree
+name: soa-enter-worktree
 description: Bootstrap a fresh worktree before starting work. Trigger when node_modules may be missing or a newly created worktree needs setup.
 ---
 

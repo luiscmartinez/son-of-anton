@@ -1,5 +1,5 @@
 ---
-name: pr-review
+name: soa-pr-review
 description: Detect and triage AI-generated pull request review comments for the delivery orchestrator flow. Use when poll-review finds AI review feedback or when you need to inspect recent AI review comments on the current PR.
 ---
 

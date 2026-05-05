@@ -1,3 +1,8 @@
+---
+name: soa
+description: Son-of-Anton canonical entrypoint. Use for /soa plan, /soa decompose, /soa execute, /soa resume, /soa install, /soa update, /soa closeout, and /soa ideate. Manages installation, updates, and the full delivery lifecycle.
+---
+
 # Son-of-Anton Skill
 
 Manages son-of-anton installation, updates, and the full delivery lifecycle.
