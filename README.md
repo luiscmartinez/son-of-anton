@@ -44,11 +44,13 @@ That's it. Son-of-anton is now embedded as a git subtree at `.son-of-anton/`.
 ### 3. Finish setup
 
 ```bash
-ln -s .son-of-anton/.agents .agents
 cp .son-of-anton/orchestrator.config.json .
 cp -r .son-of-anton/scripts ./scripts
 cp .son-of-anton/AGENTS.md .
+bash .son-of-anton/scripts/sync-skills.sh
 ```
+
+`sync-skills.sh` creates the `.agents` and `tools` symlinks at the repo root and wires Claude Code skill adapters under `.claude/skills/`.
 
 Add to `package.json`:
 
@@ -84,11 +86,11 @@ Then complete step 3 above manually.
 
 ## Ticket boundary modes
 
-| Mode | Behavior |
-|---|---|
-| `cook` | Orchestrator advances immediately to the next ticket after each merge |
+| Mode    | Behavior                                                                   |
+| ------- | -------------------------------------------------------------------------- |
+| `cook`  | Orchestrator advances immediately to the next ticket after each merge      |
 | `gated` | Orchestrator stops after each advance and prints a canonical resume prompt |
-| `glide` | Falls back to `gated` |
+| `glide` | Falls back to `gated`                                                      |
 
 Start with `gated` on a new project until you trust the agent's output.
 
@@ -113,14 +115,14 @@ bash .son-of-anton/scripts/sync-skills.sh
 
 ## Skills reference
 
-| Skill | Trigger |
-|---|---|
-| `son-of-anton-ethos` | "execute / implement / start / continue / deliver / resume" — drives the per-ticket loop |
-| `grill-me` | Plan pressure-testing before any implementation |
-| `ai-code-review` | Triage CodeRabbit, Qodo, Greptile, SonarQube review comments |
-| `enter-worktree` | Bootstrap a fresh git worktree with deps and `.env`; runtime-agnostic, not Bun-only |
-| `closeout-stack` | Squash-merge completed stacked PRs onto main |
-| `write-retrospective` | Write phase/epic retrospective to `notes/public/` |
+| Skill                 | Trigger                                                                                  |
+| --------------------- | ---------------------------------------------------------------------------------------- |
+| `son-of-anton-ethos`  | "execute / implement / start / continue / deliver / resume" — drives the per-ticket loop |
+| `grill-me`            | Plan pressure-testing before any implementation                                          |
+| `pr-review`           | Triage CodeRabbit, Qodo, Greptile, SonarQube review comments                             |
+| `enter-worktree`      | Bootstrap a fresh git worktree with deps and `.env`; runtime-agnostic, not Bun-only      |
+| `closeout-stack`      | Squash-merge completed stacked PRs onto main                                             |
+| `write-retrospective` | Write phase/epic retrospective to `notes/public/`                                        |
 
 ## Requirements
 
