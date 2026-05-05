@@ -6,4 +6,4 @@ node_modules/
 !.env.example
 notes/private
 .vscode/settings.json
-.env
+.claude/
