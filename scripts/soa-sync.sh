@@ -204,6 +204,14 @@ if [ "$IS_SOURCE_REPO" = false ]; then
   inject_soa_block ".son-of-anton/AGENTS.soa.md" "AGENTS.md"
   inject_soa_block ".son-of-anton/CLAUDE.soa.md" "CLAUDE.md"
 
+  # Refresh the global Claude Code entrypoint skill if previously installed.
+  # The global skill is a manual one-time install that otherwise drifts silently.
+  GLOBAL_SOA_SKILL="$HOME/.claude/skills/soa/SKILL.md"
+  if [ -f "$GLOBAL_SOA_SKILL" ]; then
+    cp "$REPO_ROOT/.son-of-anton/.agents/skills/soa/SKILL.md" "$GLOBAL_SOA_SKILL"
+    echo "  refreshed: ~/.claude/skills/soa/SKILL.md"
+  fi
+
   echo "soa-sync: add .son-of-anton/ to your lint/format ignore configuration (e.g. .prettierignore, .eslintignore)"
 fi
 
