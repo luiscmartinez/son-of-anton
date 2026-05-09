@@ -7,6 +7,7 @@
 **Goal:** Make `soa update` a complete upgrade — consuming repos get current skills, current structural layout, and current agent guidance injected automatically, without manual follow-up steps.
 
 **Ships:**
+
 - `scripts/soa-sync.sh` (renamed from `sync-skills.sh`) with migration runner and version marker
 - `AGENTS.soa.md` and `CLAUDE.soa.md` — consumer-facing tooling rule templates (skill triggers, subagent review rules, pre-commit discipline; consumer-path-correct)
 - Idempotent injection of `AGENTS.soa.md` → consumer `AGENTS.md` and `CLAUDE.soa.md` → consumer `CLAUDE.md` via `<!-- soa:start -->` / `<!-- soa:end -->` markers
@@ -16,6 +17,7 @@
 - README and start-here updated with subtree-vs-submodule explanation, injection behavior, migration runner contract, and manual lint-ignore steps
 
 **Defers:**
+
 - Auto-patching config-based linters (`biome.json`, `eslint.config.*`, etc.) — too varied; manual step documented in README is the gate
 - Consumer-side reviews migration — consumers have no reviews to migrate; migration runner is a no-op for them at `SOA_TARGET_VERSION=1`
 - Multi-consumer testing — only one consumer exists today; end-to-end upgrade verification is manual

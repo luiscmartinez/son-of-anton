@@ -39,6 +39,11 @@
     "toplevel",
     "unstarted",
     "worktree",
-    "worktrees"
+    "worktrees",
+    "gitignoring",
+    "mktemp",
+    "mtimes",
+    "pasteable",
+    "relitigated"
   ]
 }
