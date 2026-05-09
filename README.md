@@ -6,10 +6,14 @@ The current default for AI-assisted development is one of two failure modes:
 you're either babysitting the agent line by line, or you've handed it the
 wheel and are hoping for the best. Son of Anton is neither.
 
-Son of Anton is a delivery orchestrator for solo developers and small teams
-using Claude Code. It enforces a simple discipline: there are exactly three
-moments where a developer's judgment is irreplaceable, and the orchestrator
-owns everything in between.
+Son of Anton is a delivery orchestrator for solo developers and small teams.
+It enforces a simple discipline: there are exactly three moments where a
+developer's judgment is irreplaceable, and the orchestrator owns everything
+in between.
+
+It runs on the agent you already use — Codex, Cursor, Copilot, Claude, or
+anything else that reads `AGENTS.md`. The directory is named `.agents` for
+a reason.
 
 ---
 
@@ -67,9 +71,9 @@ exactly what to type to resume.
 - **Delivery orchestrator** — TypeScript CLI that drives the ticket loop,
   manages worktrees and branches, records review outcomes, and enforces
   stop conditions. Runs via Bun or Node.
-- **Skill layer** — Claude Code slash commands (`/soa plan`, `/soa decompose`,
-  `/soa execute`, `/soa resume`, `/soa closeout`, `/soa update`) that wire
-  the orchestrator to your AI agent.
+- **Skill layer** — behavioral instructions in `.agents/skills/` that any
+  agent can read, plus per-agent adapters for platforms with specific file
+  conventions (see [Agent compatibility](#agent-compatibility) below).
 - **Adversarial subagent review** — after each ticket, a second agent checks
   the implementation assuming the first one cut corners. Findings go to you;
   you decide what to act on.
@@ -78,14 +82,87 @@ exactly what to type to resume.
 - **Migration runner** — when Son of Anton ships structural changes, `bun run sync`
   applies them to your repo automatically. You pull and run; the migration runs itself.
 - **Agent-rule injection** — `bun run sync` injects Son-of-Anton's skill-trigger
-  rules into your `AGENTS.md` and `CLAUDE.md` so the agent knows which skills
-  to invoke automatically. Idempotent: re-running is always safe.
+  rules into `AGENTS.md` so every agent in your repo knows which skills to invoke
+  and when. Idempotent: re-running is always safe.
+
+---
+
+## Agent Compatibility
+
+Son of Anton's core lives in `.agents/skills/` and `AGENTS.md`. Any agent
+that reads those files works without additional configuration.
+
+Some platforms have their own file conventions that sit alongside the
+universal layer:
+
+| Platform            | Convention                        | How SoA handles it                                                       |
+| ------------------- | --------------------------------- | ------------------------------------------------------------------------ |
+| Codex (desktop/CLI) | `AGENTS.md`                       | native — no adapter needed                                               |
+| Cursor              | `.cursor/rules/`                  | point rules at `.agents/skills/`                                         |
+| Copilot             | `.github/copilot-instructions.md` | reference `.agents/skills/` from there                                   |
+| Claude Code         | `CLAUDE.md` + `.claude/skills/`   | `soa-sync.sh` injects `CLAUDE.soa.md` and symlinks `.claude/skills/soa*` |
+| OpenCode            | `AGENTS.md`                       | native — no adapter needed                                               |
+
+Claude Code is the only platform that needs an explicit adapter because its
+skill discovery and instruction-file preferences are baked into the platform
+itself. `soa-sync.sh` handles this automatically — it creates the `.claude/skills/`
+symlinks and writes the `CLAUDE.md` injection block alongside the universal
+`AGENTS.md` block. Every other agent reads `AGENTS.md` directly.
 
 ---
 
 ## Install
 
-### Step 1 — Global skill (one time, any machine)
+### Step 1 — Embed the subtree
+
+```bash
+git subtree add --prefix .son-of-anton https://github.com/cesarnml/son-of-anton.git main --squash
+```
+
+Son of Anton embeds at `.son-of-anton/`. No submodules, no external service,
+no npm package — the files are real tracked files in your repo history.
+
+### Step 2 — Sync
+
+```bash
+bash .son-of-anton/scripts/soa-sync.sh
+```
+
+This wires the skill layer for your agents, injects agent rules into `AGENTS.md`
+(and `CLAUDE.md` if you use Claude Code), creates the `.agents` and `tools`
+symlinks for the orchestrator, and runs any pending structural migrations.
+
+Add to `package.json` for convenience:
+
+```json
+{
+  "scripts": {
+    "sync": "bash .son-of-anton/scripts/soa-sync.sh",
+    "deliver": "bun run ./scripts/deliver.ts",
+    "closeout-stack": "bun run ./scripts/closeout-stack.ts"
+  }
+}
+```
+
+Add `.son-of-anton/` to `.prettierignore`, `.eslintignore`, or your linter's
+equivalent. The subtree must stay tracked and unignored by git, but your
+formatter should not touch it.
+
+Copy `orchestrator.config.json` from `.son-of-anton/` to your repo root and
+edit it to set your plan path, boundary mode, and review policy.
+
+### Step 3 — Start
+
+```bash
+/soa ideate       # with Claude Code
+# or open .agents/skills/soa/SKILL.md and follow the ideate instructions manually
+```
+
+<details>
+<summary>Claude Code: one-time global skill setup</summary>
+
+If you use Claude Code, install the entry-point skill globally so `/soa`
+is available in every repo without re-reading the subtree each time:
 
 ```bash
 mkdir -p ~/.claude/skills/soa
@@ -93,66 +170,8 @@ curl -fsSL https://raw.githubusercontent.com/cesarnml/son-of-anton/main/.agents/
   -o ~/.claude/skills/soa/SKILL.md
 ```
 
-This gives you `/soa install` and `/soa update` as slash commands in every
-repo on your machine. Do this once.
-
-### Step 2 — Add to a repo
-
-Open Claude Code in the target repo and run:
-
-```
-/soa install
-```
-
-Son of Anton embeds as a git subtree at `.son-of-anton/`. No submodules,
-no external service, no npm package — the files are real tracked files in
-your repo history.
-
-### Step 3 — Sync and configure
-
-```bash
-bun run sync
-```
-
-This runs `scripts/soa-sync.sh`, which:
-
-- symlinks skills into `.claude/skills/` so Claude Code discovers them
-- injects agent rules into `AGENTS.md` and `CLAUDE.md`
-- creates `.agents` and `tools` symlinks for the orchestrator
-- runs any pending structural migrations
-
-Add to `package.json`:
-
-```json
-{
-  "scripts": {
-    "deliver": "bun run ./scripts/deliver.ts",
-    "closeout-stack": "bun run ./scripts/closeout-stack.ts",
-    "sync": "bash .son-of-anton/scripts/soa-sync.sh"
-  }
-}
-```
-
-Add `.son-of-anton/` to `.prettierignore`, `.eslintignore`, or your linter's
-equivalent. The subtree is tracked by git and must not be gitignored, but
-your formatter should not touch it.
-
-Copy `orchestrator.config.json` from `.son-of-anton/` to your repo root and
-edit it to set your plan path, boundary mode, and review policy.
-
-### Step 4 — Start
-
-```
-/soa ideate
-```
-
-<details>
-<summary>Manual install (without Claude Code)</summary>
-
-```bash
-git subtree add --prefix .son-of-anton https://github.com/cesarnml/son-of-anton.git main --squash
-bash .son-of-anton/scripts/soa-sync.sh
-```
+After this, `bun run sync` in any repo wires the rest of the Claude Code
+adapter automatically.
 
 </details>
 
@@ -160,19 +179,18 @@ bash .son-of-anton/scripts/soa-sync.sh
 
 ## Updating
 
-```
-/soa update
-```
-
-Pulls the latest Son of Anton onto the subtree branch and runs `bun run sync`.
-Migrations apply automatically.
-
-<details>
-<summary>Manual</summary>
-
 ```bash
 git subtree pull --prefix .son-of-anton https://github.com/cesarnml/son-of-anton.git main --squash
-bash .son-of-anton/scripts/soa-sync.sh
+bun run sync
+```
+
+Migrations apply automatically on `bun run sync`.
+
+<details>
+<summary>Claude Code shortcut</summary>
+
+```
+/soa update
 ```
 
 </details>
@@ -181,12 +199,9 @@ bash .son-of-anton/scripts/soa-sync.sh
 
 ## Requirements
 
-- Claude Code with skills support
 - GitHub repo (`gh` CLI used for PR operations)
-- Bun or Node (TypeScript runtime for the orchestrator)
-
-The skill layer is agent-agnostic. The orchestrator CLI uses `gh` and `git`
-directly, so any Claude Code–compatible agent can drive it.
+- Bun or Node (TypeScript runtime for the orchestrator CLI)
+- Any AI agent that reads `AGENTS.md` or `.agents/skills/`
 
 ---
 
@@ -202,6 +217,11 @@ Start with `gated` until you trust the agent's output on your codebase.
 ---
 
 ## Skills Reference
+
+Skills live in `.agents/skills/`. Each is a markdown file your agent reads
+as instructions. `bun run sync` creates platform-specific adapters (e.g.,
+`.claude/skills/soa-*` symlinks for Claude Code) pointing back to the
+canonical location.
 
 | Skill                     | Trigger                                                                                                                                      |
 | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -232,9 +252,9 @@ ignore file instead of `.gitignore`.
 ## Injection and Migration
 
 **Injection.** `bun run sync` writes a `<!-- soa:start --> ... <!-- soa:end -->`
-block into `AGENTS.md` and `CLAUDE.md`. Content outside the markers is never
-touched. The block is replaced on every sync so your agent rules stay current
-with the Son of Anton version you are running.
+block into `AGENTS.md` (and `CLAUDE.md` when Claude Code is in use). Content
+outside the markers is never touched. The block is replaced on every sync so
+your agent rules stay current with the Son of Anton version you are running.
 
 **Migration runner.** `.soa-sync-version` tracks which structural migrations
 have run. When Son of Anton ships a migration (e.g., a directory rename), `bun run sync`
@@ -251,3 +271,5 @@ detects the version gap and applies it automatically. You never manually move fi
   machine except where it already does (GitHub PRs, your AI provider).
 - **Not opinionated about your stack.** TypeScript is the orchestrator's runtime;
   your application can be anything.
+- **Not tied to one agent.** The workflow runs on Codex, Cursor, Copilot, Claude,
+  OpenCode, or any agent that reads `AGENTS.md`. Swap agents mid-project if you want.
