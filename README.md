@@ -200,6 +200,7 @@ Migrations apply automatically on `bun run sync`.
 - GitHub repo (`gh` CLI used for PR operations)
 - Bun or Node (TypeScript runtime for the orchestrator CLI)
 - Any AI agent that reads `AGENTS.md` or `.agents/skills/`
+- Working lint, format, and test commands — SoA does not dictate which tools or how strict, but they must exist and do real work; without them the verify gate passes trivially and the ticket cycle is theater
 
 ---
 
