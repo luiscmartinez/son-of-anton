@@ -51,20 +51,21 @@ orchestrator.
 
 ```bash
 # When you have a concrete idea
-/soa plan           # grill-me session → approved product plan written to docs/
-/soa decompose      # ticket decomposition → you approve the list
-/soa execute        # orchestrator delivers ticket by ticket, stops for your review
-/soa closeout       # you approve; stacked PRs squash-merge to main
+/soa plan                                    # grill-me → approved plan → docs/product/plans/
+/soa decompose docs/product/plans/phase-N.md # ticket stack → you approve the list
+/soa execute phase-N                         # orchestrator delivers ticket by ticket
+/soa closeout phase-N                        # you approve; stacked PRs squash-merge to main
 
 # When the idea needs shaping first (optional)
-/soa ideate         # brainstorm with the AI → draft plan artifact
-/soa plan <draft>   # grill the draft → approved product plan
+/soa ideate                                  # brainstorm → docs/product/drafts/<slug>.md
+/soa plan docs/product/drafts/<slug>.md      # grill the draft → approved plan
+# then decompose → execute → closeout as above
 ```
 
-`/soa ideate` is optional scaffolding for when developer intention is too
-half-formed to yield a concrete plan directly. It produces a draft artifact
-that feeds into `/soa plan`. If you already know what you want to build — or
-you are working from a retrospective follow-up — skip it and go straight to
+`/soa ideate` is optional. Use it when intention is too half-formed to yield
+a concrete plan directly — it lands a draft at `docs/product/drafts/` that
+feeds straight into `/soa plan <path>`. If the idea is already clear, or you
+are working from a retrospective follow-up, skip ideate and go straight to
 `/soa plan`.
 
 Between `execute` and `closeout` you are not needed. The orchestrator
