@@ -59,6 +59,11 @@ write_soa_version() {
 # ---------------------------------------------------------------------------
 
 run_migration_1() {
+  # When .agents is a symlink, review files are never git-tracked — nothing to move.
+  if [ -L "$REPO_ROOT/.agents" ]; then
+    return
+  fi
+
   local old_base="$REPO_ROOT/.agents/delivery"
   local new_base="$REPO_ROOT/docs/product/delivery"
 
