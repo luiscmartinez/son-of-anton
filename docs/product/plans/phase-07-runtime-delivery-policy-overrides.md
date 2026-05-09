@@ -1,6 +1,6 @@
 # Phase 7: Runtime Delivery Policy Overrides for Execute/Resume
 
-**Delivery status:** Product plan draft. Pending developer approval.
+**Delivery status:** Approved product plan. Committed to `main`.
 
 ## TL;DR
 
