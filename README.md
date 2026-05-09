@@ -99,25 +99,15 @@ exactly what to type to resume.
 
 ## Agent Compatibility
 
-Son of Anton's core lives in `.agents/skills/` and `AGENTS.md`. Any agent
-that reads those files works without additional configuration.
+Son of Anton's core lives in `.agents/skills/` and `AGENTS.md`. Every major
+agent platform treats these as first-class — Codex, Cursor, Copilot, OpenCode,
+and others read them natively with no additional configuration.
 
-Some platforms have their own file conventions that sit alongside the
-universal layer:
-
-| Platform            | Convention                        | How SoA handles it                                                       |
-| ------------------- | --------------------------------- | ------------------------------------------------------------------------ |
-| Codex (desktop/CLI) | `AGENTS.md`                       | native — no adapter needed                                               |
-| Cursor              | `.cursor/rules/`                  | point rules at `.agents/skills/`                                         |
-| Copilot             | `.github/copilot-instructions.md` | reference `.agents/skills/` from there                                   |
-| Claude Code         | `CLAUDE.md` + `.claude/skills/`   | `soa-sync.sh` injects `CLAUDE.soa.md` and symlinks `.claude/skills/soa*` |
-| OpenCode            | `AGENTS.md`                       | native — no adapter needed                                               |
-
-Claude Code is the only platform that needs an explicit adapter because its
-skill discovery and instruction-file preferences are baked into the platform
-itself. `soa-sync.sh` handles this automatically — it creates the `.claude/skills/`
-symlinks and writes the `CLAUDE.md` injection block alongside the universal
-`AGENTS.md` block. Every other agent reads `AGENTS.md` directly.
+Claude Code is the exception. It has its own file preferences (`CLAUDE.md`,
+`.claude/skills/`) baked deep into the platform. `soa-sync.sh` handles this
+automatically — it injects a `<!-- soa:start -->` block into `CLAUDE.md` and
+symlinks `.claude/skills/soa*` alongside the universal `AGENTS.md` block.
+Every other agent reads `AGENTS.md` directly.
 
 ---
 
