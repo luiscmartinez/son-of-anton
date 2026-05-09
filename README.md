@@ -99,15 +99,13 @@ exactly what to type to resume.
 
 ## Agent Compatibility
 
-Son of Anton's core lives in `.agents/skills/` and `AGENTS.md`. Every major
-agent platform treats these as first-class — Codex, Cursor, Copilot, OpenCode,
-and others read them natively with no additional configuration.
+Son of Anton's core lives in `.agents/skills/` and `AGENTS.md`. Any agent
+that reads those conventions works without additional configuration.
 
-Claude Code is the exception. It has its own file preferences (`CLAUDE.md`,
-`.claude/skills/`) baked deep into the platform. `soa-sync.sh` handles this
-automatically — it injects a `<!-- soa:start -->` block into `CLAUDE.md` and
+Claude Code is the exception — it has its own file preferences (`CLAUDE.md`,
+`.claude/skills/`) baked into the platform. `soa-sync.sh` handles this
+automatically: it injects a `<!-- soa:start -->` block into `CLAUDE.md` and
 symlinks `.claude/skills/soa*` alongside the universal `AGENTS.md` block.
-Every other agent reads `AGENTS.md` directly.
 
 ---
 
