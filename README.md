@@ -1,6 +1,8 @@
 # Son of Anton
+<div>
+  <img width="800" height="800" alt="ChatGPT Image May 11, 2026, 05_00_57 AM" src="https://github.com/user-attachments/assets/32e41858-e596-4d1b-ae48-404cc3608dd4" />
+</div>
 
-**AI should do the implementation. You should own the decisions.**
 
 The current default for AI-assisted development is one of two failure modes:
 you're either babysitting the agent line by line, or you've handed it the
