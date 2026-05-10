@@ -60,6 +60,13 @@ orchestrator.
 /soa ideate                                  # brainstorm → docs/product/drafts/<slug>.md
 /soa plan docs/product/drafts/<slug>.md      # grill the draft → approved plan
 # then decompose → execute → closeout as above
+
+# Runtime policy overrides — no config file edits required
+/soa execute phase-N --boundary-mode gated   # override boundary mode for this run
+/soa execute phase-N --subagent-review-policy disabled --pr-review-policy skip_doc_only
+/soa resume phase-N --boundary-mode cook     # change policy mid-run on resume
+/soa resume phase-N --baseline orchestrator  # adopt current repo defaults when policy diverged
+/soa resume phase-N --baseline run-policy    # keep persisted run policy when repo config changed
 ```
 
 `/soa ideate` is optional. Use it when intention is too half-formed to yield
@@ -212,6 +219,45 @@ Migrations apply automatically on `bun run sync`.
 | `gated` | Orchestrator stops after each advance and prints a resume prompt |
 
 Start with `gated` until you trust the agent's output on your codebase.
+
+---
+
+## Runtime Policy Overrides
+
+`orchestrator.config.json` is the durable repo default. For one-off operational
+choices — changing boundary mode, disabling review stages for a single run —
+you can pass explicit flags to `/soa execute` or `/soa resume` without editing
+or committing config changes.
+
+### Supported flags
+
+| Flag                        | Values                                  | What it overrides                                       |
+| --------------------------- | --------------------------------------- | ------------------------------------------------------- |
+| `--boundary-mode`           | `cook`, `gated`, `glide`                | `ticketBoundaryMode`                                    |
+| `--subagent-review-policy`  | `required`, `skip_doc_only`, `disabled` | `reviewPolicy.subagentReview`                           |
+| `--pr-review-policy`        | `required`, `skip_doc_only`, `disabled` | `reviewPolicy.prReview`                                 |
+| `--review-subagent <agent>` | agent name string                       | review subagent selection                               |
+| `--same-review-subagent`    | _(flag)_                                | force same-type review subagent (ignores repo override) |
+
+The resolved policy is written to `state.json` at the start of every run.
+`orchestrator.config.json` is never modified.
+
+### Resume divergence
+
+If you edit `orchestrator.config.json` between tickets and the persisted run
+policy no longer matches, `/soa resume` refuses to continue silently and
+prints both policies with the exact recovery commands to use:
+
+```bash
+# adopt current repo defaults going forward
+/soa resume phase-N --baseline orchestrator
+
+# keep the policy the run started with
+/soa resume phase-N --baseline run-policy
+```
+
+Either baseline can be combined with explicit override flags to further patch
+the resolved policy for the remainder of the run.
 
 ---
 
