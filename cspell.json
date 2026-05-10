@@ -44,6 +44,7 @@
     "toplevel",
     "unstarted",
     "worktree",
+    "workpad",
     "worktrees",
     "gitignoring",
     "mktemp",
