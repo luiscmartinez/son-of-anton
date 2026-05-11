@@ -1,6 +1,6 @@
 # Son of Anton
 <div>
-  <img width="720" height="720" alt="son-of-anton workflow" src="https://github.com/user-attachments/assets/13e36b95-9a05-4f4f-9cda-d207d5fa95b8" />
+  <img width="800" height="800" alt="son-of-anton workflow" src="https://github.com/user-attachments/assets/13e36b95-9a05-4f4f-9cda-d207d5fa95b8" />
 </div>
 
 
