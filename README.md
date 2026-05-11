@@ -1,7 +1,7 @@
 # Son of Anton
-<div>
-  <img width="800" height="800" alt="son-of-anton workflow" src="https://github.com/user-attachments/assets/13e36b95-9a05-4f4f-9cda-d207d5fa95b8" />
-</div>
+<p align="center">
+  <img src="./media/son-of-anton-workflow.gif" alt="Animated Son of Anton workflow hero" width="720">
+</p>
 
 
 The current default for AI-assisted development is one of two failure modes:
