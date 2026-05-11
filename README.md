@@ -24,7 +24,7 @@ a reason.
 ```
 /soa plan       → you approve the WHAT
 /soa decompose  → you approve the HOW
-/soa closeout   → you approve the STACK
+/soa closeout   → you approve DONE
 ```
 
 **Gate 1 — Plan the WHAT.**
@@ -37,11 +37,11 @@ You say yes or refine. The AI does not proceed until you have.
 dependency-aware, sized for review. You look at the ticket list and approve it.
 Architectural judgment belongs to you. Ticket authorship belongs to the agent.
 
-**Gate 3 — Review the STACK.**
+**Gate 3 — Approve DONE.**
 After each ticket ships, an adversarial subagent reviews the implementation
-before the PR is opened. When the full phase is done, you review the stacked
-PRs and run `/soa closeout`. That squash-merges the stack onto main.
-Nothing merges without you.
+before the PR is opened. When the full phase is done, you decide whether the
+work is complete enough to accept and run `/soa closeout`. That squash-merges
+the stack onto main. Nothing merges without you.
 
 Everything between the gates — implementation, test scaffolding, worktree
 management, PR creation, CI polling, review triage — is owned by the
