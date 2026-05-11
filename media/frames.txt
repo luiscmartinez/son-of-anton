@@ -1,0 +1,17 @@
+file 'hero-frame-01.png'
+duration 0.5
+file 'hero-frame-02.png'
+duration 0.5
+file 'hero-frame-03.png'
+duration 0.45
+file 'hero-frame-04.png'
+duration 0.45
+file 'hero-frame-05.png'
+duration 0.45
+file 'hero-frame-06.png'
+duration 0.7
+file 'hero-frame-07.png'
+duration 0.8
+file 'hero-frame-08.png'
+duration 1.15
+file 'hero-frame-08.png'
