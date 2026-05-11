@@ -1,6 +1,8 @@
 # Son of Anton
+<div>
+  <img width="800" height="800" alt="ChatGPT Image May 11, 2026, 05_00_57 AM" src="https://github.com/user-attachments/assets/32e41858-e596-4d1b-ae48-404cc3608dd4" />
+</div>
 
-**AI should do the implementation. You should own the decisions.**
 
 <p align="center">
   <img src="./media/son-of-anton-workflow.gif" alt="Animated Son of Anton workflow hero" width="720">
