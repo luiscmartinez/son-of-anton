@@ -1,8 +1,8 @@
 # Son of Anton
+
 <p align="center">
   <img src="./media/son-of-anton-workflow.gif" alt="Animated Son of Anton workflow hero" width="720">
 </p>
-
 
 The current default for AI-assisted development is one of two failure modes:
 you're either babysitting the agent line by line, or you've handed it the

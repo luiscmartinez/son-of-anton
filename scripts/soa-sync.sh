@@ -206,9 +206,10 @@ if [ "$IS_SOURCE_REPO" = false ]; then
 
   # Refresh the global Claude Code entrypoint skill if previously installed.
   # The global skill is a manual one-time install that otherwise drifts silently.
+  SOURCE_SOA_SKILL="$REPO_ROOT/.son-of-anton/.agents/skills/soa/SKILL.md"
   GLOBAL_SOA_SKILL="$HOME/.claude/skills/soa/SKILL.md"
-  if [ -f "$GLOBAL_SOA_SKILL" ]; then
-    cp "$REPO_ROOT/.son-of-anton/.agents/skills/soa/SKILL.md" "$GLOBAL_SOA_SKILL"
+  if [ -f "$SOURCE_SOA_SKILL" ] && [ -f "$GLOBAL_SOA_SKILL" ]; then
+    cp "$SOURCE_SOA_SKILL" "$GLOBAL_SOA_SKILL"
     echo "  refreshed: ~/.claude/skills/soa/SKILL.md"
   fi
 
