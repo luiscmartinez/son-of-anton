@@ -7,6 +7,7 @@
 **Goal:** Make Phase 07's runtime policy overrides actually govern execution — not just persist and display correctly.
 
 **Ships:**
+
 - Post-hoc bounded merge of persisted `runPolicy` values onto `context.config` after state loads, before the CLI dispatch switch — fixing all six broken call sites simultaneously.
 - `LoadStateResult` named type exported from `state.ts`, replacing the inline return type of `loadState`.
 - Regression test: `--baseline run-policy` resume passes runPolicy values (not file config values) to `startTicket`.
@@ -41,14 +42,14 @@ No other config fields are touched. The merge only applies when `hadPersistedRun
 
 The six call sites that are currently broken by the absent merge:
 
-| Call site | Fields consumed |
-|---|---|
-| `post-verify` case | `reviewPolicy.subagentReview` (via `context.config` passed to `recordPostVerify`) |
-| `subagent-review` case | `reviewPolicy.subagentReview`, `reviewSubagentOverride` |
-| `poll-review` case | `reviewPolicy.prReview` |
-| `startTicket` | `reviewPolicy.subagentReview`, `ticketBoundaryMode` |
-| `openPullRequest` | `reviewPolicy.subagentReview` |
-| `applyAdvanceBoundaryMode` | `ticketBoundaryMode` |
+| Call site                  | Fields consumed                                                                   |
+| -------------------------- | --------------------------------------------------------------------------------- |
+| `post-verify` case         | `reviewPolicy.subagentReview` (via `context.config` passed to `recordPostVerify`) |
+| `subagent-review` case     | `reviewPolicy.subagentReview`, `reviewSubagentOverride`                           |
+| `poll-review` case         | `reviewPolicy.prReview`                                                           |
+| `startTicket`              | `reviewPolicy.subagentReview`, `ticketBoundaryMode`                               |
+| `openPullRequest`          | `reviewPolicy.subagentReview`                                                     |
+| `applyAdvanceBoundaryMode` | `ticketBoundaryMode`                                                              |
 
 ### `LoadStateResult` named type
 
