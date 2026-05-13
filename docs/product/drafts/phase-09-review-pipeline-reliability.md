@@ -27,6 +27,7 @@ One fix is a script change in `triage_pr_review.sh`. One is a small code change 
 **Fix:** In the AI review triager (`soa-pr-review` skill, `triage_pr_review.sh`), add a pre-filter step that classifies known vendor billing/account-limit/service-status comment patterns as non-actionable noise before they reach the findings stage. A comment that matches the billing-noise pattern should be recorded as `vendor_status` and never contribute to `needs_patch` escalation.
 
 Known patterns to target initially:
+
 - "You've reached your monthly free-tier limit" (Qodo)
 - "Free usage limit" / "usage limit" (CodeRabbit free tier)
 - Any comment from a known reviewer bot login that contains no code-block citations and mentions account, limit, tier, subscription, or upgrade
@@ -37,7 +38,7 @@ This is a heuristic — it will not catch every case — but it eliminates the p
 
 **Recurrence:** P03 (and any fresh consumer repo that hasn't installed `soa-pr-review` skill scripts).
 
-**What happens:** When `prReview` policy is `required` or `skip_doc_only`, the orchestrator calls `.son-of-anton/.agents/skills/pr-review/scripts/fetch_pr_review_comments.sh` during `poll-review`. If the script is absent (the symlink target doesn't exist), the process fails with a cryptic `ENOENT`. This happens *after* the PR is already open and the review window has started. The operator learns about the configuration problem at the worst possible moment.
+**What happens:** When `prReview` policy is `required` or `skip_doc_only`, the orchestrator calls `.son-of-anton/.agents/skills/pr-review/scripts/fetch_pr_review_comments.sh` during `poll-review`. If the script is absent (the symlink target doesn't exist), the process fails with a cryptic `ENOENT`. This happens _after_ the PR is already open and the review window has started. The operator learns about the configuration problem at the worst possible moment.
 
 **Fix:** In `openPullRequest` in `cli-runner.ts`, add an `existsSync` check against `resolveReviewFetcher()` when `prReview` policy is not `disabled`. If the fetcher script is absent, print a clear warning before the PR opens:
 
@@ -56,6 +57,7 @@ This is not a blocking error — the operator may want to open the PR and handle
 **What happens:** When decomposing a new phase, agents search for existing ticket files to use as format references. They find older delivery docs under `docs/product/delivery/` and copy their format. Older phases use `Goal / Scope / Exit Condition / Rationale` — not the current TDD `Outcome / Red / Green / Refactor / Review Focus / Rationale` contract. The orchestrator expects the current template; tickets written in the old format create ambiguity at every subsequent review gate.
 
 **Two-point fix:**
+
 - Add one line to `docs/template/overview/start-here.md` under the canonical-templates note: "Always use `docs/template/stubs/ticket.template.md` as the format reference — never model a new ticket on existing docs under `docs/product/delivery/`; older phases predate the current template."
 - Add a guard step to the `soa decompose` section of `soa/SKILL.md`: "Before writing any ticket file, read `docs/template/stubs/ticket.template.md`. Do not reference existing ticket files for format."
 

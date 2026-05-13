@@ -29,6 +29,7 @@ bun run deliver --plan <path> post-red [ticket-id]
 ```
 
 What it does:
+
 1. Reads the HEAD commit on the ticket's branch
 2. Asserts the subject contains `[red]` (configurable prefix check)
 3. Runs the repo's `verify` or `ci` command and asserts at least one test fails (non-zero exit from test runner, or specific failure count > 0)
@@ -44,6 +45,7 @@ New ticket status: `red_complete` (between `in_progress` and `verified`).
 New field on `TicketState`: `redCommitSha?: string`.
 
 The status machine becomes:
+
 ```
 pending → in_progress → red_complete → verified → subagent_review_complete → in_review → reviewed → done
 ```

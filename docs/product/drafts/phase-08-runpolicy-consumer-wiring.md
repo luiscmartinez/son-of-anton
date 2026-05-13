@@ -42,6 +42,7 @@ ticketBoundaryMode: context.config.ticketBoundaryMode,
 After divergence detection resolves (or when the persisted runPolicy is loaded without divergence), rebuild the `resolvedConfig` by merging `state.runPolicy` values on top before constructing `context`. This makes `context.config` reflect the governing policy for the run rather than the file-based defaults.
 
 The merge should be strictly bounded to the Phase 07 fields:
+
 - `ticketBoundaryMode`
 - `reviewPolicy.subagentReview`
 - `reviewPolicy.prReview`
@@ -56,6 +57,7 @@ No other config fields should be affected by runPolicy.
 ### 3. Regression test: resume with persisted runPolicy diverged from config
 
 Add an integration test that:
+
 1. Starts a run with `--boundary-mode cook`
 2. Simulates `orchestrator.config.json` change to `gated`
 3. Runs with `--baseline run-policy`
