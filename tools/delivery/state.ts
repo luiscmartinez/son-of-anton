@@ -506,6 +506,7 @@ function syncStateWithPlan(
         handoffPath: previous?.handoffPath ?? inferredTicket?.handoffPath,
         handoffGeneratedAt:
           previous?.handoffGeneratedAt ?? inferredTicket?.handoffGeneratedAt,
+        redCommitSha: previous?.redCommitSha ?? inferredTicket?.redCommitSha,
         verifiedAt:
           pickVerifiedAt(previous) ??
           pickVerifiedAt(inferredTicket as PersistedTicketFields | undefined),
@@ -770,20 +771,22 @@ function statusRank(status: TicketStatus): number {
       return 0;
     case 'in_progress':
       return 1;
-    case 'verified':
+    case 'red_complete':
       return 2;
-    case 'subagent_review_complete':
+    case 'verified':
       return 3;
-    case 'in_review':
+    case 'subagent_review_complete':
       return 4;
-    case 'needs_patch':
+    case 'in_review':
       return 5;
-    case 'operator_input_needed':
+    case 'needs_patch':
       return 6;
-    case 'reviewed':
+    case 'operator_input_needed':
       return 7;
-    case 'done':
+    case 'reviewed':
       return 8;
+    case 'done':
+      return 9;
   }
 }
 
