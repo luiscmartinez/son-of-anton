@@ -341,7 +341,7 @@ export async function runCloseoutStack(
     const config = resolveOrchestratorConfig(rawConfig, cwd);
     closeoutPlatform = createPlatformAdapters(config);
     const options = createOptions({ planPath: parsed.planPath });
-    const state = await loadState(cwd, options, config);
+    const { state } = await loadState(cwd, options, config);
     const tickets = getCloseoutTicketChain(state);
     const repo = resolveRepoSlug(cwd);
     const summary: CloseoutSummary = {
