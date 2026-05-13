@@ -1,5 +1,7 @@
 # Phase 09 — Review Loop Hardening
 
+Status: Delivered — ticket stack squash-merged to `main` (PRs [#30](https://github.com/cesarnml/son-of-anton/pull/30), [#31](https://github.com/cesarnml/son-of-anton/pull/31), [#32](https://github.com/cesarnml/son-of-anton/pull/32)); retrospective at [phase-09-review-loop-hardening-retrospective.md](../../retrospectives/phase-09-review-loop-hardening-retrospective.md).
+
 > Closes two quality-gate gaps: vendor billing noise that escalates PRs to `needs_patch`, and a TDD red gate that accepts a "[red]" commit subject without verifying any test actually failed.
 
 ## Epic

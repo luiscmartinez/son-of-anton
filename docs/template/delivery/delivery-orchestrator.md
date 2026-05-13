@@ -708,7 +708,7 @@ PR descriptions are maintained as delivery metadata, not one-shot text.
 - `open-pr` creates the initial PR body
 - `open-pr` uses a human-readable Conventional-Commit-style title plus the delivery ticket suffix, for example `feat: add user-facing behavior [PN.NN]`
 - rerunning `open-pr` refreshes the existing PR title/body instead of failing on an already-open branch
-- `record-review` stores the triage result and optional note
+- `record-review` stores the triage result and optional note; when run inside a git checkout it then **stages and commits** the updated `*-ai-review.triage.json` (and the paired `*-ai-review.fetch.json` when present on disk) so the working tree does not stay dirty after a `needs_patch` → `record-review` cycle
 - `record-review ... patched` also makes a best-effort attempt to resolve mapped native GitHub inline review threads for patched findings
 - `poll-review` auto-records `clean` when no `pr-review` feedback is detected by the final check and refreshes the PR body immediately
 - PR-body AI-review notes now distinguish current-head review from stale-history review when the reviewed SHA no longer matches the branch head
