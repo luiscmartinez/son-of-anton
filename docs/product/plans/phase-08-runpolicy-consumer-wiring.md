@@ -1,6 +1,6 @@
 # Phase 08: runPolicy Consumer Wiring
 
-**Delivery status:** Product plan approved — pending decomposition.
+**Delivery status:** Decomposed — ready for execution.
 
 ## TL;DR
 
