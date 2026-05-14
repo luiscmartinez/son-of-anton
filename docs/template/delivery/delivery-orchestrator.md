@@ -397,9 +397,10 @@ There are two concrete review paths:
 
 _Agent-to-agent path:_
 
-1. Invoke the review subagent via the Agent tool using the `reviewSubagentOverride` value. The subagent will patch what it finds autonomously.
-2. **Stay idle. No read-ahead.** Wait for the subagent to complete before doing anything else.
-3. Record the outcome.
+1. Read `docs/template/delivery/adversarial-review-template.md`. Fill in invariants, attack surfaces, and diff context from the current ticket diff and spec. Pass the completed template as the subagent's prompt — do not substitute a vague directive.
+2. Invoke the review subagent via the Agent tool. The subagent patches what it finds autonomously.
+3. **Stay idle. No read-ahead.** Wait for the subagent to complete before doing anything else.
+4. Record the outcome.
 
 _Executor-owned runner path:_
 
