@@ -1039,7 +1039,10 @@ async function applyTicketReviewUpdate(
   state: DeliveryState,
   ticketId: string,
   updateTicket: (ticket: TicketState) => TicketState,
-  dependencies: Pick<TicketReviewDependencies, 'updatePullRequestBody'>,
+  dependencies: Pick<
+    TicketReviewDependencies,
+    'updatePullRequestBody' | 'relativeToRepo' | 'runProcess'
+  >,
 ): Promise<DeliveryState> {
   const updatedTickets = state.tickets.map((ticket) =>
     ticket.id === ticketId ? updateTicket(ticket) : ticket,
@@ -1120,6 +1123,25 @@ async function applyTicketReviewUpdate(
         },
       }));
     }
+  }
+
+  const fetchPath = persistedTarget.reviewFetchArtifactPath
+    ? resolve(cwd, persistedTarget.reviewFetchArtifactPath)
+    : undefined;
+  const triagePath = persistedTarget.reviewTriageArtifactPath
+    ? resolve(cwd, persistedTarget.reviewTriageArtifactPath)
+    : undefined;
+  const artifactPaths = [triagePath, fetchPath].filter(
+    (p): p is string => p !== undefined,
+  );
+  if (artifactPaths.length > 0) {
+    await commitAiReviewArtifactsAfterRecordReview(
+      cwd,
+      ticketId,
+      artifactPaths,
+      dependencies.relativeToRepo,
+      dependencies.runProcess,
+    );
   }
 
   return nextState;
@@ -1888,14 +1910,6 @@ export async function recordTicketReview(
       reviewRecordedAt: new Date().toISOString(),
     }),
     dependencies,
-  );
-
-  await commitAiReviewArtifactsAfterRecordReview(
-    cwd,
-    ticketId,
-    [triageArtifactPath, ...(fetchArtifactPath ? [fetchArtifactPath] : [])],
-    dependencies.relativeToRepo,
-    dependencies.runProcess,
   );
 
   return nextState;

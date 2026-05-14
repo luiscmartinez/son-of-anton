@@ -617,7 +617,6 @@ export async function runDeliveryOrchestrator(
         return 0;
       }
       case 'advance': {
-        await commitDirtyWorktreeBeforeAdvance(cwd, state, context);
         const advancedState = await advanceToNextTicketImpl(
           state,
           cwd,
@@ -1405,50 +1404,6 @@ export async function recordReview(
       resolvedDependencies.updatePullRequestBody ??
       platform.updatePullRequestBody,
   });
-}
-
-async function commitDirtyWorktreeBeforeAdvance(
-  cwd: string,
-  state: DeliveryState,
-  context: DeliveryOrchestratorContext,
-): Promise<void> {
-  const activeTicket = state.tickets.find(
-    (t) => t.status === 'done' || t.status === 'reviewed',
-  );
-  if (!activeTicket) return;
-
-  const { runProcessResult } = context.platform;
-  const gitDir = (() => {
-    try {
-      runProcessResult(cwd, ['git', 'rev-parse', '--git-dir']);
-      return true;
-    } catch {
-      return false;
-    }
-  })();
-  if (!gitDir) return;
-
-  const status = runProcessResult(cwd, [
-    'git',
-    'status',
-    '--short',
-  ]).stdout.trim();
-  if (!status) return;
-
-  try {
-    runProcessResult(cwd, ['git', 'add', '--all']);
-    runProcessResult(cwd, [
-      'git',
-      'commit',
-      '-m',
-      `chore(delivery): clean worktree before advance — commit leftover artifacts [${activeTicket.id}]`,
-    ]);
-    console.log(`advance: committed leftover worktree files before advancing.`);
-  } catch (error) {
-    console.warn(
-      `advance: could not auto-commit dirty worktree: ${formatError(error)}`,
-    );
-  }
 }
 
 async function advanceToNextTicketImpl(
