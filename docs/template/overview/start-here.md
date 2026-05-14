@@ -52,11 +52,11 @@ bun run deliver --plan <plan-path> \
   --boundary-mode <cook|gated|glide> \
   --subagent-review-policy <required|skip_doc_only|disabled> \
   --pr-review-policy <required|skip_doc_only|disabled> \
-  --review-subagent <agent-name> \
+  --preferred-runner <claude-cli|codex-exec> \
   start
 ```
 
-`--same-review-subagent` clears any `reviewSubagentOverride` in config so the same agent type reviews its own work.
+`--preferred-runner` declares the execution agent's own identity. The CLI tries the preferred runner first, then the other, then records an honest `skipped`. No config change needed when switching platforms.
 
 The resolved policy is persisted in `state.json` as `runPolicy` and governs execution for every invocation that loads it. If `orchestrator.config.json` changes between runs, the orchestrator detects divergence and refuses to continue silently — pass `--baseline orchestrator` to adopt the current config or `--baseline run-policy` to re-apply the persisted runPolicy (it governs execution for the current invocation, not just state):
 
