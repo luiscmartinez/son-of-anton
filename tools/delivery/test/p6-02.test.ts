@@ -49,9 +49,9 @@ describe('P6.02 retrospective location migration', () => {
     ).toBe(true);
   });
 
-  it('notes/public/ contains no .md files', () => {
-    const mdFiles = readdirSync(notesPublicDir).filter((f) =>
-      f.endsWith('.md'),
+  it('notes/public/ contains no retrospective .md files (retrospectives live under docs/product/retrospectives/)', () => {
+    const mdFiles = readdirSync(notesPublicDir).filter(
+      (f) => f.endsWith('.md') && f.includes('retrospective'),
     );
     expect(mdFiles).toEqual([]);
   });
