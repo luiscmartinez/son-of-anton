@@ -24,24 +24,13 @@ import type {
  *   matching the existing `review_policy=subagentReview:... prReview:...` pattern.
  *
  * Example output:
- *   boundary_mode=cook subagentReview:skip_doc_only prReview:skip_doc_only reviewSubagent:same-type
+ *   boundary_mode=cook subagentReview:skip_doc_only prReview:skip_doc_only
  */
 export function formatRunPolicy(policy: RunPolicy): string {
-  let reviewSubagentStr: string;
-
-  if (policy.reviewSubagent.kind === 'override') {
-    reviewSubagentStr = policy.reviewSubagent.value;
-  } else if (policy.reviewSubagent.kind === 'runner') {
-    reviewSubagentStr = `runner(${policy.reviewSubagent.runner})`;
-  } else {
-    reviewSubagentStr = 'same-type';
-  }
-
   return [
     `boundary_mode=${policy.ticketBoundaryMode}`,
     `subagentReview:${policy.subagentReview}`,
     `prReview:${policy.prReview}`,
-    `reviewSubagent:${reviewSubagentStr}`,
   ].join(' ');
 }
 

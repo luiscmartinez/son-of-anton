@@ -1,6 +1,13 @@
-import { existsSync, readFileSync, realpathSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  realpathSync,
+  writeFileSync,
+} from 'node:fs';
 import { realpath } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { dirname, resolve } from 'node:path';
 import {
   getUsage,
   parseCliArgs,
@@ -16,7 +23,6 @@ import {
 import type {
   ResolvedOrchestratorConfig,
   ReviewPolicyStageValue,
-  SubagentReviewRunnerKind,
   TicketBoundaryMode,
 } from './config';
 import type {
@@ -114,7 +120,11 @@ import {
   restackTicket as restackTicketImpl,
   startTicket as startTicketImpl,
 } from './ticket-flow';
-import { validateRunnerArtifact } from './subagent-runner';
+import {
+  buildRunnerArtifact,
+  tryRunner,
+  validateRunnerArtifact,
+} from './subagent-runner';
 
 export const WORKTREE_EXEMPT = new Set(['status', 'sync', 'start']);
 
@@ -186,9 +196,7 @@ export async function runDeliveryOrchestrator(
         boundaryMode?: TicketBoundaryMode;
         subagentReviewPolicy?: ReviewPolicyStageValue;
         prReviewPolicy?: ReviewPolicyStageValue;
-        reviewSubagent?: string;
-        sameReviewSubagent?: boolean;
-        runnerSubagentReview?: SubagentReviewRunnerKind;
+        preferredRunner?: 'claude-cli' | 'codex-exec';
         redCommitSha?: string;
         baseline?: 'orchestrator' | 'run-policy';
       }
@@ -350,10 +358,7 @@ export async function runDeliveryOrchestrator(
         const hasExplicitPolicyFlags =
           parsed.boundaryMode !== undefined ||
           parsed.subagentReviewPolicy !== undefined ||
-          parsed.prReviewPolicy !== undefined ||
-          parsed.reviewSubagent !== undefined ||
-          parsed.sameReviewSubagent === true ||
-          parsed.runnerSubagentReview !== undefined;
+          parsed.prReviewPolicy !== undefined;
         const stateForStart = hasExplicitPolicyFlags
           ? { ...state, runPolicy: deriveRunPolicyFromConfig(resolvedConfig) }
           : state;
@@ -434,47 +439,146 @@ export async function runDeliveryOrchestrator(
         return 0;
       }
       case 'subagent-review': {
-        const {
-          auditOutcome: subagentOutcome,
-          auditPatchCommitArgs: subagentPatchCommitArgs,
-          auditTicketId: subagentTicketId,
-        } = parsePostVerifyArgs(parsed.positionals);
+        const subagentTicketId = parsed.positionals[0];
         const subagentTarget =
           (subagentTicketId
             ? state.tickets.find((t) => t.id === subagentTicketId)
             : state.tickets.find((t) => t.status === 'verified')) ?? undefined;
-        const isDocOnly = subagentTarget
-          ? isPlatformLocalBranchDocOnly(
-              subagentTarget.worktreePath,
-              subagentTarget.baseBranch,
-              context.config.runtime,
-            )
-          : false;
+
+        if (!subagentTarget) {
+          throw new Error(
+            subagentTicketId
+              ? `Unknown ticket ${subagentTicketId}.`
+              : 'No ticket at verified status found.',
+          );
+        }
+
+        const isDocOnly = isPlatformLocalBranchDocOnly(
+          subagentTarget.worktreePath,
+          subagentTarget.baseBranch,
+          context.config.runtime,
+        );
+        const policy = context.config.reviewPolicy.subagentReview;
+
+        // Auto-skip doc-only tickets under skip_doc_only policy.
+        if (policy === 'skip_doc_only' && isDocOnly) {
+          const nextState = recordSubagentReview(
+            state,
+            'skipped',
+            true,
+            policy,
+            undefined,
+            undefined,
+            undefined,
+            subagentTarget.id,
+          );
+          console.log('Doc-only ticket — subagent review auto-skipped.');
+          await saveState(cwd, nextState);
+          console.log(formatStatus(nextState, context.config));
+          return 0;
+        }
+
+        // Build runner order: preferred first, other second.
+        const preferredRunner = parsed.preferredRunner;
+        const runnerOrder: Array<'claude-cli' | 'codex-exec'> =
+          preferredRunner === 'codex-exec'
+            ? ['codex-exec', 'claude-cli']
+            : ['claude-cli', 'codex-exec'];
+
+        const worktreePath = subagentTarget.worktreePath;
+        const headSha = context.platform.readCurrentBranch
+          ? (() => {
+              try {
+                return spawnSync('git', ['rev-parse', 'HEAD'], {
+                  cwd: worktreePath,
+                  encoding: 'utf-8',
+                }).stdout.trim();
+              } catch {
+                return 'unknown';
+              }
+            })()
+          : 'unknown';
+
+        const reviewPrompt =
+          `Assume this implementation has holes — find them. ` +
+          `Review all code changes introduced in the current branch versus its base branch (${subagentTarget.baseBranch}). ` +
+          `Make any fixes you judge necessary. Commit all fixes with messages ending with " [subagent-review]". ` +
+          `Skip ticket doc files under docs/product/delivery/. ` +
+          `Do not rationalize away anything you notice — flag it and let the human decide.`;
+
+        const RUNNER_TIMEOUT_MS = 10 * 60 * 1000;
+
+        let outcome: 'clean' | 'patched' | 'skipped' = 'skipped';
+        let usedRunner: 'claude-cli' | 'codex-exec' | 'skipped' = 'skipped';
+
+        for (const runner of runnerOrder) {
+          const result = tryRunner(
+            () => {
+              const args =
+                runner === 'claude-cli'
+                  ? ['--print', reviewPrompt, '--output-format', 'text']
+                  : [reviewPrompt];
+              const bin = runner === 'claude-cli' ? 'claude' : 'codex';
+              const spawned = spawnSync(bin, args, {
+                cwd: worktreePath,
+                timeout: RUNNER_TIMEOUT_MS,
+                encoding: 'utf-8',
+              });
+              return {
+                exitCode: spawned.status,
+                timedOut:
+                  spawned.signal === 'SIGTERM' ||
+                  spawned.error?.message?.includes('timed out') ||
+                  false,
+              };
+            },
+            () => {
+              const status = spawnSync('git', ['status', '--porcelain'], {
+                cwd: worktreePath,
+                encoding: 'utf-8',
+              });
+              return (status.stdout ?? '').trim().length > 0;
+            },
+          );
+
+          if (result.status === 'ran') {
+            outcome = result.outcome;
+            usedRunner = runner;
+            break;
+          }
+
+          console.log(
+            `Runner ${runner} unavailable${result.status === 'timeout' ? ' (timed out)' : ''}, trying fallback...`,
+          );
+        }
+
+        // Write runner artifact.
+        const artifact = buildRunnerArtifact(usedRunner, headSha, outcome);
+        const artifactRelPath = `${state.reviewsDirPath}/${subagentTarget.id}-subagent-runner.json`;
+        const artifactAbsPath = resolve(cwd, artifactRelPath);
+        mkdirSync(dirname(artifactAbsPath), { recursive: true });
+        writeFileSync(
+          artifactAbsPath,
+          JSON.stringify(artifact, null, 2) + '\n',
+          'utf-8',
+        );
+
         const nextState = recordSubagentReview(
           state,
-          subagentOutcome,
+          outcome,
           isDocOnly,
-          context.config.reviewPolicy.subagentReview,
-          subagentOutcome === 'patched'
-            ? resolveInternalReviewPatchCommits(
-                subagentTarget?.worktreePath ?? cwd,
-                context,
-                subagentPatchCommitArgs,
-                '[subagent-review]',
-                'Subagent review',
-              )
-            : undefined,
-          context.config.reviewSubagentOverride,
-          subagentTicketId,
+          policy,
+          undefined,
+          undefined,
+          undefined,
+          subagentTarget.id,
+          artifactRelPath,
         );
-        const justRecorded = nextState.tickets.find(
-          (t) =>
-            t.status === 'subagent_review_complete' &&
-            state.tickets.find((prev) => prev.id === t.id)?.status ===
-              'verified',
-        );
-        if (justRecorded?.subagentReviewOutcome === 'skipped') {
-          console.log('Doc-only ticket — subagent review auto-skipped.');
+
+        if (outcome === 'skipped') {
+          console.log(
+            'All runners unavailable — subagent review honestly skipped.',
+          );
         }
         await saveState(cwd, nextState);
         console.log(formatStatus(nextState, context.config));
@@ -1206,14 +1310,18 @@ export async function openPullRequest(
 ): Promise<DeliveryState> {
   const resolvedTicketId = ticketId;
 
-  if (context.config.subagentReviewRunner !== undefined) {
+  if (context.config.reviewPolicy.subagentReview !== 'disabled') {
     const targetTicket = resolvedTicketId
       ? state.tickets.find((t) => t.id === resolvedTicketId)
       : (state.tickets.find((t) => t.status === 'subagent_review_complete') ??
         state.tickets.find((t) => t.status === 'verified') ??
         state.tickets.find((t) => t.status === 'in_review'));
 
-    if (targetTicket !== undefined) {
+    if (
+      targetTicket !== undefined &&
+      targetTicket.subagentReviewOutcome != null &&
+      targetTicket.subagentReviewOutcome !== 'skipped'
+    ) {
       const rawArtifactPath = targetTicket.subagentRunnerArtifactPath;
       const artifactPath = rawArtifactPath
         ? resolve(cwd, rawArtifactPath)
@@ -1231,13 +1339,10 @@ export async function openPullRequest(
             }
           })()
         : null;
-      const configuredKind = context.config.subagentReviewRunner.kind;
-      if (!artifact || artifact.runnerKind !== configuredKind) {
+      if (!artifact) {
         throw createWorkflowContractError(
           'workflow.open_pr.requires_runner_review',
-          `Ticket ${targetTicket.id} requires an executor-owned runner review before opening a PR. ` +
-            `Runner kind: ${configuredKind}. ` +
-            `No valid runner review artifact found at ${rawArtifactPath ?? '(path not set)'}.`,
+          `Ticket ${targetTicket.id} requires a valid runner review artifact before opening a PR. subagentReviewOutcome="${targetTicket.subagentReviewOutcome}" but no artifact found at ${rawArtifactPath ?? '(path not set)'}. Re-run subagent-review to regenerate the artifact.`,
         );
       }
     }

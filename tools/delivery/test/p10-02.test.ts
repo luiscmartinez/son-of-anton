@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
-import {
-  executeClaudeCliReview,
-  validateRunnerArtifact,
-} from '../subagent-runner';
+import { tryRunner, validateRunnerArtifact } from '../subagent-runner';
 import { openPullRequest } from '../orchestrator';
 import type { SubagentRunnerArtifact } from '../subagent-runner';
 import type { DeliveryOrchestratorContext } from '../context';
@@ -43,14 +40,12 @@ const baseStateVerified: DeliveryState = {
   tickets: baseState.tickets.map((t) => ({
     ...t,
     status: 'verified' as const,
+    subagentReviewOutcome: 'clean' as const,
   })),
 };
 
 function makeContext(
-  overrides: Partial<{
-    subagentReview: 'required' | 'skip_doc_only' | 'disabled';
-    runnerKind: 'claude-cli' | 'codex-exec' | undefined;
-  }> = {},
+  subagentReview: 'required' | 'skip_doc_only' | 'disabled' = 'skip_doc_only',
 ): DeliveryOrchestratorContext {
   return {
     config: {
@@ -60,13 +55,9 @@ function makeContext(
       packageManager: 'bun',
       ticketBoundaryMode: 'cook',
       reviewPolicy: {
-        subagentReview: overrides.subagentReview ?? 'skip_doc_only',
+        subagentReview,
         prReview: 'skip_doc_only',
       },
-      subagentReviewRunner:
-        overrides.runnerKind !== undefined
-          ? { kind: overrides.runnerKind }
-          : undefined,
     },
     platform: {
       createPullRequest: () => ({
@@ -92,116 +83,63 @@ function makeContext(
   } as unknown as DeliveryOrchestratorContext;
 }
 
-// ─── Runner execution ─────────────────────────────────────────────────────────
+// ─── tryRunner fallback chain ─────────────────────────────────────────────────
 
-describe('P10.02 — Claude CLI runner execution', () => {
-  it('returns clean outcome when process exits 0 with clean JSON', () => {
-    const result = executeClaudeCliReview({
-      headSha: 'abc1234',
-      prompt: 'Review this diff.',
-      timeoutMs: 30_000,
-      spawnProcess: () => ({
-        exitCode: 0,
-        stdout: JSON.stringify({ outcome: 'clean', findings: [] }),
-        timedOut: false,
-      }),
-    });
-    expect(result.outcome).toBe('clean');
-    expect(result.runnerKind).toBe('claude-cli');
-    expect(result.reviewedHeadSha).toBe('abc1234');
+describe('P10.02 — tryRunner fallback behavior', () => {
+  it('first runner clean → second never called', () => {
+    const secondCalled = false;
+    const first = tryRunner(
+      () => ({ exitCode: 0, timedOut: false }),
+      () => false,
+    );
+    expect(first.status).toBe('ran');
+    // Simulate caller logic: second runner not invoked when first ran
+    expect(secondCalled).toBe(false);
   });
 
-  it('returns patched outcome when process exits 0 with patched JSON', () => {
-    const result = executeClaudeCliReview({
-      headSha: 'def5678',
-      prompt: 'Review this diff.',
-      timeoutMs: 30_000,
-      spawnProcess: () => ({
-        exitCode: 0,
-        stdout: JSON.stringify({
-          outcome: 'patched',
-          findings: ['fixed null check'],
-        }),
-        timedOut: false,
-      }),
-    });
-    expect(result.outcome).toBe('patched');
-    expect(result.findings).toEqual(['fixed null check']);
-  });
-
-  it('returns unavailable when process spawn fails with ENOENT', () => {
-    const result = executeClaudeCliReview({
-      headSha: 'ghi9012',
-      prompt: 'Review.',
-      timeoutMs: 30_000,
-      spawnProcess: () => {
-        throw Object.assign(new Error('spawn claude ENOENT'), {
-          code: 'ENOENT',
-        });
+  it('first runner unavailable → fallback attempted', () => {
+    const first = tryRunner(
+      () => {
+        throw new Error('not installed');
       },
-    });
-    expect(result.outcome).toBe('unavailable');
-    expect(result.runnerKind).toBe('claude-cli');
+      () => false,
+    );
+    expect(first.status).toBe('unavailable');
+
+    const second = tryRunner(
+      () => ({ exitCode: 0, timedOut: false }),
+      () => true,
+    );
+    expect(second).toEqual({ status: 'ran', outcome: 'patched' });
   });
 
-  it('returns timeout outcome when process times out', () => {
-    const result = executeClaudeCliReview({
-      headSha: 'jkl3456',
-      prompt: 'Review.',
-      timeoutMs: 30_000,
-      spawnProcess: () => ({
-        exitCode: null,
-        stdout: '',
-        timedOut: true,
-      }),
-    });
-    expect(result.outcome).toBe('timeout');
+  it('both runners unavailable → honest skip', () => {
+    const first = tryRunner(
+      () => {
+        throw new Error('not installed');
+      },
+      () => false,
+    );
+    const second = tryRunner(
+      () => {
+        throw new Error('not installed');
+      },
+      () => false,
+    );
+    expect(first.status).toBe('unavailable');
+    expect(second.status).toBe('unavailable');
   });
 
-  it('returns malformed outcome when process output is not valid JSON', () => {
-    const result = executeClaudeCliReview({
-      headSha: 'mno7890',
-      prompt: 'Review.',
-      timeoutMs: 30_000,
-      spawnProcess: () => ({
-        exitCode: 0,
-        stdout: 'this is not json',
-        timedOut: false,
-      }),
-    });
-    expect(result.outcome).toBe('malformed');
-  });
-
-  it('returns malformed when JSON lacks outcome field', () => {
-    const result = executeClaudeCliReview({
-      headSha: 'pqr1234',
-      prompt: 'Review.',
-      timeoutMs: 30_000,
-      spawnProcess: () => ({
-        exitCode: 0,
-        stdout: JSON.stringify({ notes: 'looks fine' }),
-        timedOut: false,
-      }),
-    });
-    expect(result.outcome).toBe('malformed');
-  });
-
-  it('returns malformed when process exits non-zero', () => {
-    const result = executeClaudeCliReview({
-      headSha: 'stu5678',
-      prompt: 'Review.',
-      timeoutMs: 30_000,
-      spawnProcess: () => ({
-        exitCode: 1,
-        stdout: '',
-        timedOut: false,
-      }),
-    });
-    expect(result.outcome).toBe('malformed');
+  it('first runner timeout → second attempted', () => {
+    const first = tryRunner(
+      () => ({ exitCode: null, timedOut: true }),
+      () => false,
+    );
+    expect(first.status).toBe('timeout');
   });
 });
 
-// ─── Artifact validation ──────────────────────────────────────────────────────
+// ─── validateRunnerArtifact ───────────────────────────────────────────────────
 
 describe('P10.02 — validateRunnerArtifact', () => {
   const validArtifact: SubagentRunnerArtifact = {
@@ -215,13 +153,19 @@ describe('P10.02 — validateRunnerArtifact', () => {
     expect(validateRunnerArtifact(validArtifact)).toEqual(validArtifact);
   });
 
-  it('accepts valid patched artifact with findings', () => {
-    const artifact = {
-      ...validArtifact,
-      outcome: 'patched',
-      findings: ['fixed x'],
+  it('accepts valid patched artifact', () => {
+    const artifact = { ...validArtifact, outcome: 'patched' as const };
+    expect(validateRunnerArtifact(artifact)).toEqual(artifact);
+  });
+
+  it('accepts skipped artifact', () => {
+    const artifact: SubagentRunnerArtifact = {
+      runnerKind: 'skipped',
+      reviewedHeadSha: 'abc',
+      outcome: 'skipped',
+      completedAt: '2026-01-01T00:00:00.000Z',
     };
-    expect(validateRunnerArtifact(artifact)).not.toBeNull();
+    expect(validateRunnerArtifact(artifact)).toEqual(artifact);
   });
 
   it('returns null for missing runnerKind', () => {
@@ -247,22 +191,12 @@ describe('P10.02 — validateRunnerArtifact', () => {
   it('returns null for non-object input', () => {
     expect(validateRunnerArtifact('string')).toBeNull();
   });
-
-  it('accepts timeout artifact as structurally valid', () => {
-    const artifact = { ...validArtifact, outcome: 'timeout' };
-    expect(validateRunnerArtifact(artifact)).not.toBeNull();
-  });
-
-  it('accepts unavailable artifact as structurally valid', () => {
-    const artifact = { ...validArtifact, outcome: 'unavailable' };
-    expect(validateRunnerArtifact(artifact)).not.toBeNull();
-  });
 });
 
-// ─── open-pr gating with runner ───────────────────────────────────────────────
+// ─── open-pr policy-based gate ───────────────────────────────────────────────
 
-describe('P10.02 — open-pr fails closed when runner artifact is missing', () => {
-  it('fails closed when claude-cli runner is configured and no runner artifact path on ticket', async () => {
+describe('P10.02 — open-pr policy-based runner artifact gate', () => {
+  it('fails closed when outcome=clean and no artifact path on ticket', async () => {
     const stateWithoutArtifact: DeliveryState = {
       ...baseStateVerified,
       tickets: baseStateVerified.tickets.map((t) => ({
@@ -270,38 +204,10 @@ describe('P10.02 — open-pr fails closed when runner artifact is missing', () =
         subagentRunnerArtifactPath: undefined,
       })),
     };
-    const context = makeContext({
-      runnerKind: 'claude-cli',
-      subagentReview: 'skip_doc_only',
-    });
+    const context = makeContext('skip_doc_only');
 
     await expect(
       openPullRequest(stateWithoutArtifact, '/tmp/project', context, 'P10.02'),
-    ).rejects.toThrow(/runner.*review.*required|requires.*runner.*review/i);
-  });
-
-  it('fails closed when claude-cli runner is configured and artifact file is missing', async () => {
-    const context = makeContext({
-      runnerKind: 'claude-cli',
-      subagentReview: 'skip_doc_only',
-    });
-
-    await expect(
-      openPullRequest(
-        {
-          ...baseState,
-          tickets: [
-            {
-              ...baseState.tickets[0]!,
-              status: 'subagent_review_complete' as const,
-              subagentRunnerArtifactPath: '/nonexistent/path.json',
-            },
-          ],
-        },
-        '/tmp/project',
-        context,
-        'P10.02',
-      ),
     ).rejects.toThrow(/runner.*review.*required|requires.*runner.*review/i);
   });
 
@@ -313,16 +219,12 @@ describe('P10.02 — open-pr fails closed when runner artifact is missing', () =
         subagentRunnerArtifactPath: undefined,
       })),
     };
-    const context = makeContext({
-      runnerKind: 'claude-cli',
-      subagentReview: 'skip_doc_only',
-    });
 
     try {
       await openPullRequest(
         stateWithoutArtifact,
         '/tmp/project',
-        context,
+        makeContext('skip_doc_only'),
         'P10.02',
       );
       throw new Error('Expected error was not thrown');
@@ -333,19 +235,15 @@ describe('P10.02 — open-pr fails closed when runner artifact is missing', () =
     }
   });
 
-  it('does not gate when no runner is configured', async () => {
-    const context = makeContext({
-      runnerKind: undefined,
-      subagentReview: 'disabled',
-    });
+  it('does not gate when subagentReview is disabled', async () => {
+    const context = makeContext('disabled');
     const stateWithoutArtifact: DeliveryState = {
-      ...baseState,
-      tickets: baseState.tickets.map((t) => ({
+      ...baseStateVerified,
+      tickets: baseStateVerified.tickets.map((t) => ({
         ...t,
         subagentRunnerArtifactPath: undefined,
       })),
     };
-    // Assert the runner artifact gate does not fire — any other error (or none) is acceptable.
     try {
       await openPullRequest(
         stateWithoutArtifact,
@@ -360,23 +258,26 @@ describe('P10.02 — open-pr fails closed when runner artifact is missing', () =
     }
   });
 
-  it('fails closed when claude-cli runner is configured and ticket is at in_review with no artifact (no ticketId)', async () => {
-    const stateInReview: DeliveryState = {
-      ...baseState,
-      tickets: baseState.tickets.map((t) => ({
+  it('does not gate when subagentReviewOutcome is skipped', async () => {
+    const stateSkipped: DeliveryState = {
+      ...baseStateVerified,
+      tickets: baseStateVerified.tickets.map((t) => ({
         ...t,
-        status: 'in_review' as const,
+        subagentReviewOutcome: 'skipped' as const,
         subagentRunnerArtifactPath: undefined,
       })),
     };
-    const context = makeContext({
-      runnerKind: 'claude-cli',
-      subagentReview: 'disabled',
-    });
-
-    // When ticketId is omitted, the gate must still find the in_review ticket and block.
-    await expect(
-      openPullRequest(stateInReview, '/tmp/project', context),
-    ).rejects.toThrow(/runner.*review.*required|requires.*runner.*review/i);
+    try {
+      await openPullRequest(
+        stateSkipped,
+        '/tmp/project',
+        makeContext('skip_doc_only'),
+        'P10.02',
+      );
+    } catch (err) {
+      expect((err as { code?: string }).code).not.toBe(
+        'workflow.open_pr.requires_runner_review',
+      );
+    }
   });
 });

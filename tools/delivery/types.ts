@@ -1,19 +1,9 @@
-import type {
-  ReviewPolicyStageValue,
-  SubagentReviewRunnerKind,
-  TicketBoundaryMode,
-} from './config';
-
-export type RunPolicyReviewSubagent =
-  | { kind: 'same-type' }
-  | { kind: 'override'; value: string }
-  | { kind: 'runner'; runner: SubagentReviewRunnerKind };
+import type { ReviewPolicyStageValue, TicketBoundaryMode } from './config';
 
 export type RunPolicy = {
   ticketBoundaryMode: TicketBoundaryMode;
   subagentReview: ReviewPolicyStageValue;
   prReview: ReviewPolicyStageValue;
-  reviewSubagent: RunPolicyReviewSubagent;
 };
 
 export type TicketStatus =

@@ -3,15 +3,12 @@ import {
   resolveOrchestratorConfig as resolveOrchestratorConfigImpl,
   inferPackageManager,
   VALID_REVIEW_POLICY_STAGE_VALUES,
-  VALID_SUBAGENT_REVIEW_RUNNER_KINDS,
   type OrchestratorConfig,
   type PrReviewAgent,
   type ResolvedOrchestratorConfig,
   type ResolvedReviewPolicy,
   type ReviewPolicy,
   type ReviewPolicyStageValue,
-  type SubagentReviewRunnerConfig,
-  type SubagentReviewRunnerKind,
 } from './config';
 
 export type {
@@ -21,15 +18,9 @@ export type {
   ResolvedReviewPolicy,
   ReviewPolicy,
   ReviewPolicyStageValue,
-  SubagentReviewRunnerConfig,
-  SubagentReviewRunnerKind,
 };
 
-export {
-  inferPackageManager,
-  VALID_REVIEW_POLICY_STAGE_VALUES,
-  VALID_SUBAGENT_REVIEW_RUNNER_KINDS,
-};
+export { inferPackageManager, VALID_REVIEW_POLICY_STAGE_VALUES };
 
 export async function loadOrchestratorConfig(
   cwd: string,

@@ -8,7 +8,6 @@
     "subagentReview": "skip_doc_only",
     "prReview": "skip_doc_only"
   },
-  "subagentReviewRunner": { "kind": "codex-exec" },
   "prReviewAgents": [
     { "login": "coderabbitai", "name": "coderabbit", "resolveThreads": true },
     { "login": "Copilot", "name": "copilot", "resolveThreads": true }

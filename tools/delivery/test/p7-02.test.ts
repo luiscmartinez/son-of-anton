@@ -12,7 +12,6 @@ const baseRawConfig: OrchestratorConfig = {
   packageManager: 'bun',
   ticketBoundaryMode: 'cook',
   reviewPolicy: { subagentReview: 'skip_doc_only', prReview: 'skip_doc_only' },
-  reviewSubagentOverride: 'codex:codex-rescue',
 };
 
 describe('P7.02 runtime policy override parsing and resolution', () => {
@@ -47,38 +46,50 @@ describe('P7.02 runtime policy override parsing and resolution', () => {
       expect(result.prReviewPolicy).toBe('skip_doc_only');
     });
 
-    it('parses --review-subagent with an agent string', () => {
+    it('parses --preferred-runner claude-cli', () => {
       const result = parseCliArgs(
-        ['--plan', 'x.md', 'start', '--review-subagent', 'codex:codex-rescue'],
+        [
+          '--plan',
+          'x.md',
+          'subagent-review',
+          '--preferred-runner',
+          'claude-cli',
+        ],
         DUMMY_USAGE,
       );
-      expect(result.reviewSubagent).toBe('codex:codex-rescue');
+      expect(result.preferredRunner).toBe('claude-cli');
     });
 
-    it('parses --same-review-subagent as boolean true', () => {
+    it('parses --preferred-runner codex-exec', () => {
       const result = parseCliArgs(
-        ['--plan', 'x.md', 'start', '--same-review-subagent'],
+        [
+          '--plan',
+          'x.md',
+          'subagent-review',
+          '--preferred-runner',
+          'codex-exec',
+        ],
         DUMMY_USAGE,
       );
-      expect(result.sameReviewSubagent).toBe(true);
+      expect(result.preferredRunner).toBe('codex-exec');
     });
 
-    it('throws when --review-subagent and --same-review-subagent are both provided', () => {
+    it('throws on invalid --preferred-runner value', () => {
       expect(() =>
         parseCliArgs(
-          [
-            '--plan',
-            'x.md',
-            'start',
-            '--review-subagent',
-            'codex:codex-rescue',
-            '--same-review-subagent',
-          ],
+          ['--plan', 'x.md', 'subagent-review', '--preferred-runner', 'gemini'],
           DUMMY_USAGE,
         ),
-      ).toThrow(
-        /--review-subagent.*mutually exclusive|mutually exclusive.*--review-subagent/,
-      );
+      ).toThrow('--preferred-runner');
+    });
+
+    it('throws when --preferred-runner value is missing', () => {
+      expect(() =>
+        parseCliArgs(
+          ['--plan', 'x.md', 'subagent-review', '--preferred-runner'],
+          DUMMY_USAGE,
+        ),
+      ).toThrow('--preferred-runner');
     });
 
     it('throws on invalid --subagent-review-policy value', () => {
@@ -99,44 +110,11 @@ describe('P7.02 runtime policy override parsing and resolution', () => {
       ).toThrow('--pr-review-policy');
     });
 
-    it('throws when --review-subagent value is missing', () => {
-      expect(() =>
-        parseCliArgs(
-          ['--plan', 'x.md', 'start', '--review-subagent'],
-          DUMMY_USAGE,
-        ),
-      ).toThrow('--review-subagent');
-    });
-
-    it('throws when --review-subagent value is whitespace-only', () => {
-      expect(() =>
-        parseCliArgs(
-          ['--plan', 'x.md', 'start', '--review-subagent', '   '],
-          DUMMY_USAGE,
-        ),
-      ).toThrow('--review-subagent');
-    });
-
-    it('trims whitespace from a valid --review-subagent value', () => {
-      const result = parseCliArgs(
-        [
-          '--plan',
-          'x.md',
-          'start',
-          '--review-subagent',
-          ' codex:codex-rescue ',
-        ],
-        DUMMY_USAGE,
-      );
-      expect(result.reviewSubagent).toBe('codex:codex-rescue');
-    });
-
     it('leaves policy fields undefined when flags are absent', () => {
       const result = parseCliArgs(['--plan', 'x.md', 'status'], DUMMY_USAGE);
       expect(result.subagentReviewPolicy).toBeUndefined();
       expect(result.prReviewPolicy).toBeUndefined();
-      expect(result.reviewSubagent).toBeUndefined();
-      expect(result.sameReviewSubagent).toBeUndefined();
+      expect(result.preferredRunner).toBeUndefined();
     });
   });
 
@@ -173,7 +151,6 @@ describe('P7.02 runtime policy override parsing and resolution', () => {
         baseRawConfig,
       );
       expect(patched.reviewPolicy?.subagentReview).toBe('required');
-      // other fields unchanged
       expect(patched.reviewPolicy?.prReview).toBe('skip_doc_only');
     });
 
@@ -183,27 +160,6 @@ describe('P7.02 runtime policy override parsing and resolution', () => {
         baseRawConfig,
       );
       expect(patched.reviewPolicy?.prReview).toBe('disabled');
-    });
-
-    it('patches reviewSubagentOverride when --review-subagent provided', () => {
-      const patched = resolveRuntimePolicyOverrides(
-        { reviewSubagent: 'some-other-agent' },
-        baseRawConfig,
-      );
-      expect(patched.reviewSubagentOverride).toBe('some-other-agent');
-    });
-
-    it('clears reviewSubagentOverride when --same-review-subagent provided', () => {
-      const patched = resolveRuntimePolicyOverrides(
-        { sameReviewSubagent: true },
-        baseRawConfig,
-      );
-      expect(patched.reviewSubagentOverride).toBeUndefined();
-    });
-
-    it('preserves reviewSubagentOverride from config when neither flag provided', () => {
-      const patched = resolveRuntimePolicyOverrides({}, baseRawConfig);
-      expect(patched.reviewSubagentOverride).toBe('codex:codex-rescue');
     });
 
     it('patches ticketBoundaryMode when --boundary-mode provided', () => {

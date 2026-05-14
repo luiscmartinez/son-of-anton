@@ -4,18 +4,6 @@ import { resolve } from 'node:path';
 
 export const VALID_TICKET_BOUNDARY_MODES = ['cook', 'gated', 'glide'] as const;
 
-export const VALID_SUBAGENT_REVIEW_RUNNER_KINDS = [
-  'claude-cli',
-  'codex-exec',
-] as const;
-
-export type SubagentReviewRunnerKind =
-  (typeof VALID_SUBAGENT_REVIEW_RUNNER_KINDS)[number];
-
-export type SubagentReviewRunnerConfig = {
-  kind: SubagentReviewRunnerKind;
-};
-
 export type TicketBoundaryMode = (typeof VALID_TICKET_BOUNDARY_MODES)[number];
 
 export const VALID_REVIEW_POLICY_STAGE_VALUES = [
@@ -30,8 +18,6 @@ export type ReviewPolicyStageValue =
 export type ReviewPolicy = {
   subagentReview?: ReviewPolicyStageValue;
   prReview?: ReviewPolicyStageValue;
-  /** @deprecated Use prReview instead. Accepted for migration; maps to prReview. */
-  externalReview?: ReviewPolicyStageValue;
 };
 
 export type ResolvedReviewPolicy = {
@@ -52,9 +38,6 @@ export type OrchestratorConfig = {
   packageManager?: 'bun' | 'npm' | 'pnpm' | 'yarn';
   ticketBoundaryMode?: TicketBoundaryMode;
   reviewPolicy?: ReviewPolicy;
-  /** @deprecated Use subagentReviewRunner instead. Accepted for migration. */
-  reviewSubagentOverride?: string;
-  subagentReviewRunner?: SubagentReviewRunnerConfig;
   prReviewAgents?: PrReviewAgent[];
 };
 
@@ -65,9 +48,6 @@ export type ResolvedOrchestratorConfig = {
   packageManager: 'bun' | 'npm' | 'pnpm' | 'yarn';
   ticketBoundaryMode: TicketBoundaryMode;
   reviewPolicy: ResolvedReviewPolicy;
-  /** @deprecated Use subagentReviewRunner instead. */
-  reviewSubagentOverride?: string;
-  subagentReviewRunner?: SubagentReviewRunnerConfig;
   prReviewAgents?: PrReviewAgent[];
 };
 
@@ -130,24 +110,23 @@ export async function loadOrchestratorConfig(
     'orchestrator.config.json',
   );
 
+  for (const retired of [
+    'reviewSubagentOverride',
+    'subagentReviewRunner',
+  ] as const) {
+    if (retired in raw) {
+      throw new Error(
+        `orchestrator.config.json: "${retired}" has been removed. Delete it from your config.`,
+      );
+    }
+  }
+
   const reviewPolicy =
     raw.reviewPolicy !== undefined
       ? parseReviewPolicy(raw.reviewPolicy)
       : undefined;
 
-  const reviewSubagentOverride = optionalNonBlankString(
-    raw.reviewSubagentOverride,
-    'reviewSubagentOverride',
-    'orchestrator.config.json',
-  );
-
-  const subagentReviewRunner =
-    raw.subagentReviewRunner !== undefined
-      ? parseSubagentReviewRunner(raw.subagentReviewRunner)
-      : undefined;
-
-  const resolvedPrReview =
-    reviewPolicy?.prReview ?? reviewPolicy?.externalReview ?? undefined;
+  const resolvedPrReview = reviewPolicy?.prReview ?? undefined;
   const prReviewAgents =
     raw.prReviewAgents !== undefined
       ? parsePrReviewAgents(raw.prReviewAgents)
@@ -171,8 +150,6 @@ export async function loadOrchestratorConfig(
     ticketBoundaryMode:
       raw.ticketBoundaryMode as OrchestratorConfig['ticketBoundaryMode'],
     reviewPolicy,
-    reviewSubagentOverride,
-    subagentReviewRunner,
     prReviewAgents,
   };
 }
@@ -199,13 +176,8 @@ export function resolveOrchestratorConfig(
     ticketBoundaryMode: raw.ticketBoundaryMode ?? 'cook',
     reviewPolicy: {
       subagentReview: raw.reviewPolicy?.subagentReview ?? 'skip_doc_only',
-      prReview:
-        raw.reviewPolicy?.prReview ??
-        raw.reviewPolicy?.externalReview ??
-        'skip_doc_only',
+      prReview: raw.reviewPolicy?.prReview ?? 'skip_doc_only',
     },
-    reviewSubagentOverride: raw.reviewSubagentOverride,
-    subagentReviewRunner: raw.subagentReviewRunner,
     prReviewAgents: raw.prReviewAgents,
   };
 }
@@ -243,7 +215,7 @@ function parseReviewPolicy(raw: unknown): ReviewPolicy {
     );
   }
 
-  const KNOWN_KEYS = ['subagentReview', 'prReview', 'externalReview'] as const;
+  const KNOWN_KEYS = ['subagentReview', 'prReview'] as const;
 
   for (const unknownKey of Object.keys(obj)) {
     if (!KNOWN_KEYS.includes(unknownKey as (typeof KNOWN_KEYS)[number])) {
@@ -310,34 +282,6 @@ function parsePrReviewAgents(raw: unknown): PrReviewAgent[] {
       resolveThreads: obj['resolveThreads'] === true,
     };
   });
-}
-
-function parseSubagentReviewRunner(raw: unknown): SubagentReviewRunnerConfig {
-  if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-    throw new Error(
-      'orchestrator.config.json: subagentReviewRunner must be an object with a "kind" field.',
-    );
-  }
-
-  const obj = raw as Record<string, unknown>;
-
-  if (typeof obj['kind'] !== 'string') {
-    throw new Error(
-      `orchestrator.config.json: subagentReviewRunner.kind is missing or not a string. Expected: ${VALID_SUBAGENT_REVIEW_RUNNER_KINDS.join(', ')}`,
-    );
-  }
-
-  if (
-    !VALID_SUBAGENT_REVIEW_RUNNER_KINDS.includes(
-      obj['kind'] as SubagentReviewRunnerKind,
-    )
-  ) {
-    throw new Error(
-      `orchestrator.config.json: subagentReviewRunner.kind "${obj['kind']}" is invalid. Expected: ${VALID_SUBAGENT_REVIEW_RUNNER_KINDS.join(', ')}`,
-    );
-  }
-
-  return { kind: obj['kind'] as SubagentReviewRunnerKind };
 }
 
 function optionalNonBlankString(

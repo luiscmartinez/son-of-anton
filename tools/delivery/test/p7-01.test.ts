@@ -15,7 +15,6 @@ const baseConfig: ResolvedOrchestratorConfig = {
   packageManager: 'bun',
   ticketBoundaryMode: 'cook',
   reviewPolicy: { subagentReview: 'skip_doc_only', prReview: 'skip_doc_only' },
-  reviewSubagentOverride: 'codex:codex-rescue',
 };
 
 const legacyRawState = {
@@ -31,23 +30,6 @@ const legacyRawState = {
 
 describe('P7.01 run-policy state model and migration', () => {
   describe('deriveRunPolicyFromConfig', () => {
-    it('produces override reviewSubagent when reviewSubagentOverride is set', () => {
-      const policy = deriveRunPolicyFromConfig(baseConfig);
-      expect(policy.reviewSubagent).toEqual({
-        kind: 'override',
-        value: 'codex:codex-rescue',
-      });
-    });
-
-    it('produces same-type reviewSubagent when no override is set', () => {
-      const config: ResolvedOrchestratorConfig = {
-        ...baseConfig,
-        reviewSubagentOverride: undefined,
-      };
-      const policy = deriveRunPolicyFromConfig(config);
-      expect(policy.reviewSubagent).toEqual({ kind: 'same-type' });
-    });
-
     it('reflects ticketBoundaryMode from config', () => {
       const config: ResolvedOrchestratorConfig = {
         ...baseConfig,
@@ -66,6 +48,11 @@ describe('P7.01 run-policy state model and migration', () => {
       expect(policy.subagentReview).toBe('required');
       expect(policy.prReview).toBe('disabled');
     });
+
+    it('derives cook boundary mode from config', () => {
+      const policy = deriveRunPolicyFromConfig(baseConfig);
+      expect(policy.ticketBoundaryMode).toBe('cook');
+    });
   });
 
   describe('normalizeRunPolicy', () => {
@@ -74,10 +61,6 @@ describe('P7.01 run-policy state model and migration', () => {
       const normalized = normalizeRunPolicy(state, baseConfig);
       expect(normalized.runPolicy).toBeDefined();
       expect(normalized.runPolicy!.ticketBoundaryMode).toBe('cook');
-      expect(normalized.runPolicy!.reviewSubagent).toEqual({
-        kind: 'override',
-        value: 'codex:codex-rescue',
-      });
     });
 
     it('derives runPolicy from config when runPolicy is null in persisted state', () => {
@@ -95,7 +78,6 @@ describe('P7.01 run-policy state model and migration', () => {
         ticketBoundaryMode: 'gated',
         subagentReview: 'required',
         prReview: 'disabled',
-        reviewSubagent: { kind: 'same-type' },
       };
       const state = {
         ...legacyRawState,
@@ -106,34 +88,17 @@ describe('P7.01 run-policy state model and migration', () => {
     });
   });
 
-  describe('RunPolicyReviewSubagent tagged shape survives round-trip', () => {
-    it('override shape survives JSON serialization without collapsing', () => {
+  describe('RunPolicy shape survives round-trip', () => {
+    it('RunPolicy survives JSON serialization', () => {
       const policy: RunPolicy = {
         ticketBoundaryMode: 'cook',
         subagentReview: 'skip_doc_only',
         prReview: 'skip_doc_only',
-        reviewSubagent: { kind: 'override', value: 'codex:codex-rescue' },
       };
       const serialized = JSON.parse(JSON.stringify(policy)) as RunPolicy;
-      expect(serialized.reviewSubagent.kind).toBe('override');
-      if (serialized.reviewSubagent.kind === 'override') {
-        expect(serialized.reviewSubagent.value).toBe('codex:codex-rescue');
-      } else {
-        throw new Error(
-          'Expected kind=override but got same-type after round-trip',
-        );
-      }
-    });
-
-    it('same-type shape survives JSON serialization without collapsing', () => {
-      const policy: RunPolicy = {
-        ticketBoundaryMode: 'cook',
-        subagentReview: 'skip_doc_only',
-        prReview: 'skip_doc_only',
-        reviewSubagent: { kind: 'same-type' },
-      };
-      const serialized = JSON.parse(JSON.stringify(policy)) as RunPolicy;
-      expect(serialized.reviewSubagent).toEqual({ kind: 'same-type' });
+      expect(serialized.ticketBoundaryMode).toBe('cook');
+      expect(serialized.subagentReview).toBe('skip_doc_only');
+      expect(serialized.prReview).toBe('skip_doc_only');
     });
 
     it('normalizeDeliveryStateFromPersisted preserves runPolicy when present', () => {
@@ -143,15 +108,11 @@ describe('P7.01 run-policy state model and migration', () => {
           ticketBoundaryMode: 'cook',
           subagentReview: 'skip_doc_only',
           prReview: 'skip_doc_only',
-          reviewSubagent: { kind: 'override', value: 'codex:codex-rescue' },
         },
       };
       const normalized = normalizeDeliveryStateFromPersisted(rawState);
       expect(normalized.runPolicy).toBeDefined();
-      expect(normalized.runPolicy!.reviewSubagent).toEqual({
-        kind: 'override',
-        value: 'codex:codex-rescue',
-      });
+      expect(normalized.runPolicy!.ticketBoundaryMode).toBe('cook');
     });
   });
 

@@ -490,6 +490,7 @@ export function recordSubagentReview(
   agentName?: string,
   now: () => string = () => new Date().toISOString(),
   ticketId?: string,
+  artifactPath?: string,
 ): DeliveryState {
   const target =
     (ticketId
@@ -547,6 +548,7 @@ export function recordSubagentReview(
             subagentReviewCompletedAt: completedAt,
             subagentReviewPatchCommits: patchCommits,
             subagentReviewAgent: agentName,
+            subagentRunnerArtifactPath: artifactPath,
           }
         : ticket,
     ),

@@ -39,12 +39,8 @@ describe('P7.05 phase 07 shipped command surface — help text coverage', () => 
     expect(USAGE).toContain('--pr-review-policy');
   });
 
-  it('getUsage includes --review-subagent flag', () => {
-    expect(USAGE).toContain('--review-subagent');
-  });
-
-  it('getUsage includes --same-review-subagent flag', () => {
-    expect(USAGE).toContain('--same-review-subagent');
+  it('getUsage includes --preferred-runner flag', () => {
+    expect(USAGE).toContain('--preferred-runner');
   });
 
   it('getUsage includes --baseline flag', () => {
@@ -93,7 +89,6 @@ describe('P7.05 divergence error message — runnable syntax', () => {
     ticketBoundaryMode: 'cook',
     subagentReview: 'skip_doc_only',
     prReview: 'skip_doc_only',
-    reviewSubagent: { kind: 'same-type' },
   };
 
   it('formatRunPolicyDivergenceError emits --baseline orchestrator (space-separated)', () => {

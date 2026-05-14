@@ -1,10 +1,8 @@
 import {
   VALID_REVIEW_POLICY_STAGE_VALUES,
-  VALID_SUBAGENT_REVIEW_RUNNER_KINDS,
   VALID_TICKET_BOUNDARY_MODES,
   type OrchestratorConfig,
   type ReviewPolicyStageValue,
-  type SubagentReviewRunnerKind,
   type TicketBoundaryMode,
 } from './config';
 import type { OrchestratorOptions } from './types';
@@ -24,9 +22,7 @@ export type ParsedCliArgs = {
   boundaryMode?: TicketBoundaryMode;
   subagentReviewPolicy?: ReviewPolicyStageValue;
   prReviewPolicy?: ReviewPolicyStageValue;
-  reviewSubagent?: string;
-  sameReviewSubagent?: boolean;
-  runnerSubagentReview?: SubagentReviewRunnerKind;
+  preferredRunner?: 'claude-cli' | 'codex-exec';
   redCommitSha?: string;
   baseline?: BaselineValue;
 };
@@ -39,31 +35,10 @@ export type ParsedCliArgs = {
 export function resolveRuntimePolicyOverrides(
   parsed: Pick<
     ParsedCliArgs,
-    | 'boundaryMode'
-    | 'subagentReviewPolicy'
-    | 'prReviewPolicy'
-    | 'reviewSubagent'
-    | 'sameReviewSubagent'
-    | 'runnerSubagentReview'
+    'boundaryMode' | 'subagentReviewPolicy' | 'prReviewPolicy'
   >,
   rawConfig: OrchestratorConfig,
 ): OrchestratorConfig {
-  const reviewSubagentOverride =
-    parsed.reviewSubagent !== undefined
-      ? parsed.reviewSubagent
-      : parsed.sameReviewSubagent === true ||
-          parsed.runnerSubagentReview !== undefined
-        ? undefined
-        : rawConfig.reviewSubagentOverride;
-
-  const subagentReviewRunner =
-    parsed.runnerSubagentReview !== undefined
-      ? { kind: parsed.runnerSubagentReview }
-      : parsed.sameReviewSubagent === true ||
-          parsed.reviewSubagent !== undefined
-        ? undefined
-        : rawConfig.subagentReviewRunner;
-
   const mergedReviewPolicy = {
     ...rawConfig.reviewPolicy,
     ...(parsed.subagentReviewPolicy !== undefined
@@ -74,11 +49,7 @@ export function resolveRuntimePolicyOverrides(
       : {}),
   };
 
-  // Guard: if --pr-review-policy upgrades prReview to a non-disabled value but
-  // the config has no prReviewAgents, fail fast so the operator knows they need
-  // to configure prReviewAgents before enabling external PR review.
-  const effectivePrReview =
-    mergedReviewPolicy.prReview ?? mergedReviewPolicy.externalReview;
+  const effectivePrReview = mergedReviewPolicy.prReview;
 
   if (
     parsed.prReviewPolicy !== undefined &&
@@ -95,8 +66,6 @@ export function resolveRuntimePolicyOverrides(
     ...rawConfig,
     ticketBoundaryMode: parsed.boundaryMode ?? rawConfig.ticketBoundaryMode,
     reviewPolicy: mergedReviewPolicy,
-    reviewSubagentOverride,
-    subagentReviewRunner,
   };
 }
 
@@ -116,7 +85,7 @@ export function getUsage(runDeliverInvocation: string): string {
     '  start [ticket-id]',
     '  post-red [ticket-id] [--red-commit-sha <sha>]',
     '  post-verify [ticket-id] [clean|patched] [patch-commit-sha ...]',
-    '  subagent-review [ticket-id] [clean|patched|skipped] [patch-commit-sha ...]',
+    '  subagent-review [ticket-id] [--preferred-runner <claude-cli|codex-exec>]',
     '  open-pr [ticket-id]',
     '  poll-review [ticket-id]',
     '  reconcile-late-review <ticket-id>',
@@ -128,9 +97,7 @@ export function getUsage(runDeliverInvocation: string): string {
     '  --boundary-mode <cook|gated|glide>',
     '  --subagent-review-policy <required|skip_doc_only|disabled>',
     '  --pr-review-policy <required|skip_doc_only|disabled>',
-    '  --review-subagent <agent>',
-    '  --same-review-subagent',
-    `  --runner-subagent-review <${VALID_SUBAGENT_REVIEW_RUNNER_KINDS.join('|')}>`,
+    '  --preferred-runner <claude-cli|codex-exec>',
     '  --baseline <orchestrator|run-policy>',
   ].join('\n');
 }
@@ -141,9 +108,7 @@ export function parseCliArgs(argv: string[], usage: string): ParsedCliArgs {
   let boundaryMode: ParsedCliArgs['boundaryMode'];
   let subagentReviewPolicy: ParsedCliArgs['subagentReviewPolicy'];
   let prReviewPolicy: ParsedCliArgs['prReviewPolicy'];
-  let reviewSubagent: ParsedCliArgs['reviewSubagent'];
-  let sameReviewSubagent: ParsedCliArgs['sameReviewSubagent'];
-  let runnerSubagentReview: ParsedCliArgs['runnerSubagentReview'];
+  let preferredRunner: ParsedCliArgs['preferredRunner'];
   let redCommitSha: ParsedCliArgs['redCommitSha'];
   let baseline: ParsedCliArgs['baseline'];
   const flags = new Set<string>();
@@ -228,41 +193,21 @@ export function parseCliArgs(argv: string[], usage: string): ParsedCliArgs {
       continue;
     }
 
-    if (value === '--review-subagent') {
+    if (value === '--preferred-runner') {
       const raw = argv[index + 1];
-
-      if (!raw || raw.trim() === '' || raw.startsWith('--')) {
-        throw new Error(
-          'Pass --review-subagent <agent> with a non-blank agent identifier.',
-        );
-      }
-
-      reviewSubagent = raw.trim();
-      index += 1;
-      continue;
-    }
-
-    if (value === '--same-review-subagent') {
-      sameReviewSubagent = true;
-      continue;
-    }
-
-    if (value === '--runner-subagent-review') {
-      const raw = argv[index + 1];
+      const VALID_RUNNERS = ['claude-cli', 'codex-exec'] as const;
 
       if (
         raw === undefined ||
         raw.startsWith('--') ||
-        !VALID_SUBAGENT_REVIEW_RUNNER_KINDS.includes(
-          raw as SubagentReviewRunnerKind,
-        )
+        !(VALID_RUNNERS as readonly string[]).includes(raw)
       ) {
         throw new Error(
-          `Pass --runner-subagent-review <${VALID_SUBAGENT_REVIEW_RUNNER_KINDS.join('|')}>.`,
+          `Pass --preferred-runner <${VALID_RUNNERS.join('|')}>.`,
         );
       }
 
-      runnerSubagentReview = raw as SubagentReviewRunnerKind;
+      preferredRunner = raw as 'claude-cli' | 'codex-exec';
       index += 1;
       continue;
     }
@@ -312,18 +257,6 @@ export function parseCliArgs(argv: string[], usage: string): ParsedCliArgs {
     positionals.push(value ?? '');
   }
 
-  const reviewSubagentFlagCount = [
-    reviewSubagent !== undefined,
-    sameReviewSubagent === true,
-    runnerSubagentReview !== undefined,
-  ].filter(Boolean).length;
-
-  if (reviewSubagentFlagCount > 1) {
-    throw new Error(
-      '--review-subagent, --same-review-subagent, and --runner-subagent-review are mutually exclusive. Pass one or the other.',
-    );
-  }
-
   const [command, ...rest] = positionals;
 
   if (!command) {
@@ -339,9 +272,7 @@ export function parseCliArgs(argv: string[], usage: string): ParsedCliArgs {
     boundaryMode,
     subagentReviewPolicy,
     prReviewPolicy,
-    reviewSubagent,
-    sameReviewSubagent,
-    runnerSubagentReview,
+    preferredRunner,
     redCommitSha,
     baseline,
   };

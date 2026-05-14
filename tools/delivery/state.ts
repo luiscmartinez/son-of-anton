@@ -5,7 +5,6 @@ import { dirname, resolve } from 'node:path';
 import type {
   ResolvedOrchestratorConfig,
   ReviewPolicyStageValue,
-  SubagentReviewRunnerKind,
   TicketBoundaryMode,
 } from './config';
 import {
@@ -21,7 +20,6 @@ import type {
   DeliveryState,
   OrchestratorOptions,
   RunPolicy,
-  RunPolicyReviewSubagent,
   TicketDefinition,
   TicketState,
   TicketStatus,
@@ -29,22 +27,6 @@ import type {
 
 // ─── Run-policy divergence helpers ──────────────────────────────────────────
 
-function runPolicyReviewSubagentEqual(
-  a: RunPolicyReviewSubagent,
-  b: RunPolicyReviewSubagent,
-): boolean {
-  if (a.kind !== b.kind) return false;
-  if (a.kind === 'override' && b.kind === 'override')
-    return a.value === b.value;
-  if (a.kind === 'runner' && b.kind === 'runner') return a.runner === b.runner;
-  return true;
-}
-
-/**
- * Compare persisted runPolicy against the current config-derived policy on
- * the four bounded Phase 07 fields.
- * Returns an array of field names that differ (empty = no divergence).
- */
 export function detectRunPolicyDivergence(
   persisted: RunPolicy,
   current: RunPolicy,
@@ -59,30 +41,9 @@ export function detectRunPolicyDivergence(
   if (persisted.prReview !== current.prReview) {
     fields.push('prReview');
   }
-  if (
-    !runPolicyReviewSubagentEqual(
-      persisted.reviewSubagent,
-      current.reviewSubagent,
-    )
-  ) {
-    fields.push('reviewSubagent');
-  }
   return fields;
 }
 
-function formatReviewSubagent(rs: RunPolicyReviewSubagent): string {
-  if (rs.kind === 'override') return `override(${rs.value})`;
-  if (rs.kind === 'runner') return `runner(${rs.runner})`;
-  return 'same-type';
-}
-
-/**
- * Format an operator-facing error message when resume detects divergence
- * between the persisted runPolicy and the current repo config.
- *
- * Includes both policy values for each diverged field and exact recovery
- * commands the operator can use to resolve the conflict.
- */
 export function formatRunPolicyDivergenceError(
   persisted: RunPolicy,
   current: RunPolicy,
@@ -105,12 +66,9 @@ export function formatRunPolicyDivergenceError(
     } else if (field === 'subagentReview') {
       persistedValue = persisted.subagentReview;
       currentValue = current.subagentReview;
-    } else if (field === 'prReview') {
+    } else {
       persistedValue = persisted.prReview;
       currentValue = current.prReview;
-    } else {
-      persistedValue = formatReviewSubagent(persisted.reviewSubagent);
-      currentValue = formatReviewSubagent(current.reviewSubagent);
     }
 
     lines.push(
@@ -130,90 +88,31 @@ export function formatRunPolicyDivergenceError(
   return lines.join('\n');
 }
 
-/**
- * Apply explicit CLI flag overrides on top of a base RunPolicy.
- * Used when `--baseline run-policy` is selected: preserve the persisted
- * policy but honour any additional flags the operator passed.
- *
- * Callers must not pass both `reviewSubagent` and `sameReviewSubagent`
- * simultaneously — this function throws defensively even though `parseCliArgs`
- * already rejects that combination at the CLI layer.
- */
 export function patchRunPolicyWithFlags(
   base: RunPolicy,
   flags: {
     boundaryMode?: TicketBoundaryMode;
     subagentReviewPolicy?: ReviewPolicyStageValue;
     prReviewPolicy?: ReviewPolicyStageValue;
-    reviewSubagent?: string;
-    sameReviewSubagent?: boolean;
-    runnerSubagentReview?: SubagentReviewRunnerKind;
   },
 ): RunPolicy {
-  const reviewSubagentFlags = [
-    flags.reviewSubagent !== undefined,
-    flags.sameReviewSubagent === true,
-    flags.runnerSubagentReview !== undefined,
-  ].filter(Boolean).length;
-
-  if (reviewSubagentFlags > 1) {
-    throw new Error(
-      'patchRunPolicyWithFlags: reviewSubagent, sameReviewSubagent, and runnerSubagentReview are mutually exclusive.',
-    );
-  }
-
-  let reviewSubagent: RunPolicyReviewSubagent;
-
-  if (flags.runnerSubagentReview !== undefined) {
-    reviewSubagent = {
-      kind: 'runner',
-      runner: flags.runnerSubagentReview,
-    };
-  } else if (flags.reviewSubagent !== undefined) {
-    reviewSubagent = { kind: 'override', value: flags.reviewSubagent };
-  } else if (flags.sameReviewSubagent === true) {
-    reviewSubagent = { kind: 'same-type' };
-  } else {
-    reviewSubagent = base.reviewSubagent;
-  }
-
   return {
     ticketBoundaryMode: flags.boundaryMode ?? base.ticketBoundaryMode,
     subagentReview: flags.subagentReviewPolicy ?? base.subagentReview,
     prReview: flags.prReviewPolicy ?? base.prReview,
-    reviewSubagent,
   };
 }
 
 export function deriveRunPolicyFromConfig(
   config: ResolvedOrchestratorConfig,
 ): RunPolicy {
-  let reviewSubagent: RunPolicyReviewSubagent;
-
-  if (config.subagentReviewRunner) {
-    reviewSubagent = {
-      kind: 'runner',
-      runner: config.subagentReviewRunner.kind,
-    };
-  } else if (config.reviewSubagentOverride) {
-    reviewSubagent = { kind: 'override', value: config.reviewSubagentOverride };
-  } else {
-    reviewSubagent = { kind: 'same-type' };
-  }
-
   return {
     ticketBoundaryMode: config.ticketBoundaryMode,
     subagentReview: config.reviewPolicy.subagentReview,
     prReview: config.reviewPolicy.prReview,
-    reviewSubagent,
   };
 }
 
-/**
- * Apply a persisted runPolicy on top of the current resolved config.
- * The logical inverse of deriveRunPolicyFromConfig: all four bounded Phase 07
- * fields are taken from the runPolicy, overriding whatever the config says.
- */
 export function applyRunPolicyToConfig(
   config: ResolvedOrchestratorConfig,
   runPolicy: RunPolicy,
@@ -226,14 +125,6 @@ export function applyRunPolicyToConfig(
       subagentReview: runPolicy.subagentReview,
       prReview: runPolicy.prReview,
     },
-    reviewSubagentOverride:
-      runPolicy.reviewSubagent.kind === 'override'
-        ? runPolicy.reviewSubagent.value
-        : undefined,
-    subagentReviewRunner:
-      runPolicy.reviewSubagent.kind === 'runner'
-        ? { kind: runPolicy.reviewSubagent.runner }
-        : undefined,
   };
 }
 

@@ -31,14 +31,12 @@ const samTypePolicy: RunPolicy = {
   ticketBoundaryMode: 'cook',
   subagentReview: 'skip_doc_only',
   prReview: 'skip_doc_only',
-  reviewSubagent: { kind: 'same-type' },
 };
 
 const overridePolicy: RunPolicy = {
   ticketBoundaryMode: 'gated',
   subagentReview: 'required',
   prReview: 'disabled',
-  reviewSubagent: { kind: 'override', value: 'codex:codex-rescue' },
 };
 
 // ─── formatRunPolicy ─────────────────────────────────────────────────────────
@@ -61,24 +59,12 @@ describe('P7.04 run-policy observability', () => {
       );
     });
 
-    it('renders reviewSubagent same-type as "same-type"', () => {
-      expect(formatRunPolicy(samTypePolicy)).toContain(
-        'reviewSubagent:same-type',
-      );
-    });
-
-    it('renders reviewSubagent override with the agent value', () => {
-      expect(formatRunPolicy(overridePolicy)).toContain(
-        'reviewSubagent:codex:codex-rescue',
-      );
-    });
-
-    it('renders all four fields in a single string', () => {
+    it('renders all three fields in a single string', () => {
       const out = formatRunPolicy(overridePolicy);
       expect(out).toContain('boundary_mode=gated');
       expect(out).toContain('subagentReview:required');
       expect(out).toContain('prReview:disabled');
-      expect(out).toContain('reviewSubagent:codex:codex-rescue');
+      expect(out).not.toContain('reviewSubagent');
     });
   });
 
@@ -115,7 +101,7 @@ describe('P7.04 run-policy observability', () => {
       expect(runPolicyLine).toContain('gated');
     });
 
-    it('shows reviewSubagent override in the run_policy line', () => {
+    it('shows subagentReview value in the run_policy line', () => {
       const state: DeliveryState = {
         ...baseState,
         runPolicy: overridePolicy,
@@ -124,19 +110,7 @@ describe('P7.04 run-policy observability', () => {
       const runPolicyLine = out
         .split('\n')
         .find((l) => l.startsWith('run_policy='));
-      expect(runPolicyLine).toContain('codex:codex-rescue');
-    });
-
-    it('shows same-type in the run_policy line when no override', () => {
-      const state: DeliveryState = {
-        ...baseState,
-        runPolicy: samTypePolicy,
-      };
-      const out = formatStatus(state, baseConfig);
-      const runPolicyLine = out
-        .split('\n')
-        .find((l) => l.startsWith('run_policy='));
-      expect(runPolicyLine).toContain('same-type');
+      expect(runPolicyLine).toContain('subagentReview:required');
     });
 
     it('labels the run_policy line as [persisted] to distinguish it from config lines', () => {

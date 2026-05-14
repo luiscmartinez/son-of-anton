@@ -14,7 +14,6 @@ const basePolicy: RunPolicy = {
   ticketBoundaryMode: 'cook',
   subagentReview: 'skip_doc_only',
   prReview: 'skip_doc_only',
-  reviewSubagent: { kind: 'same-type' },
 };
 
 // ─── detectRunPolicyDivergence ───────────────────────────────────────────────
@@ -46,44 +45,6 @@ describe('P7.03 resume divergence guardrails', () => {
       );
     });
 
-    it('detects reviewSubagent divergence when kind differs', () => {
-      const current: RunPolicy = {
-        ...basePolicy,
-        reviewSubagent: { kind: 'override', value: 'codex:codex-rescue' },
-      };
-      expect(detectRunPolicyDivergence(basePolicy, current)).toContain(
-        'reviewSubagent',
-      );
-    });
-
-    it('detects reviewSubagent divergence when both are override but different values', () => {
-      const persisted: RunPolicy = {
-        ...basePolicy,
-        reviewSubagent: { kind: 'override', value: 'agent-a' },
-      };
-      const current: RunPolicy = {
-        ...basePolicy,
-        reviewSubagent: { kind: 'override', value: 'agent-b' },
-      };
-      expect(detectRunPolicyDivergence(persisted, current)).toContain(
-        'reviewSubagent',
-      );
-    });
-
-    it('does not flag reviewSubagent when both are override with the same value', () => {
-      const persisted: RunPolicy = {
-        ...basePolicy,
-        reviewSubagent: { kind: 'override', value: 'agent-a' },
-      };
-      const current: RunPolicy = {
-        ...basePolicy,
-        reviewSubagent: { kind: 'override', value: 'agent-a' },
-      };
-      expect(detectRunPolicyDivergence(persisted, current)).not.toContain(
-        'reviewSubagent',
-      );
-    });
-
     it('returns multiple fields when multiple diverge', () => {
       const current: RunPolicy = {
         ...basePolicy,
@@ -94,7 +55,6 @@ describe('P7.03 resume divergence guardrails', () => {
       expect(fields).toContain('ticketBoundaryMode');
       expect(fields).toContain('subagentReview');
       expect(fields).not.toContain('prReview');
-      expect(fields).not.toContain('reviewSubagent');
     });
   });
 
@@ -231,48 +191,6 @@ describe('P7.03 resume divergence guardrails', () => {
         prReviewPolicy: 'disabled',
       });
       expect(patched.prReview).toBe('disabled');
-    });
-
-    it('sets reviewSubagent to override when --review-subagent provided', () => {
-      const patched = patchRunPolicyWithFlags(basePolicy, {
-        reviewSubagent: 'some-agent',
-      });
-      expect(patched.reviewSubagent).toEqual({
-        kind: 'override',
-        value: 'some-agent',
-      });
-    });
-
-    it('sets reviewSubagent to same-type when --same-review-subagent provided', () => {
-      const withOverride: RunPolicy = {
-        ...basePolicy,
-        reviewSubagent: { kind: 'override', value: 'some-agent' },
-      };
-      const patched = patchRunPolicyWithFlags(withOverride, {
-        sameReviewSubagent: true,
-      });
-      expect(patched.reviewSubagent).toEqual({ kind: 'same-type' });
-    });
-
-    it('preserves base reviewSubagent when neither --review-subagent nor --same-review-subagent provided', () => {
-      const withOverride: RunPolicy = {
-        ...basePolicy,
-        reviewSubagent: { kind: 'override', value: 'preserved-agent' },
-      };
-      const patched = patchRunPolicyWithFlags(withOverride, {});
-      expect(patched.reviewSubagent).toEqual({
-        kind: 'override',
-        value: 'preserved-agent',
-      });
-    });
-
-    it('throws when both reviewSubagent and sameReviewSubagent are provided', () => {
-      expect(() =>
-        patchRunPolicyWithFlags(basePolicy, {
-          reviewSubagent: 'some-agent',
-          sameReviewSubagent: true,
-        }),
-      ).toThrow('mutually exclusive');
     });
   });
 

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'bun:test';
 
 import {
-  executeCodexExecReview,
-  executeClaudeCliReview,
+  buildRunnerArtifact,
+  tryRunner,
   validateRunnerArtifact,
 } from '../subagent-runner';
 import { openPullRequest } from '../orchestrator';
@@ -40,7 +40,7 @@ const baseStateVerified: DeliveryState = {
 };
 
 function makeContext(
-  runnerKind: 'claude-cli' | 'codex-exec' | undefined,
+  subagentReview: 'required' | 'skip_doc_only' | 'disabled' = 'skip_doc_only',
 ): DeliveryOrchestratorContext {
   return {
     config: {
@@ -50,11 +50,9 @@ function makeContext(
       packageManager: 'bun',
       ticketBoundaryMode: 'cook',
       reviewPolicy: {
-        subagentReview: 'skip_doc_only',
+        subagentReview,
         prReview: 'skip_doc_only',
       },
-      subagentReviewRunner:
-        runnerKind !== undefined ? { kind: runnerKind } : undefined,
     },
     platform: {
       createPullRequest: () => ({
@@ -80,226 +78,57 @@ function makeContext(
   } as unknown as DeliveryOrchestratorContext;
 }
 
-// ─── Codex Exec runner execution ──────────────────────────────────────────────
+// ─── tryRunner with codex-exec identity ───────────────────────────────────────
 
-describe('P10.03 — Codex Exec runner execution', () => {
-  it('returns clean outcome when process exits 0 with clean JSON', () => {
-    const result = executeCodexExecReview({
-      headSha: 'abc1234',
-      prompt: 'Review this diff.',
-      timeoutMs: 30_000,
-      spawnProcess: () => ({
-        exitCode: 0,
-        stdout: JSON.stringify({ outcome: 'clean', findings: [] }),
-        timedOut: false,
-      }),
-    });
-    expect(result.outcome).toBe('clean');
-    expect(result.runnerKind).toBe('codex-exec');
-    expect(result.reviewedHeadSha).toBe('abc1234');
+describe('P10.03 — tryRunner: outcome detection is runner-agnostic', () => {
+  it('returns ran+clean for codex-exec style invocation with no changes', () => {
+    const result = tryRunner(
+      () => ({ exitCode: 0, timedOut: false }),
+      () => false,
+    );
+    expect(result).toEqual({ status: 'ran', outcome: 'clean' });
   });
 
-  it('returns patched outcome when process exits 0 with patched JSON', () => {
-    const result = executeCodexExecReview({
-      headSha: 'def5678',
-      prompt: 'Review this diff.',
-      timeoutMs: 30_000,
-      spawnProcess: () => ({
-        exitCode: 0,
-        stdout: JSON.stringify({
-          outcome: 'patched',
-          findings: ['removed dead branch'],
-        }),
-        timedOut: false,
-      }),
-    });
-    expect(result.outcome).toBe('patched');
-    expect(result.findings).toEqual(['removed dead branch']);
+  it('returns ran+patched for codex-exec style invocation with changes', () => {
+    const result = tryRunner(
+      () => ({ exitCode: 0, timedOut: false }),
+      () => true,
+    );
+    expect(result).toEqual({ status: 'ran', outcome: 'patched' });
   });
 
-  it('returns unavailable when process spawn fails with ENOENT', () => {
-    const result = executeCodexExecReview({
-      headSha: 'ghi9012',
-      prompt: 'Review.',
-      timeoutMs: 30_000,
-      spawnProcess: () => {
-        throw Object.assign(new Error('spawn codex ENOENT'), {
-          code: 'ENOENT',
-        });
+  it('returns unavailable for codex-exec style when spawn fails', () => {
+    const result = tryRunner(
+      () => {
+        throw new Error('spawn codex ENOENT');
       },
-    });
-    expect(result.outcome).toBe('unavailable');
-    expect(result.runnerKind).toBe('codex-exec');
-  });
-
-  it('returns timeout outcome when process times out', () => {
-    const result = executeCodexExecReview({
-      headSha: 'jkl3456',
-      prompt: 'Review.',
-      timeoutMs: 30_000,
-      spawnProcess: () => ({
-        exitCode: null,
-        stdout: '',
-        timedOut: true,
-      }),
-    });
-    expect(result.outcome).toBe('timeout');
-  });
-
-  it('returns malformed when output is not valid JSON', () => {
-    const result = executeCodexExecReview({
-      headSha: 'mno7890',
-      prompt: 'Review.',
-      timeoutMs: 30_000,
-      spawnProcess: () => ({
-        exitCode: 0,
-        stdout: 'not json',
-        timedOut: false,
-      }),
-    });
-    expect(result.outcome).toBe('malformed');
-  });
-
-  it('returns malformed when JSON lacks outcome field', () => {
-    const result = executeCodexExecReview({
-      headSha: 'pqr1234',
-      prompt: 'Review.',
-      timeoutMs: 30_000,
-      spawnProcess: () => ({
-        exitCode: 0,
-        stdout: JSON.stringify({ summary: 'looks fine' }),
-        timedOut: false,
-      }),
-    });
-    expect(result.outcome).toBe('malformed');
-  });
-
-  it('returns malformed when process exits non-zero', () => {
-    const result = executeCodexExecReview({
-      headSha: 'stu5678',
-      prompt: 'Review.',
-      timeoutMs: 30_000,
-      spawnProcess: () => ({
-        exitCode: 1,
-        stdout: '',
-        timedOut: false,
-      }),
-    });
-    expect(result.outcome).toBe('malformed');
+      () => false,
+    );
+    expect(result).toEqual({ status: 'unavailable' });
   });
 });
 
-// ─── Runner identity ──────────────────────────────────────────────────────────
+// ─── buildRunnerArtifact identity ────────────────────────────────────────────
 
-describe('P10.03 — runner identity in artifacts', () => {
-  it('codex-exec result has runnerKind codex-exec', () => {
-    const result = executeCodexExecReview({
-      headSha: 'abc',
-      prompt: 'p',
-      timeoutMs: 1000,
-      spawnProcess: () => ({
-        exitCode: 0,
-        stdout: JSON.stringify({ outcome: 'clean' }),
-        timedOut: false,
-      }),
-    });
-    expect(result.runnerKind).toBe('codex-exec');
+describe('P10.03 — buildRunnerArtifact identity', () => {
+  it('builds codex-exec artifact with correct runnerKind', () => {
+    const artifact = buildRunnerArtifact('codex-exec', 'sha1234', 'clean');
+    expect(artifact.runnerKind).toBe('codex-exec');
+    expect(artifact.outcome).toBe('clean');
+    expect(artifact.reviewedHeadSha).toBe('sha1234');
+    expect(typeof artifact.completedAt).toBe('string');
   });
 
-  it('claude-cli result has runnerKind claude-cli (unchanged by P10.03)', () => {
-    const result = executeClaudeCliReview({
-      headSha: 'abc',
-      prompt: 'p',
-      timeoutMs: 1000,
-      spawnProcess: () => ({
-        exitCode: 0,
-        stdout: JSON.stringify({ outcome: 'clean' }),
-        timedOut: false,
-      }),
-    });
-    expect(result.runnerKind).toBe('claude-cli');
-  });
-});
-
-// ─── open-pr gating with codex-exec runner ───────────────────────────────────
-
-describe('P10.03 — open-pr fails closed when codex-exec runner artifact is missing', () => {
-  it('fails closed when codex-exec runner is configured and no artifact path on ticket', async () => {
-    const stateWithoutArtifact: DeliveryState = {
-      ...baseStateVerified,
-      tickets: baseStateVerified.tickets.map((t) => ({
-        ...t,
-        subagentRunnerArtifactPath: undefined,
-      })),
-    };
-    const context = makeContext('codex-exec');
-
-    await expect(
-      openPullRequest(stateWithoutArtifact, '/tmp/project', context, 'P10.03'),
-    ).rejects.toThrow(/runner.*review.*required|requires.*runner.*review/i);
+  it('builds claude-cli artifact with correct runnerKind', () => {
+    const artifact = buildRunnerArtifact('claude-cli', 'sha5678', 'patched');
+    expect(artifact.runnerKind).toBe('claude-cli');
+    expect(artifact.outcome).toBe('patched');
   });
 
-  it('exposes stable contract code workflow.open_pr.requires_runner_review for codex-exec', async () => {
-    const stateWithoutArtifact: DeliveryState = {
-      ...baseStateVerified,
-      tickets: baseStateVerified.tickets.map((t) => ({
-        ...t,
-        subagentRunnerArtifactPath: undefined,
-      })),
-    };
-    const context = makeContext('codex-exec');
-
-    try {
-      await openPullRequest(
-        stateWithoutArtifact,
-        '/tmp/project',
-        context,
-        'P10.03',
-      );
-      throw new Error('Expected error was not thrown');
-    } catch (error) {
-      expect((error as { code?: string }).code).toBe(
-        'workflow.open_pr.requires_runner_review',
-      );
-    }
-  });
-
-  it('does not gate when no runner is configured (codex path)', async () => {
-    const context = makeContext(undefined);
-    const stateWithoutArtifact: DeliveryState = {
-      ...baseStateVerified,
-      tickets: baseStateVerified.tickets.map((t) => ({
-        ...t,
-        subagentRunnerArtifactPath: undefined,
-      })),
-    };
-    try {
-      await openPullRequest(
-        stateWithoutArtifact,
-        '/tmp/project',
-        context,
-        'P10.03',
-      );
-    } catch (err) {
-      expect((err as Error).message).not.toMatch(/requires.*runner.*review/i);
-    }
-  });
-
-  it('fails closed when codex-exec runner is configured and ticket is at in_review with no artifact (no ticketId)', async () => {
-    const stateInReview: DeliveryState = {
-      ...baseStateVerified,
-      tickets: baseStateVerified.tickets.map((t) => ({
-        ...t,
-        status: 'in_review' as const,
-        subagentRunnerArtifactPath: undefined,
-      })),
-    };
-    const context = makeContext('codex-exec');
-
-    // When ticketId is omitted, the gate must still find the in_review ticket and block.
-    await expect(
-      openPullRequest(stateInReview, '/tmp/project', context),
-    ).rejects.toThrow(/runner.*review.*required|requires.*runner.*review/i);
+  it('builds skipped artifact for honest skip case', () => {
+    const artifact = buildRunnerArtifact('skipped', 'sha9012', 'skipped');
+    expect(artifact.runnerKind).toBe('skipped');
+    expect(artifact.outcome).toBe('skipped');
   });
 });
 
@@ -319,13 +148,9 @@ describe('P10.03 — validateRunnerArtifact accepts codex-exec runnerKind', () =
     );
   });
 
-  it('accepts a valid codex-exec patched artifact with findings', () => {
-    const artifact = {
-      ...validCodexArtifact,
-      outcome: 'patched',
-      findings: ['removed dead branch'],
-    };
-    expect(validateRunnerArtifact(artifact)).not.toBeNull();
+  it('accepts a valid codex-exec patched artifact', () => {
+    const artifact = { ...validCodexArtifact, outcome: 'patched' as const };
+    expect(validateRunnerArtifact(artifact)).toEqual(artifact);
   });
 
   it('returns null for codex-exec artifact missing reviewedHeadSha', () => {
@@ -337,5 +162,75 @@ describe('P10.03 — validateRunnerArtifact accepts codex-exec runnerKind', () =
     expect(
       validateRunnerArtifact({ ...validCodexArtifact, outcome: 'unknown' }),
     ).toBeNull();
+  });
+});
+
+// ─── open-pr policy-based gate (codex path) ───────────────────────────────────
+
+describe('P10.03 — open-pr policy gate applies to codex-exec artifacts too', () => {
+  it('fails closed when outcome=clean and no artifact path', async () => {
+    const stateWithoutArtifact: DeliveryState = {
+      ...baseStateVerified,
+      tickets: baseStateVerified.tickets.map((t) => ({
+        ...t,
+        status: 'verified' as const,
+        subagentReviewOutcome: 'clean' as const,
+        subagentRunnerArtifactPath: undefined,
+      })),
+    };
+    const context = makeContext('skip_doc_only');
+
+    await expect(
+      openPullRequest(stateWithoutArtifact, '/tmp/project', context, 'P10.03'),
+    ).rejects.toThrow(/runner.*review.*required|requires.*runner.*review/i);
+  });
+
+  it('exposes stable contract code for codex path', async () => {
+    const stateWithoutArtifact: DeliveryState = {
+      ...baseStateVerified,
+      tickets: baseStateVerified.tickets.map((t) => ({
+        ...t,
+        status: 'verified' as const,
+        subagentReviewOutcome: 'clean' as const,
+        subagentRunnerArtifactPath: undefined,
+      })),
+    };
+
+    try {
+      await openPullRequest(
+        stateWithoutArtifact,
+        '/tmp/project',
+        makeContext('skip_doc_only'),
+        'P10.03',
+      );
+      throw new Error('Expected error was not thrown');
+    } catch (error) {
+      expect((error as { code?: string }).code).toBe(
+        'workflow.open_pr.requires_runner_review',
+      );
+    }
+  });
+
+  it('does not gate when subagentReview is disabled (codex path)', async () => {
+    const context = makeContext('disabled');
+    const stateWithoutArtifact: DeliveryState = {
+      ...baseStateVerified,
+      tickets: baseStateVerified.tickets.map((t) => ({
+        ...t,
+        subagentRunnerArtifactPath: undefined,
+      })),
+    };
+    try {
+      await openPullRequest(
+        stateWithoutArtifact,
+        '/tmp/project',
+        context,
+        'P10.03',
+      );
+    } catch (err) {
+      expect((err as { code?: string }).code).not.toBe(
+        'workflow.open_pr.requires_runner_review',
+      );
+    }
   });
 });

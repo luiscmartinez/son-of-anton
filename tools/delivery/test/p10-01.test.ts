@@ -3,18 +3,18 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-import { parseCliArgs, resolveRuntimePolicyOverrides } from '../cli';
+import { parseCliArgs } from '../cli';
 import {
   loadOrchestratorConfig,
   resolveOrchestratorConfig,
 } from '../runtime-config';
 import { formatRunPolicy } from '../format';
+import { deriveRunPolicyFromConfig } from '../state';
 import {
-  deriveRunPolicyFromConfig,
-  applyRunPolicyToConfig,
-  patchRunPolicyWithFlags,
-  detectRunPolicyDivergence,
-} from '../state';
+  buildRunnerArtifact,
+  tryRunner,
+  validateRunnerArtifact,
+} from '../subagent-runner';
 import type { ResolvedOrchestratorConfig } from '../runtime-config';
 import type { RunPolicy } from '../types';
 
@@ -30,404 +30,264 @@ const baseResolvedConfig: ResolvedOrchestratorConfig = {
   },
 };
 
-// ─── Config parsing ──────────────────────────────────────────────────────────
+// ─── Clean-break: retired config keys throw ─────────────────────────────────
 
-describe('P10.01 — runner-native config parsing', () => {
-  it('loads subagentReviewRunner with kind claude-cli', async () => {
-    const tempDir = await mkdtemp(join(tmpdir(), 'p10-01-cfg-'));
+describe('P10.01 — retired config keys throw on load', () => {
+  it('throws when subagentReviewRunner is present in config', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'p10-01-retired-'));
     try {
       await writeFile(
         join(tempDir, 'orchestrator.config.json'),
         JSON.stringify({ subagentReviewRunner: { kind: 'claude-cli' } }),
       );
+      await expect(loadOrchestratorConfig(tempDir)).rejects.toThrow(
+        /subagentReviewRunner.*has been removed/,
+      );
+    } finally {
+      await rm(tempDir, { recursive: true });
+    }
+  });
+
+  it('throws when reviewSubagentOverride is present in config', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'p10-01-retired2-'));
+    try {
+      await writeFile(
+        join(tempDir, 'orchestrator.config.json'),
+        JSON.stringify({ reviewSubagentOverride: 'codex:codex-rescue' }),
+      );
+      await expect(loadOrchestratorConfig(tempDir)).rejects.toThrow(
+        /reviewSubagentOverride.*has been removed/,
+      );
+    } finally {
+      await rm(tempDir, { recursive: true });
+    }
+  });
+
+  it('loads cleanly when neither retired key is present', async () => {
+    const tempDir = await mkdtemp(join(tmpdir(), 'p10-01-clean-'));
+    try {
+      await writeFile(
+        join(tempDir, 'orchestrator.config.json'),
+        JSON.stringify({ ticketBoundaryMode: 'cook' }),
+      );
       const config = await loadOrchestratorConfig(tempDir);
-      expect(config.subagentReviewRunner).toEqual({ kind: 'claude-cli' });
+      expect(config.ticketBoundaryMode).toBe('cook');
     } finally {
       await rm(tempDir, { recursive: true });
     }
   });
+});
 
-  it('loads subagentReviewRunner with kind codex-exec', async () => {
-    const tempDir = await mkdtemp(join(tmpdir(), 'p10-01-cfg-codex-'));
-    try {
-      await writeFile(
-        join(tempDir, 'orchestrator.config.json'),
-        JSON.stringify({ subagentReviewRunner: { kind: 'codex-exec' } }),
-      );
-      const config = await loadOrchestratorConfig(tempDir);
-      expect(config.subagentReviewRunner).toEqual({ kind: 'codex-exec' });
-    } finally {
-      await rm(tempDir, { recursive: true });
-    }
-  });
+// ─── resolveOrchestratorConfig ───────────────────────────────────────────────
 
-  it('throws on invalid subagentReviewRunner.kind', async () => {
-    const tempDir = await mkdtemp(join(tmpdir(), 'p10-01-cfg-bad-'));
-    try {
-      await writeFile(
-        join(tempDir, 'orchestrator.config.json'),
-        JSON.stringify({ subagentReviewRunner: { kind: 'gemini-cli' } }),
-      );
-      await expect(loadOrchestratorConfig(tempDir)).rejects.toThrow(
-        /subagentReviewRunner/,
-      );
-    } finally {
-      await rm(tempDir, { recursive: true });
-    }
-  });
-
-  it('throws when subagentReviewRunner is not an object', async () => {
-    const tempDir = await mkdtemp(join(tmpdir(), 'p10-01-cfg-type-'));
-    try {
-      await writeFile(
-        join(tempDir, 'orchestrator.config.json'),
-        JSON.stringify({ subagentReviewRunner: 'claude-cli' }),
-      );
-      await expect(loadOrchestratorConfig(tempDir)).rejects.toThrow(
-        /subagentReviewRunner/,
-      );
-    } finally {
-      await rm(tempDir, { recursive: true });
-    }
-  });
-
-  it('throws when subagentReviewRunner is missing kind', async () => {
-    const tempDir = await mkdtemp(join(tmpdir(), 'p10-01-cfg-no-kind-'));
-    try {
-      await writeFile(
-        join(tempDir, 'orchestrator.config.json'),
-        JSON.stringify({ subagentReviewRunner: {} }),
-      );
-      await expect(loadOrchestratorConfig(tempDir)).rejects.toThrow(
-        /subagentReviewRunner/,
-      );
-    } finally {
-      await rm(tempDir, { recursive: true });
-    }
-  });
-
-  it('resolveOrchestratorConfig includes subagentReviewRunner from raw config', () => {
-    const resolved = resolveOrchestratorConfig(
-      { subagentReviewRunner: { kind: 'claude-cli' } },
-      '/tmp/test',
-    );
-    expect(resolved.subagentReviewRunner).toEqual({ kind: 'claude-cli' });
-  });
-
-  it('resolveOrchestratorConfig has no subagentReviewRunner when absent', () => {
+describe('P10.01 — resolveOrchestratorConfig', () => {
+  it('resolves with no subagentReviewRunner field', () => {
     const resolved = resolveOrchestratorConfig({}, '/tmp/test');
-    expect(resolved.subagentReviewRunner).toBeUndefined();
+    expect(
+      (resolved as Record<string, unknown>)['subagentReviewRunner'],
+    ).toBeUndefined();
+    expect(
+      (resolved as Record<string, unknown>)['reviewSubagentOverride'],
+    ).toBeUndefined();
   });
 });
 
-// ─── RunPolicy round-trip ────────────────────────────────────────────────────
+// ─── deriveRunPolicyFromConfig ───────────────────────────────────────────────
 
-describe('P10.01 — RunPolicy runner round-trip', () => {
-  it('deriveRunPolicyFromConfig produces runner kind when subagentReviewRunner is set', () => {
-    const config: ResolvedOrchestratorConfig = {
-      ...baseResolvedConfig,
-      subagentReviewRunner: { kind: 'claude-cli' },
-    };
-    const policy = deriveRunPolicyFromConfig(config);
-    expect(policy.reviewSubagent).toEqual({
-      kind: 'runner',
-      runner: 'claude-cli',
+describe('P10.01 — deriveRunPolicyFromConfig', () => {
+  it('produces a RunPolicy with three fields (no reviewSubagent)', () => {
+    const policy = deriveRunPolicyFromConfig(baseResolvedConfig);
+    expect(policy).toEqual({
+      ticketBoundaryMode: 'cook',
+      subagentReview: 'skip_doc_only',
+      prReview: 'skip_doc_only',
     });
-  });
-
-  it('deriveRunPolicyFromConfig produces runner kind for codex-exec', () => {
-    const config: ResolvedOrchestratorConfig = {
-      ...baseResolvedConfig,
-      subagentReviewRunner: { kind: 'codex-exec' },
-    };
-    const policy = deriveRunPolicyFromConfig(config);
-    expect(policy.reviewSubagent).toEqual({
-      kind: 'runner',
-      runner: 'codex-exec',
-    });
-  });
-
-  it('deriveRunPolicyFromConfig prefers subagentReviewRunner over reviewSubagentOverride', () => {
-    const config: ResolvedOrchestratorConfig = {
-      ...baseResolvedConfig,
-      subagentReviewRunner: { kind: 'claude-cli' },
-      reviewSubagentOverride: 'codex:codex-rescue',
-    };
-    const policy = deriveRunPolicyFromConfig(config);
-    expect(policy.reviewSubagent.kind).toBe('runner');
-  });
-
-  it('applyRunPolicyToConfig sets subagentReviewRunner from runner reviewSubagent', () => {
-    const runPolicy: RunPolicy = {
-      ticketBoundaryMode: 'cook',
-      subagentReview: 'skip_doc_only',
-      prReview: 'skip_doc_only',
-      reviewSubagent: { kind: 'runner', runner: 'claude-cli' },
-    };
-    const applied = applyRunPolicyToConfig(baseResolvedConfig, runPolicy);
-    expect(applied.subagentReviewRunner).toEqual({ kind: 'claude-cli' });
-    expect(applied.reviewSubagentOverride).toBeUndefined();
-  });
-
-  it('applyRunPolicyToConfig clears subagentReviewRunner for override kind', () => {
-    const runPolicy: RunPolicy = {
-      ticketBoundaryMode: 'cook',
-      subagentReview: 'skip_doc_only',
-      prReview: 'skip_doc_only',
-      reviewSubagent: { kind: 'override', value: 'codex:codex-rescue' },
-    };
-    const applied = applyRunPolicyToConfig(
-      { ...baseResolvedConfig, subagentReviewRunner: { kind: 'claude-cli' } },
-      runPolicy,
-    );
-    expect(applied.subagentReviewRunner).toBeUndefined();
-    expect(applied.reviewSubagentOverride).toBe('codex:codex-rescue');
-  });
-
-  it('applyRunPolicyToConfig clears subagentReviewRunner for same-type kind', () => {
-    const runPolicy: RunPolicy = {
-      ticketBoundaryMode: 'cook',
-      subagentReview: 'skip_doc_only',
-      prReview: 'skip_doc_only',
-      reviewSubagent: { kind: 'same-type' },
-    };
-    const applied = applyRunPolicyToConfig(
-      { ...baseResolvedConfig, subagentReviewRunner: { kind: 'claude-cli' } },
-      runPolicy,
-    );
-    expect(applied.subagentReviewRunner).toBeUndefined();
-    expect(applied.reviewSubagentOverride).toBeUndefined();
-  });
-
-  it('detectRunPolicyDivergence detects runner kind change', () => {
-    const persisted: RunPolicy = {
-      ticketBoundaryMode: 'cook',
-      subagentReview: 'skip_doc_only',
-      prReview: 'skip_doc_only',
-      reviewSubagent: { kind: 'runner', runner: 'claude-cli' },
-    };
-    const current: RunPolicy = {
-      ...persisted,
-      reviewSubagent: { kind: 'runner', runner: 'codex-exec' },
-    };
-    const diverged = detectRunPolicyDivergence(persisted, current);
-    expect(diverged).toContain('reviewSubagent');
-  });
-
-  it('detectRunPolicyDivergence detects runner vs same-type change', () => {
-    const persisted: RunPolicy = {
-      ticketBoundaryMode: 'cook',
-      subagentReview: 'skip_doc_only',
-      prReview: 'skip_doc_only',
-      reviewSubagent: { kind: 'runner', runner: 'claude-cli' },
-    };
-    const current: RunPolicy = {
-      ...persisted,
-      reviewSubagent: { kind: 'same-type' },
-    };
-    const diverged = detectRunPolicyDivergence(persisted, current);
-    expect(diverged).toContain('reviewSubagent');
-  });
-
-  it('detectRunPolicyDivergence reports no divergence for identical runner policies', () => {
-    const policy: RunPolicy = {
-      ticketBoundaryMode: 'cook',
-      subagentReview: 'skip_doc_only',
-      prReview: 'skip_doc_only',
-      reviewSubagent: { kind: 'runner', runner: 'claude-cli' },
-    };
-    expect(detectRunPolicyDivergence(policy, policy)).toEqual([]);
-  });
-
-  it('patchRunPolicyWithFlags applies runner-subagent-review override', () => {
-    const base: RunPolicy = {
-      ticketBoundaryMode: 'cook',
-      subagentReview: 'skip_doc_only',
-      prReview: 'skip_doc_only',
-      reviewSubagent: { kind: 'same-type' },
-    };
-    const patched = patchRunPolicyWithFlags(base, {
-      runnerSubagentReview: 'codex-exec',
-    });
-    expect(patched.reviewSubagent).toEqual({
-      kind: 'runner',
-      runner: 'codex-exec',
-    });
-  });
-
-  it('patchRunPolicyWithFlags: runnerSubagentReview and sameReviewSubagent are mutually exclusive', () => {
-    const base: RunPolicy = {
-      ticketBoundaryMode: 'cook',
-      subagentReview: 'skip_doc_only',
-      prReview: 'skip_doc_only',
-      reviewSubagent: { kind: 'same-type' },
-    };
-    expect(() =>
-      patchRunPolicyWithFlags(base, {
-        runnerSubagentReview: 'claude-cli',
-        sameReviewSubagent: true,
-      }),
-    ).toThrow(/mutually exclusive/);
+    expect(
+      (policy as Record<string, unknown>)['reviewSubagent'],
+    ).toBeUndefined();
   });
 });
 
-// ─── CLI parsing ─────────────────────────────────────────────────────────────
+// ─── CLI --preferred-runner flag ─────────────────────────────────────────────
 
-describe('P10.01 — CLI --runner-subagent-review flag', () => {
+describe('P10.01 — CLI --preferred-runner flag', () => {
   const usage = 'Usage: bun run deliver --plan <plan> <cmd>';
 
-  it('parses --runner-subagent-review claude-cli', () => {
+  it('parses --preferred-runner claude-cli', () => {
     const parsed = parseCliArgs(
       [
         '--plan',
         'docs/product/delivery/p/impl.md',
-        '--runner-subagent-review',
+        '--preferred-runner',
         'claude-cli',
-        'status',
+        'subagent-review',
       ],
       usage,
     );
-    expect(parsed.runnerSubagentReview).toBe('claude-cli');
+    expect(parsed.preferredRunner).toBe('claude-cli');
   });
 
-  it('parses --runner-subagent-review codex-exec', () => {
+  it('parses --preferred-runner codex-exec', () => {
     const parsed = parseCliArgs(
       [
         '--plan',
         'docs/product/delivery/p/impl.md',
-        '--runner-subagent-review',
+        '--preferred-runner',
         'codex-exec',
-        'status',
+        'subagent-review',
       ],
       usage,
     );
-    expect(parsed.runnerSubagentReview).toBe('codex-exec');
+    expect(parsed.preferredRunner).toBe('codex-exec');
   });
 
-  it('throws on invalid --runner-subagent-review value', () => {
+  it('throws on invalid --preferred-runner value', () => {
     expect(() =>
       parseCliArgs(
         [
           '--plan',
           'docs/product/delivery/p/impl.md',
-          '--runner-subagent-review',
+          '--preferred-runner',
           'gemini-cli',
-          'status',
+          'subagent-review',
         ],
         usage,
       ),
-    ).toThrow(/runner-subagent-review/);
+    ).toThrow(/preferred-runner/);
   });
 
-  it('throws when --runner-subagent-review value is missing', () => {
+  it('throws when --preferred-runner value is missing', () => {
     expect(() =>
       parseCliArgs(
         [
           '--plan',
           'docs/product/delivery/p/impl.md',
-          '--runner-subagent-review',
-          'status',
+          '--preferred-runner',
+          'subagent-review',
         ],
         usage,
       ),
-    ).toThrow(/runner-subagent-review/);
+    ).toThrow(/preferred-runner/);
   });
 
-  it('throws when --runner-subagent-review and --same-review-subagent are both passed', () => {
-    expect(() =>
-      parseCliArgs(
-        [
-          '--plan',
-          'docs/product/delivery/p/impl.md',
-          '--runner-subagent-review',
-          'claude-cli',
-          '--same-review-subagent',
-          'status',
-        ],
-        usage,
-      ),
-    ).toThrow(/mutually exclusive/);
-  });
-
-  it('throws when --runner-subagent-review and --review-subagent are both passed', () => {
-    expect(() =>
-      parseCliArgs(
-        [
-          '--plan',
-          'docs/product/delivery/p/impl.md',
-          '--runner-subagent-review',
-          'claude-cli',
-          '--review-subagent',
-          'codex:codex-rescue',
-          'status',
-        ],
-        usage,
-      ),
-    ).toThrow(/mutually exclusive/);
-  });
-
-  it('resolveRuntimePolicyOverrides applies runnerSubagentReview to config', () => {
-    const rawConfig = {};
-    const result = resolveRuntimePolicyOverrides(
-      { runnerSubagentReview: 'claude-cli' },
-      rawConfig,
+  it('leaves preferredRunner undefined when flag is absent', () => {
+    const parsed = parseCliArgs(
+      ['--plan', 'docs/product/delivery/p/impl.md', 'subagent-review'],
+      usage,
     );
-    expect(result.subagentReviewRunner).toEqual({ kind: 'claude-cli' });
-  });
-
-  it('resolveRuntimePolicyOverrides clears legacy reviewSubagentOverride when --runner-subagent-review is used', () => {
-    const rawConfig = { reviewSubagentOverride: 'codex:codex-rescue' };
-    const result = resolveRuntimePolicyOverrides(
-      { runnerSubagentReview: 'claude-cli' },
-      rawConfig,
-    );
-    expect(result.subagentReviewRunner).toEqual({ kind: 'claude-cli' });
-    expect(result.reviewSubagentOverride).toBeUndefined();
-  });
-
-  it('resolveRuntimePolicyOverrides clears subagentReviewRunner when --review-subagent is used', () => {
-    const rawConfig = { subagentReviewRunner: { kind: 'claude-cli' as const } };
-    const result = resolveRuntimePolicyOverrides(
-      { reviewSubagent: 'codex:codex-rescue' },
-      rawConfig,
-    );
-    expect(result.subagentReviewRunner).toBeUndefined();
-    expect(result.reviewSubagentOverride).toBe('codex:codex-rescue');
-  });
-
-  it('resolveRuntimePolicyOverrides clears subagentReviewRunner when --same-review-subagent is used', () => {
-    const rawConfig = { subagentReviewRunner: { kind: 'codex-exec' as const } };
-    const result = resolveRuntimePolicyOverrides(
-      { sameReviewSubagent: true },
-      rawConfig,
-    );
-    expect(result.subagentReviewRunner).toBeUndefined();
-    expect(result.reviewSubagentOverride).toBeUndefined();
+    expect(parsed.preferredRunner).toBeUndefined();
   });
 });
 
-// ─── Format ──────────────────────────────────────────────────────────────────
+// ─── tryRunner unit tests ─────────────────────────────────────────────────────
 
-describe('P10.01 — formatRunPolicy with runner', () => {
-  it('formats runner kind as runner(<kind>)', () => {
-    const policy: RunPolicy = {
-      ticketBoundaryMode: 'cook',
-      subagentReview: 'skip_doc_only',
-      prReview: 'skip_doc_only',
-      reviewSubagent: { kind: 'runner', runner: 'claude-cli' },
-    };
-    const formatted = formatRunPolicy(policy);
-    expect(formatted).toContain('reviewSubagent:runner(claude-cli)');
+describe('P10.01 — tryRunner', () => {
+  it('returns ran+clean when spawn succeeds and no changes', () => {
+    const result = tryRunner(
+      () => ({ exitCode: 0, timedOut: false }),
+      () => false,
+    );
+    expect(result).toEqual({ status: 'ran', outcome: 'clean' });
   });
 
-  it('formats codex-exec runner correctly', () => {
+  it('returns ran+patched when spawn succeeds and changes detected', () => {
+    const result = tryRunner(
+      () => ({ exitCode: 0, timedOut: false }),
+      () => true,
+    );
+    expect(result).toEqual({ status: 'ran', outcome: 'patched' });
+  });
+
+  it('returns unavailable when spawn throws', () => {
+    const result = tryRunner(
+      () => {
+        throw new Error('not found');
+      },
+      () => false,
+    );
+    expect(result).toEqual({ status: 'unavailable' });
+  });
+
+  it('returns timeout when spawn times out', () => {
+    const result = tryRunner(
+      () => ({ exitCode: null, timedOut: true }),
+      () => false,
+    );
+    expect(result).toEqual({ status: 'timeout' });
+  });
+
+  it('does not call checkHasChanges when spawned process timed out', () => {
+    let checked = false;
+    tryRunner(
+      () => ({ exitCode: null, timedOut: true }),
+      () => {
+        checked = true;
+        return false;
+      },
+    );
+    expect(checked).toBe(false);
+  });
+});
+
+// ─── validateRunnerArtifact ───────────────────────────────────────────────────
+
+describe('P10.01 — validateRunnerArtifact', () => {
+  it('validates a valid claude-cli artifact', () => {
+    const artifact = buildRunnerArtifact('claude-cli', 'abc123', 'clean');
+    expect(validateRunnerArtifact(artifact)).toEqual(artifact);
+  });
+
+  it('validates a valid codex-exec artifact', () => {
+    const artifact = buildRunnerArtifact('codex-exec', 'def456', 'patched');
+    expect(validateRunnerArtifact(artifact)).toEqual(artifact);
+  });
+
+  it('validates a skipped artifact', () => {
+    const artifact = buildRunnerArtifact('skipped', 'ghi789', 'skipped');
+    expect(validateRunnerArtifact(artifact)).toEqual(artifact);
+  });
+
+  it('returns null for missing runnerKind', () => {
+    expect(
+      validateRunnerArtifact({
+        reviewedHeadSha: 'abc',
+        outcome: 'clean',
+        completedAt: 'x',
+      }),
+    ).toBeNull();
+  });
+
+  it('returns null for invalid outcome', () => {
+    expect(
+      validateRunnerArtifact({
+        runnerKind: 'claude-cli',
+        reviewedHeadSha: 'abc',
+        outcome: 'bad',
+        completedAt: 'x',
+      }),
+    ).toBeNull();
+  });
+
+  it('returns null for non-object input', () => {
+    expect(validateRunnerArtifact(null)).toBeNull();
+    expect(validateRunnerArtifact('string')).toBeNull();
+    expect(validateRunnerArtifact(42)).toBeNull();
+  });
+});
+
+// ─── formatRunPolicy (no reviewSubagent) ─────────────────────────────────────
+
+describe('P10.01 — formatRunPolicy without reviewSubagent', () => {
+  it('formats policy with three fields only', () => {
     const policy: RunPolicy = {
       ticketBoundaryMode: 'cook',
       subagentReview: 'skip_doc_only',
       prReview: 'skip_doc_only',
-      reviewSubagent: { kind: 'runner', runner: 'codex-exec' },
     };
     const formatted = formatRunPolicy(policy);
-    expect(formatted).toContain('reviewSubagent:runner(codex-exec)');
+    expect(formatted).toContain('boundary_mode=cook');
+    expect(formatted).toContain('subagentReview:skip_doc_only');
+    expect(formatted).toContain('prReview:skip_doc_only');
+    expect(formatted).not.toContain('reviewSubagent');
   });
 });
