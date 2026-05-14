@@ -27,6 +27,7 @@ export type ParsedCliArgs = {
   reviewSubagent?: string;
   sameReviewSubagent?: boolean;
   runnerSubagentReview?: SubagentReviewRunnerKind;
+  redCommitSha?: string;
   baseline?: BaselineValue;
 };
 
@@ -113,7 +114,7 @@ export function getUsage(runDeliverInvocation: string): string {
     '  status',
     '  repair-state',
     '  start [ticket-id]',
-    '  post-red [ticket-id]',
+    '  post-red [ticket-id] [--red-commit-sha <sha>]',
     '  post-verify [ticket-id] [clean|patched] [patch-commit-sha ...]',
     '  subagent-review [ticket-id] [clean|patched|skipped] [patch-commit-sha ...]',
     '  open-pr [ticket-id]',
@@ -143,6 +144,7 @@ export function parseCliArgs(argv: string[], usage: string): ParsedCliArgs {
   let reviewSubagent: ParsedCliArgs['reviewSubagent'];
   let sameReviewSubagent: ParsedCliArgs['sameReviewSubagent'];
   let runnerSubagentReview: ParsedCliArgs['runnerSubagentReview'];
+  let redCommitSha: ParsedCliArgs['redCommitSha'];
   let baseline: ParsedCliArgs['baseline'];
   const flags = new Set<string>();
   const positionals: string[] = [];
@@ -265,6 +267,20 @@ export function parseCliArgs(argv: string[], usage: string): ParsedCliArgs {
       continue;
     }
 
+    if (value === '--red-commit-sha') {
+      const raw = argv[index + 1];
+
+      if (!raw || raw.trim() === '' || raw.startsWith('--')) {
+        throw new Error(
+          'Pass --red-commit-sha <sha> with a non-blank commit SHA.',
+        );
+      }
+
+      redCommitSha = raw.trim();
+      index += 1;
+      continue;
+    }
+
     if (value === '--baseline') {
       const raw = argv[index + 1];
 
@@ -326,6 +342,7 @@ export function parseCliArgs(argv: string[], usage: string): ParsedCliArgs {
     reviewSubagent,
     sameReviewSubagent,
     runnerSubagentReview,
+    redCommitSha,
     baseline,
   };
 }

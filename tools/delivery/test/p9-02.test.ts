@@ -160,6 +160,46 @@ describe('P9.02 tdd gate hardening', () => {
     expect(nextState).toBe(state);
   });
 
+  it('records red_complete against named redCommitSha without running CI or checking HEAD subject', async () => {
+    const nextState = await recordPostRed(
+      baseState,
+      'P9.02',
+      createDeliveryOrchestratorContext(baseConfig),
+      {
+        isLocalBranchDocOnly: () => false,
+        readHeadSha: () => 'green-head-sha',
+        readLatestCommitSubject: () => 'feat(P9.02): green implementation',
+        runVerify: () => {
+          throw new Error(
+            'should not run CI when --red-commit-sha is provided',
+          );
+        },
+      },
+      'explicit-red-sha',
+    );
+
+    expect(nextState.tickets[0]).toMatchObject({
+      status: 'red_complete',
+      redCommitSha: 'explicit-red-sha',
+    });
+  });
+
+  it('rejects post-red when HEAD commit subject lacks [red] and no --red-commit-sha provided', async () => {
+    await expect(
+      recordPostRed(
+        baseState,
+        'P9.02',
+        createDeliveryOrchestratorContext(baseConfig),
+        {
+          isLocalBranchDocOnly: () => false,
+          readHeadSha: () => 'abc123',
+          readLatestCommitSubject: () => 'feat(P9.02): green implementation',
+          runVerify: () => ({ exitCode: 1, stderr: '', stdout: '' }),
+        },
+      ),
+    ).rejects.toThrow(/\[red\]/);
+  });
+
   it('treats .json-only branches as doc-only but not mixed code branches', () => {
     const tempDir = mkdtempSync(join(tmpdir(), 'p9-02-doc-only-'));
     const remoteDir = mkdtempSync(join(tmpdir(), 'p9-02-doc-only-remote-'));

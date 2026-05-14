@@ -178,6 +178,32 @@ describe('P7.03 resume divergence guardrails', () => {
     });
   });
 
+  // ─── parseCliArgs — --red-commit-sha flag ────────────────────────────────────
+
+  describe('parseCliArgs — --red-commit-sha flag', () => {
+    it('parses --red-commit-sha and exposes it on parsed result', () => {
+      const result = parseCliArgs(
+        ['--plan', 'x.md', 'post-red', '--red-commit-sha', 'abc1234def'],
+        DUMMY_USAGE,
+      );
+      expect(result.redCommitSha).toBe('abc1234def');
+    });
+
+    it('leaves redCommitSha undefined when flag is absent', () => {
+      const result = parseCliArgs(['--plan', 'x.md', 'post-red'], DUMMY_USAGE);
+      expect(result.redCommitSha).toBeUndefined();
+    });
+
+    it('throws when --red-commit-sha has no value', () => {
+      expect(() =>
+        parseCliArgs(
+          ['--plan', 'x.md', 'post-red', '--red-commit-sha'],
+          DUMMY_USAGE,
+        ),
+      ).toThrow('--red-commit-sha');
+    });
+  });
+
   // ─── patchRunPolicyWithFlags ─────────────────────────────────────────────────
 
   describe('patchRunPolicyWithFlags', () => {

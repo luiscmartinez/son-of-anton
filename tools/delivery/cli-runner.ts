@@ -189,6 +189,7 @@ export async function runDeliveryOrchestrator(
         reviewSubagent?: string;
         sameReviewSubagent?: boolean;
         runnerSubagentReview?: SubagentReviewRunnerKind;
+        redCommitSha?: string;
         baseline?: 'orchestrator' | 'run-policy';
       }
     | undefined;
@@ -425,6 +426,8 @@ export async function runDeliveryOrchestrator(
           state,
           parsed.positionals[0],
           context,
+          {},
+          parsed.redCommitSha,
         );
         await saveState(cwd, nextState);
         console.log(formatStatus(nextState, context.config));
@@ -1045,6 +1048,7 @@ export async function recordPostRed(
       stdout: string;
     };
   } = {},
+  redCommitSha?: string,
 ): Promise<DeliveryState> {
   const target =
     (ticketId
@@ -1068,6 +1072,22 @@ export async function recordPostRed(
   if (isDocOnly) {
     console.log('Doc-only branch — post-red skipped.');
     return state;
+  }
+
+  // When --red-commit-sha is provided the operator is asserting that the named
+  // commit was the red commit. Skip the HEAD subject check and CI check — both
+  // are designed for the sequential red-then-green workflow where HEAD is still
+  // the red commit. With a named SHA the red evidence is already in history.
+  if (redCommitSha !== undefined) {
+    console.log(
+      `post-red: recording against named red commit ${redCommitSha} (skipping HEAD and CI checks).`,
+    );
+    return recordPostRedImpl(state, {
+      headSha: redCommitSha,
+      latestCommitSubject: '[red]',
+      ticketId,
+      verifyExitCode: 1,
+    });
   }
 
   const latestCommitSubject =

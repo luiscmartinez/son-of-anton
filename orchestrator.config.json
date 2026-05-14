@@ -9,6 +9,7 @@
     "prReview": "skip_doc_only"
   },
   "prReviewAgents": [
-    { "login": "coderabbitai", "name": "coderabbit", "resolveThreads": true }
+    { "login": "coderabbitai", "name": "coderabbit", "resolveThreads": true },
+    { "login": "Copilot", "name": "copilot", "resolveThreads": false }
   ]
 }
