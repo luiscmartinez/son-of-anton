@@ -1,0 +1,24 @@
+{
+	"name": "codogotchi",
+	"module": "index.ts",
+	"type": "module",
+	"private": true,
+	"scripts": {
+		"sync": "bash .son-of-anton/scripts/soa-sync.sh",
+		"deliver": "bun run ./scripts/deliver.ts",
+		"closeout-stack": "bun run ./scripts/closeout-stack.ts",
+		"format": "biome format --write .",
+		"lint": "biome lint --write .",
+		"check": "biome check --write .",
+		"verify": "biome check .",
+		"spellcheck": "cspell lint --no-progress \"**/*.{ts,md,json,txt}\""
+	},
+	"devDependencies": {
+		"@biomejs/biome": "^2.4.15",
+		"@types/bun": "latest",
+		"cspell": "^10.0.0"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	}
+}

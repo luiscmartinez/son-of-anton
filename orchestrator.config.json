@@ -1,0 +1,11 @@
+{
+	"defaultBranch": "main",
+	"planRoot": "docs",
+	"runtime": "bun",
+	"packageManager": "bun",
+	"ticketBoundaryMode": "gated",
+	"reviewPolicy": {
+		"subagentReview": "skip_doc_only",
+		"prReview": "skip_doc_only"
+	}
+}
