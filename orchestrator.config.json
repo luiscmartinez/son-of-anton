@@ -7,5 +7,9 @@
 	"reviewPolicy": {
 		"subagentReview": "skip_doc_only",
 		"prReview": "skip_doc_only"
-	}
+	},
+	"prReviewAgents": [
+		{ "login": "coderabbitai", "name": "coderabbit", "resolveThreads": true },
+		{ "login": "Copilot", "name": "copilot", "resolveThreads": true }
+	]
 }
