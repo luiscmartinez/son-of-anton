@@ -468,7 +468,6 @@ export async function runDeliveryOrchestrator(
             policy,
             undefined,
             undefined,
-            undefined,
             subagentTarget.id,
           );
           console.log('Doc-only ticket — subagent review auto-skipped.');
@@ -567,7 +566,6 @@ export async function runDeliveryOrchestrator(
           outcome,
           isDocOnly,
           policy,
-          undefined,
           undefined,
           undefined,
           subagentTarget.id,
@@ -1224,12 +1222,13 @@ export async function recordPostRed(
 
 export function recordSubagentReview(
   state: DeliveryState,
-  outcome?: 'clean' | 'patched',
+  outcome?: 'clean' | 'patched' | 'skipped',
   isDocOnly?: boolean,
   policy?: ReviewPolicyStageValue,
   patchCommits?: InternalReviewPatchCommit[],
   agentName?: string,
   ticketId?: string,
+  artifactPath?: string,
 ): DeliveryState {
   if (!policy) {
     throw new Error('recordSubagentReview requires an explicit policy.');
@@ -1244,6 +1243,7 @@ export function recordSubagentReview(
     agentName,
     undefined,
     ticketId,
+    artifactPath,
   );
 }
 

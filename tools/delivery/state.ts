@@ -446,6 +446,11 @@ function syncStateWithPlan(
         subagentReviewPatchCommits:
           previous?.subagentReviewPatchCommits ??
           inferredTicket?.subagentReviewPatchCommits,
+        subagentReviewAgent:
+          previous?.subagentReviewAgent ?? inferredTicket?.subagentReviewAgent,
+        subagentRunnerArtifactPath:
+          previous?.subagentRunnerArtifactPath ??
+          inferredTicket?.subagentRunnerArtifactPath,
         prNumber: previous?.prNumber ?? inferredTicket?.prNumber,
         prUrl: previous?.prUrl ?? inferredTicket?.prUrl,
         prOpenedAt: previous?.prOpenedAt ?? inferredTicket?.prOpenedAt,
