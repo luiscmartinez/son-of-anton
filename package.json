@@ -8,10 +8,15 @@
 		"deliver": "bun run ./scripts/deliver.ts",
 		"closeout-stack": "bun run ./scripts/closeout-stack.ts",
 		"format": "biome format --write .",
+		"format:quiet": "biome format --write . --log-level=error",
 		"lint": "biome lint --write .",
+		"lint:quiet": "biome lint --write . --log-level=error",
 		"check": "biome check --write .",
 		"verify": "biome check .",
-		"spellcheck": "cspell lint --no-progress \"**/*.{ts,md,json,txt}\""
+		"verify:quiet": "biome check . --log-level=error",
+		"spellcheck": "cspell lint --no-progress \"**/*.{ts,md,json,txt}\"",
+		"ci": "bun run verify && bun run spellcheck",
+		"ci:quiet": "bun run verify:quiet && bun run spellcheck"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "^2.4.15",

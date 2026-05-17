@@ -98,9 +98,19 @@ P1.21 (validation runbook + execution) is the ticket that verifies these.
 
 ## CI Baseline
 
-> Baseline recorded: pending — pre-phase tooling commit adds `format:quiet`, `lint:quiet`, `verify:quiet`, `ci`, `ci:quiet` to `package.json`. The first `bun run ci:quiet` against the resulting `main` is the baseline; paste output here before `/soa execute phase-01` starts.
+> Baseline recorded: 2026-05-18 — `bun run ci:quiet` is **GREEN** on `main` after the pre-phase tooling commit. Output:
+>
+> ```
+> $ bun run verify:quiet && bun run spellcheck
+> $ biome check . --log-level=error
+> Checked 6 files in 6ms. No fixes applied.
+> $ cspell lint --no-progress "**/*.{ts,md,json,txt}"
+> CSpell: Files checked: 57, Issues found: 0 in 0 files.
+> ```
+>
+> Pre-phase tooling commit added: `format:quiet`, `lint:quiet`, `verify:quiet`, `ci`, `ci:quiet` to `package.json`, plus a cspell dictionary expansion to cover project terms surfaced by the phase-01 ticket docs.
 
-Per-ticket CI diffs are evaluated against that baseline. Pre-existing failures noted here do not block tickets; newly introduced failures do.
+Per-ticket CI diffs are evaluated against this green baseline. Any newly introduced biome diagnostic or cspell issue blocks the ticket.
 
 ## Review Rules
 
