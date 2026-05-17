@@ -556,7 +556,7 @@ Default `cook` flow (with repo-default `skip_doc_only` review policy):
 ```bash
 bun run deliver --plan docs/product/delivery/phase-NN/implementation-plan.md start
 bun run deliver --plan docs/product/delivery/phase-NN/implementation-plan.md post-verify [clean|patched] [patch-commit-sha ...]
-# for code tickets when subagentReview is required, invoke the subagent (e.g. codex:codex-rescue); subagent patches autonomously, then record:
+# for code tickets when subagentReview is required, pass --preferred-runner <claude-cli|codex-exec> to run the subagent review programmatically, then record:
 bun run deliver --plan docs/product/delivery/phase-NN/implementation-plan.md subagent-review [clean|patched] [patch-commit-sha ...]
 # for doc-only tickets under skip_doc_only, subagent-review auto-records skipped
 bun run deliver --plan docs/product/delivery/phase-NN/implementation-plan.md open-pr

@@ -157,8 +157,8 @@ The distinction is:
 Standalone does not mean "skip internal review discipline." It means the orchestrator does not track ticket-state checkpoints for that PR shape.
 
 - the post-verify review pass is still required before running standalone `ai-review`
-- for non-trivial code changes, run `codex:codex-rescue` informally before `ai-review`
-- doc-only or genuinely trivial changes may skip the Codex pass
+- for non-trivial code changes, run a subagent review pass (e.g. `subagent-review --preferred-runner <claude-cli|codex-exec>`) before `ai-review`
+- doc-only or genuinely trivial changes may skip the subagent pass
 - if a change feels too risky without recorded post-verify / subagent-review gates, it should move to ticketed delivery instead of stretching the standalone path
 
 ## Why This Repo Uses It
