@@ -148,8 +148,8 @@ Add to `package.json` for convenience:
 {
   "scripts": {
     "sync": "bash .son-of-anton/scripts/soa-sync.sh",
-    "deliver": "bun run ./scripts/deliver.ts",
-    "closeout-stack": "bun run ./scripts/closeout-stack.ts"
+    "deliver": "bun run .son-of-anton/scripts/deliver.ts",
+    "closeout-stack": "bun run .son-of-anton/scripts/closeout-stack.ts"
   }
 }
 ```
