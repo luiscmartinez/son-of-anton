@@ -1,7 +1,7 @@
 import { describe, expect, spyOn, test } from "bun:test";
 import { convexTest } from "convex-test";
+import { convexTestModules } from "../test/convex-modules";
 import schema from "./schema";
-import { convexTestModules } from "./test/modules";
 
 // Force loot rng so http happy-path is deterministic across CI runs.
 spyOn(Math, "random").mockReturnValue(0.99);
