@@ -227,11 +227,11 @@ Review artifact persistence now follows a hard split:
 - no rendered `.txt` review artifact is persisted
 - a stable `fetch.json` without `triage.json` is an incomplete internal state and should be surfaced as such rather than treated as a completed review
 
-At this point in the repo, `poll-review`, `record-review`, and standalone `ai-review` are intentionally thin mode-specific shells around the same post-PR lifecycle helpers. Ticket-linked flow still owns stacked state transitions and standalone flow still owns PR discovery plus author-body preservation, but the semantic review handling between those edges is shared.
+At this point in the repo, `poll-review`, `record-review`, `triage-ticket`, and `triage-standalone` are intentionally thin mode-specific shells around the same post-PR lifecycle helpers. Ticket-linked flow still owns stacked state transitions and standalone flow still owns PR discovery plus author-body preservation, but the semantic review handling between those edges is shared.
 
-### Late review reconcile (`done` tickets)
+### Ticket PR triage (`done` tickets)
 
-`poll-review` only targets tickets in **`in_review`**. After a ticket is **`done`**, use **`reconcile-late-review <ticket-id>`** when external AI review comments arrived late and you want to re-fetch, re-run the repo triager, persist updated artifacts under the plan reviews directory, refresh delivery state (while keeping the ticket **`done`**), and refresh the PR body (best-effort).
+`poll-review` only targets tickets in **`in_review`**. After a ticket is **`done`**, use **`triage-ticket <ticket-id>`** when external AI review comments arrived late and you want to re-fetch, re-run the repo triager, persist updated artifacts under the plan reviews directory, refresh delivery state (while keeping the ticket **`done`**), and refresh the PR body (best-effort). The old `reconcile-late-review` command remains a backwards-compatible alias.
 
 Run it from a worktree where `.agents/delivery/<plan-key>/state.json` for that plan is authoritative (this repo does not discover state across worktrees for you). The ticket must still have a stored **`prNumber`**. The command uses a short single-interval poll so the first check runs immediately; re-run if vendors are still in flight.
 
@@ -323,7 +323,7 @@ Operator reset guidance in `gated`:
 
 **Handoff artifact `modified_sections`.** The handoff now includes a `## Modified Sections` block extracted from the ticket's `## Scope` section. Read only the file sections listed there — do not re-read full files. This keeps per-ticket context bounded as implementation files grow across the phase.
 
-That policy applies only to ticket-linked delivery PRs. Standalone manual `ai-review` runs for non-ticket PRs do not have a next-ticket boundary, so there is no analogous look-ahead rule there.
+That policy applies only to ticket-linked delivery PRs. Standalone manual `triage-standalone` runs for non-ticket PRs do not have a next-ticket boundary, so there is no analogous look-ahead rule there.
 
 ## Syncing Existing Work
 
@@ -496,13 +496,13 @@ Available commands:
 - `sync`
 - `status`
 - `repair-state`
-- `ai-review [--pr <number>]`
+- `triage-standalone [--pr <number>]`
 - `start [ticket-id]`
 - `post-verify [ticket-id] [clean|patched] [patch-commit-sha ...]`
 - `subagent-review [clean|patched] [patch-commit-sha ...]`
 - `open-pr [ticket-id]`
 - `poll-review [ticket-id]`
-- `reconcile-late-review <ticket-id>`
+- `triage-ticket <ticket-id>`
 - `record-review <ticket-id> <clean|patched|operator_input_needed> [note]`
 - `advance`
 - `restack [ticket-id]`
@@ -601,8 +601,8 @@ bun run closeout-stack --plan docs/product/delivery/phase-NN/implementation-plan
 For a non-ticket PR, run the manual standalone path:
 
 ```bash
-bun run deliver ai-review
-# or: bun run deliver ai-review --pr 32
+bun run deliver triage-standalone
+# or: bun run deliver triage-standalone --pr 32
 ```
 
 For standalone PRs, the internal review contract is behavior-first, not state-recorded:
@@ -611,10 +611,10 @@ For standalone PRs, the internal review contract is behavior-first, not state-re
 - use `verify:quiet` for the fast inner loop
 - run `ci:quiet` before publication for non-doc code changes so the final local gate matches the pre-push hook
 - run the post-verify diff review and re-check risky areas
-- for non-trivial code changes, run a same-type review subagent informally before `ai-review`
-- run standalone `ai-review` as the orchestrator-visible external review gate
+- for non-trivial code changes, run a same-type review subagent informally before `triage-standalone`
+- run standalone `triage-standalone` as the orchestrator-visible external review gate
 
-In standalone mode, `post-verify` and `subagent-review` are expected preflight discipline, not orchestrator gates. The orchestrator can tell the agent to do them, but without standalone state it cannot verify, audit, or block on them. Only standalone `ai-review` is an orchestrator-visible gate today.
+In standalone mode, `post-verify` and `subagent-review` are expected preflight discipline, not orchestrator gates. The orchestrator can tell the agent to do them, but without standalone state it cannot verify, audit, or block on them. Only standalone `triage-standalone` is an orchestrator-visible gate today.
 
 The ticket-only commands `post-verify`, `subagent-review`, `open-pr`, `poll-review`, `record-review`, and `advance` do not apply to standalone PRs because there is no ticket state to update. That architectural constraint does not remove the underlying review discipline; it does mean the post-verify review pass and optional subagent pass remain guided discretion in standalone mode rather than durable workflow state.
 

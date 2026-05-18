@@ -10,9 +10,11 @@ import { realpath } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import {
   getUsage,
+  isStandaloneTriageCommand,
   parseCliArgs,
   resolveOptionsForCommand,
   resolveRuntimePolicyOverrides,
+  TICKET_TRIAGE_COMMAND,
 } from './cli';
 import { ensureEnvReady as ensureEnvReadyImpl } from './env';
 import {
@@ -266,7 +268,7 @@ export async function runDeliveryOrchestrator(
     let context = createDeliveryOrchestratorContext(resolvedConfig);
     const platform = context.platform;
     const notifier = resolveNotifier();
-    if (parsed.command === 'ai-review') {
+    if (isStandaloneTriageCommand(parsed.command)) {
       const result = await runStandaloneAiReview(
         cwd,
         notifier,
@@ -318,7 +320,7 @@ export async function runDeliveryOrchestrator(
       'sync',
       'repair-state',
       'record-review',
-      'reconcile-late-review',
+      TICKET_TRIAGE_COMMAND,
       // start: re-stamps runPolicy from current config when explicit flags are
       // present, so blocking it on divergence is counter-productive — let
       // start-time stamping resolve the conflict.
@@ -757,12 +759,12 @@ export async function runDeliveryOrchestrator(
         );
         return 0;
       }
-      case 'reconcile-late-review': {
+      case TICKET_TRIAGE_COMMAND: {
         const ticketId = parsed.positionals[0];
 
         if (!ticketId) {
           throw new Error(
-            `Usage: ${context.invocation} --plan <plan-path> reconcile-late-review <ticket-id>`,
+            `Usage: ${context.invocation} --plan <plan-path> triage-ticket <ticket-id>`,
           );
         }
 
@@ -1522,7 +1524,7 @@ export async function reconcileLateReview(
   const resolvedDependencies =
     typeof maybeDependencies === 'object' ? maybeDependencies : dependencies;
   if (!ticketId) {
-    throw new Error('Missing ticket id for reconcile-late-review.');
+    throw new Error('Missing ticket id for triage-ticket.');
   }
   const platform = context.platform;
   return runReconcileLateTicketReview(state, cwd, ticketId, {

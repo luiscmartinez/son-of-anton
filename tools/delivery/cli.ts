@@ -27,6 +27,25 @@ export type ParsedCliArgs = {
   baseline?: BaselineValue;
 };
 
+export const STANDALONE_TRIAGE_COMMAND = 'triage-standalone';
+export const TICKET_TRIAGE_COMMAND = 'triage-ticket';
+
+export function normalizeDeliveryCommand(command: string): string {
+  if (command === 'ai-review') {
+    return STANDALONE_TRIAGE_COMMAND;
+  }
+
+  if (command === 'reconcile-late-review') {
+    return TICKET_TRIAGE_COMMAND;
+  }
+
+  return command;
+}
+
+export function isStandaloneTriageCommand(command: string): boolean {
+  return normalizeDeliveryCommand(command) === STANDALONE_TRIAGE_COMMAND;
+}
+
 /**
  * Resolve runtime policy overrides from parsed CLI args onto the raw config.
  * CLI flags take precedence over config file values; absent flags preserve config.
@@ -75,10 +94,10 @@ function isValidBoundaryMode(mode: unknown): mode is TicketBoundaryMode {
 
 export function getUsage(runDeliverInvocation: string): string {
   return [
-    `Usage: ${runDeliverInvocation} --plan <plan-path> <command>`,
+    `Usage: ${runDeliverInvocation} [--plan <plan-path>] <command>`,
     '',
     'Commands:',
-    '  ai-review [--pr <number>]',
+    '  triage-standalone [--pr <number>]',
     '  sync',
     '  status',
     '  repair-state',
@@ -88,10 +107,14 @@ export function getUsage(runDeliverInvocation: string): string {
     '  subagent-review [ticket-id] [--preferred-runner <claude-cli|codex-exec>]',
     '  open-pr [ticket-id]',
     '  poll-review [ticket-id]',
-    '  reconcile-late-review <ticket-id>',
+    '  triage-ticket <ticket-id>',
     '  record-review <ticket-id> <clean|patched|operator_input_needed> [note]',
     '  advance',
     '  restack [ticket-id]',
+    '',
+    'Aliases:',
+    '  ai-review -> triage-standalone',
+    '  reconcile-late-review -> triage-ticket',
     '',
     'Options:',
     '  --boundary-mode <cook|gated>',
@@ -264,7 +287,7 @@ export function parseCliArgs(argv: string[], usage: string): ParsedCliArgs {
   }
 
   return {
-    command,
+    command: normalizeDeliveryCommand(command),
     positionals: rest,
     flags,
     planPath,

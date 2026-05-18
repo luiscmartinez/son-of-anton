@@ -347,7 +347,7 @@ export function formatStandaloneAiReviewResult(
   result: StandaloneAiReviewResult,
 ): string {
   return [
-    'Standalone AI Review',
+    'Standalone PR Triage',
     `pr=${result.prUrl}`,
     `outcome=${result.outcome}`,
     result.recordedAt ? `recorded_at=${result.recordedAt}` : undefined,

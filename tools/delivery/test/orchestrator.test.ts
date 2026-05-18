@@ -227,6 +227,38 @@ describe('delivery orchestrator', () => {
     });
   });
 
+  it('normalizes legacy review command aliases to triage commands', () => {
+    expect(
+      parseCliArgs(['ai-review', '--pr', '19'], getUsage('bun run deliver')),
+    ).toMatchObject({
+      command: 'triage-standalone',
+      prNumber: 19,
+    });
+    expect(
+      parseCliArgs(
+        [
+          '--plan',
+          'docs/product/delivery/phase-03/implementation-plan.md',
+          'reconcile-late-review',
+          'P3.01',
+        ],
+        getUsage('bun run deliver'),
+      ),
+    ).toMatchObject({
+      command: 'triage-ticket',
+      positionals: ['P3.01'],
+    });
+  });
+
+  it('documents canonical triage commands in usage while keeping aliases visible', () => {
+    const usage = getUsage('bun run deliver');
+
+    expect(usage).toContain('triage-standalone [--pr <number>]');
+    expect(usage).toContain('triage-ticket <ticket-id>');
+    expect(usage).toContain('ai-review -> triage-standalone');
+    expect(usage).toContain('reconcile-late-review -> triage-ticket');
+  });
+
   it('rejects invalid boundary-mode CLI override', () => {
     expect(() =>
       parseCliArgs(
@@ -785,7 +817,7 @@ describe('delivery orchestrator', () => {
     ).toContain('AI review complete.');
   });
 
-  it('merges the standalone ai review section into a pr body', () => {
+  it('merges the standalone triage section into a pr body', () => {
     const section = buildStandaloneAiReviewSection({
       outcome: 'operator_input_needed',
       note: 'Actionable AI review findings were detected.',
@@ -862,7 +894,7 @@ describe('delivery orchestrator', () => {
     expect(merged).toContain('`coderabbit`, `greptile`');
   });
 
-  it('renders final standalone ai review outcomes accurately', () => {
+  it('renders final standalone triage outcomes accurately', () => {
     expect(
       buildStandaloneAiReviewSection({
         outcome: 'patched',
@@ -3025,10 +3057,10 @@ describe('delivery orchestrator', () => {
         pullRequest: {
           body: 'existing body',
           createdAt: '2026-04-01T10:00:00.000Z',
-          headRefName: 'codex/sonarqube-standalone-ai-review',
+          headRefName: 'codex/sonarqube-standalone-triage',
           headRefOid: 'abcdef1234567890',
           number: 75,
-          title: 'feat: add SonarQube support to standalone ai-review flow',
+          title: 'feat: add SonarQube support to standalone triage flow',
           url: 'https://example.test/pull/75',
         },
         updatePullRequestBody: () => {},
@@ -3256,7 +3288,7 @@ describe('delivery orchestrator', () => {
     expect(sleeps).toEqual([360000]);
   });
 
-  it('reconcile-late-review keeps done status when triage resolves to needs_patch', async () => {
+  it('triage-ticket keeps done status when triage resolves to needs_patch', async () => {
     const state: DeliveryState = {
       planKey: 'phase-03',
       planPath: 'docs/product/delivery/phase-03/implementation-plan.md',
@@ -3355,7 +3387,7 @@ describe('delivery orchestrator', () => {
     }
   });
 
-  it('reconcile-late-review rejects when the ticket is not done', async () => {
+  it('triage-ticket rejects when the ticket is not done', async () => {
     const state: DeliveryState = {
       planKey: 'phase-03',
       planPath: 'docs/product/delivery/phase-03/implementation-plan.md',
@@ -3395,10 +3427,10 @@ describe('delivery orchestrator', () => {
           comments: [],
         }),
       }),
-    ).rejects.toThrow(/must be done before reconciling late review/);
+    ).rejects.toThrow(/must be done before ticket PR triage/);
   });
 
-  it('reconcile-late-review keeps done and preserves prior artifacts on clean timeout', async () => {
+  it('triage-ticket keeps done and preserves prior artifacts on clean timeout', async () => {
     const state: DeliveryState = {
       planKey: 'phase-03',
       planPath: 'docs/product/delivery/phase-03/implementation-plan.md',

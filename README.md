@@ -56,6 +56,8 @@ orchestrator.
 /soa plan                                    # grill-me → approved plan → docs/product/plans/
 /soa decompose docs/product/plans/phase-N.md # ticket stack → you approve the list
 /soa execute phase-N                         # orchestrator delivers ticket by ticket
+/soa triage-ticket PR#19                     # reconcile late AI review on a done ticket PR
+/soa triage-standalone PR#19                 # run standalone AI-review triage on a non-ticket PR
 /soa closeout phase-N                        # you approve; stacked PRs squash-merge to main
 
 # When the idea needs shaping first (optional)
@@ -82,6 +84,12 @@ opens the worktree, implements, verifies, runs the adversarial review,
 opens the PR, polls for external AI review comments, triages them, and
 advances to the next ticket. It stops at defined boundaries and tells you
 exactly what to type to resume.
+
+If late external AI review comments arrive after a ticket PR is already `done`,
+use `/soa triage-ticket PR#<number>` so the agent resolves the PR back to its
+delivery state and runs `triage-ticket`. For non-ticketed PRs, use
+`/soa triage-standalone PR#<number>`, which runs the standalone triage
+path instead.
 
 ---
 
@@ -280,15 +288,15 @@ as instructions. `bun run sync` creates platform-specific adapters (e.g.,
 `.claude/skills/soa-*` symlinks for Claude Code) pointing back to the
 canonical location.
 
-| Skill                     | Trigger                                                                                                                                      |
-| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| `soa`                     | Main entrypoint: `/soa ideate`, `/soa plan`, `/soa decompose`, `/soa execute`, `/soa resume`, `/soa install`, `/soa update`, `/soa closeout` |
-| `soa-son-of-anton-ethos`  | Auto-invoked on "execute / implement / start / deliver / resume" — owns the per-ticket loop                                                  |
-| `soa-grill-me`            | Plan pressure-testing before any implementation                                                                                              |
-| `soa-pr-review`           | Triage CodeRabbit, Qodo, Greptile, SonarQube review comments (`triage`)                                                                      |
-| `soa-enter-worktree`      | Bootstrap a fresh worktree with deps and `.env`                                                                                              |
-| `soa-closeout-stack`      | Squash-merge completed stacked PRs onto main                                                                                                 |
-| `soa-write-retrospective` | Write phase retrospective to `docs/product/retrospectives/`                                                                                  |
+| Skill                     | Trigger                                                                                                                                                                                      |
+| ------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `soa`                     | Main entrypoint: `/soa ideate`, `/soa plan`, `/soa decompose`, `/soa execute`, `/soa resume`, `/soa triage-ticket`, `/soa triage-standalone`, `/soa install`, `/soa update`, `/soa closeout` |
+| `soa-son-of-anton-ethos`  | Auto-invoked on "execute / implement / start / deliver / resume" — owns the per-ticket loop                                                                                                  |
+| `soa-grill-me`            | Plan pressure-testing before any implementation                                                                                                                                              |
+| `soa-pr-review`           | Triage CodeRabbit, Qodo, Greptile, SonarQube review comments (`triage`)                                                                                                                      |
+| `soa-enter-worktree`      | Bootstrap a fresh worktree with deps and `.env`                                                                                                                                              |
+| `soa-closeout-stack`      | Squash-merge completed stacked PRs onto main                                                                                                                                                 |
+| `soa-write-retrospective` | Write phase retrospective to `docs/product/retrospectives/`                                                                                                                                  |
 
 ---
 

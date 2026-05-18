@@ -45,6 +45,8 @@ export {
   resolveDeliveryReviewPollingProfile,
 } from './review-polling-profile';
 
+const STANDALONE_TRIAGE_ARTIFACT_DIR = '.agents/triage-standalone';
+
 function formatError(error: unknown): string {
   if (error instanceof Error) {
     return error.message;
@@ -606,7 +608,7 @@ async function readStandaloneAiReviewOutcome(
 ): Promise<ReviewOutcome | undefined> {
   const triageArtifactPath = resolve(
     cwd,
-    '.agents/ai-review',
+    STANDALONE_TRIAGE_ARTIFACT_DIR,
     `pr-${prNumber}`,
     'review.triage.json',
   );
@@ -1399,7 +1401,7 @@ export async function runReconcileLateTicketReview(
 
   if (target.status !== 'done') {
     throw new Error(
-      `Ticket ${ticketId} must be done before reconciling late review (use poll-review while the ticket is in review).`,
+      `Ticket ${ticketId} must be done before ticket PR triage (use poll-review while the ticket is in review).`,
     );
   }
 
@@ -1562,7 +1564,7 @@ export async function runStandaloneAiReviewLifecycle(
       const processedReview = await processDetectedAiReview({
         artifactStemPath: resolve(
           cwd,
-          '.agents/ai-review',
+          STANDALONE_TRIAGE_ARTIFACT_DIR,
           `pr-${pullRequest.number}`,
           'review',
         ),
@@ -1622,7 +1624,12 @@ export async function runStandaloneAiReviewLifecycle(
         previousOutcome,
       });
       const triageArtifactPath = await writeCleanTriageArtifact(
-        resolve(cwd, '.agents/ai-review', `pr-${pullRequest.number}`, 'review'),
+        resolve(
+          cwd,
+          STANDALONE_TRIAGE_ARTIFACT_DIR,
+          `pr-${pullRequest.number}`,
+          'review',
+        ),
         {
           incompleteAgents: processedReview.incompleteAgents,
           note: processedReview.note,
@@ -1631,7 +1638,12 @@ export async function runStandaloneAiReviewLifecycle(
         },
       );
       const existingFetchArtifactPath = buildReviewArtifactPaths(
-        resolve(cwd, '.agents/ai-review', `pr-${pullRequest.number}`, 'review'),
+        resolve(
+          cwd,
+          STANDALONE_TRIAGE_ARTIFACT_DIR,
+          `pr-${pullRequest.number}`,
+          'review',
+        ),
       ).fetchArtifactPath;
       const standaloneResult: StandaloneAiReviewResult = {
         fetchArtifactPath: existsSync(existingFetchArtifactPath)
@@ -1666,7 +1678,7 @@ export async function writeStandaloneAiReviewNote(
 ): Promise<void> {
   const notePath = resolve(
     cwd,
-    '.agents/ai-review',
+    STANDALONE_TRIAGE_ARTIFACT_DIR,
     `pr-${prNumber}`,
     'note.md',
   );

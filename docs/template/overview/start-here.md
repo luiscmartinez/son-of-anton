@@ -72,10 +72,18 @@ bun run deliver --plan <plan-path> --baseline run-policy   <command>
 Small bounded changes that don't warrant a full phase (bug fixes, doc updates, cleanup):
 
 ```bash
-bun run deliver ai-review [--pr <number>]
+bun run deliver triage-standalone [--pr <number>]
 ```
 
 Self-audit is required. A same-type review subagent is optional but recommended for non-trivial changes.
+
+For late external AI review triage after a PR already exists, use the matching
+`/soa` wrapper:
+
+```bash
+/soa triage-ticket PR#19      # done ticket-linked phase PRs
+/soa triage-standalone PR#19  # standalone non-ticket PRs
+```
 
 ## Key files
 

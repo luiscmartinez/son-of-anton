@@ -5,7 +5,7 @@ description: Execute approved multi-ticket phase/epic work or standalone (non-ti
 
 # Son Of Anton Ethos
 
-**Before executing a single command:** Read `docs/template/delivery/delivery-orchestrator.md` in full. Every orchestrator action — for both ticket stacks (`start`, `post-verify`, `subagent-review`, `open-pr`, `poll-review`, `record-review`, `advance`) and standalone PRs (`ai-review`) — is defined there with exact sequencing and policy. That document is the authoritative command surface. Your own reasoning about what the flow "probably" is does not override it.
+**Before executing a single command:** Read `docs/template/delivery/delivery-orchestrator.md` in full. Every orchestrator action — for both ticket stacks (`start`, `post-verify`, `subagent-review`, `open-pr`, `poll-review`, `record-review`, `advance`, `triage-ticket`) and standalone PRs (`triage-standalone`) — is defined there with exact sequencing and policy. That document is the authoritative command surface. Your own reasoning about what the flow "probably" is does not override it.
 
 Son of Anton drives approved work to completion. How ticket boundaries are handled is governed by `ticketBoundaryMode` in `orchestrator.config.json`. The orchestrator does not seek repeated permission between tickets — but it honors the boundary contract precisely as configured.
 
@@ -14,13 +14,13 @@ Son of Anton drives approved work to completion. How ticket boundaries are handl
 ## Standalone PRs
 
 1. **Entrypoint.** Use `bun run deliver`.
-2. **When to use.** Smaller bounded changes ship as standalone PRs without a new phase/epic. Use `bun run deliver ai-review [--pr <number>]` — not the ticketed stacked flow (`--plan …`, `poll-review`, `advance`, etc.).
+2. **When to use.** Smaller bounded changes ship as standalone PRs without a new phase/epic. Use `bun run deliver triage-standalone [--pr <number>]` — not the ticketed stacked flow (`--plan …`, `poll-review`, `advance`, etc.).
 3. **Review discipline.** Complete implement → fast verification (`bun run verify:quiet` + scoped tests as needed) → final publication gate (`bun run ci:quiet` for non-doc code changes) → named self-audit (re-read diff, second-pass risky areas). Standalone PRs do not use the ticket-only `post-verify` or `subagent-review` recorders because the flow is stateless, so these remain expected preflight behaviors rather than orchestrator-enforced gates.
    - Self-audit is required for every standalone PR.
-   - For non-trivial code changes, invoke a review subagent via the Agent tool before `ai-review`. Fill in `docs/template/delivery/adversarial-review-template.md` from the diff and use it as the prompt — do not substitute a vague "find holes" directive. Doc-only or genuinely trivial changes may skip this step.
-   - Standalone `ai-review` is the only orchestrator-visible review gate on this path.
+   - For non-trivial code changes, invoke a review subagent via the Agent tool before `triage-standalone`. Fill in `docs/template/delivery/adversarial-review-template.md` from the diff and use it as the prompt — do not substitute a vague "find holes" directive. Doc-only or genuinely trivial changes may skip this step.
+   - Standalone `triage-standalone` is the only orchestrator-visible review gate on this path.
    - If the change needs recorded self-audit / Codex gates to feel safe, it likely should not stay a standalone PR unless the repo first adds lightweight standalone review state.
-4. **Running `ai-review`.** Uses real wall-clock polling. Surface that before starting; do not hide the time cost.
+4. **Running `triage-standalone`.** Uses real wall-clock polling. Surface that before starting; do not hide the time cost.
 5. **Commits.** Follow AGENTS Pre-Commit (Prettier for touched files; spellcheck when docs or user-facing copy changed).
 6. **Product-scope gates** apply to new phase/epic work — not to standalone PRs already allowed outside a new phase.
 
@@ -115,7 +115,7 @@ If the configured subagent is unavailable, set `subagentReview: "disabled"` in `
 
 ## External Review
 
-Applies to both standalone PRs (`ai-review`) and ticket stacks (`poll-review`). The review signals and triage rules are the same; only the CLI command differs.
+Applies to standalone PRs (`triage-standalone`), in-review ticket stacks (`poll-review`), and done ticket-linked PRs (`triage-ticket`). The review signals and triage rules are the same; only the CLI command differs.
 
 ### Signals
 
