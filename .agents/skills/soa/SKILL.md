@@ -42,13 +42,13 @@ Pull the latest changes from son-of-anton, then re-sync skill symlinks:
 
 ```bash
 git fetch https://github.com/cesarnml/son-of-anton.git main
-git subtree pull --prefix .son-of-anton https://github.com/cesarnml/son-of-anton.git FETCH_HEAD --squash
+git subtree merge --prefix .son-of-anton FETCH_HEAD --squash
 bash .son-of-anton/scripts/soa-sync.sh
 ```
 
-Use `FETCH_HEAD`, not plain `main`, for the subtree pull. This makes the
-upstream revision unambiguous in consumer repos that also have their own `main`
-history.
+Fetch the upstream branch first, then merge `FETCH_HEAD`. Do not pass plain
+`main` to the subtree command in consumer repos; it can resolve through local
+consumer history instead of the fetched Son-of-Anton commit.
 
 After the update, verify that a known subtree file matches the fetched upstream
 ref. At minimum:
