@@ -120,7 +120,9 @@ import {
   startTicket as startTicketImpl,
 } from './ticket-flow';
 import {
+  buildSubagentReviewPrompt,
   buildRunnerArtifact,
+  findDeliveryDocPaths,
   tryRunner,
   validateRunnerArtifact,
 } from './subagent-runner';
@@ -484,25 +486,49 @@ export async function runDeliveryOrchestrator(
             : ['claude-cli', 'codex-exec'];
 
         const worktreePath = subagentTarget.worktreePath;
-        const headSha = context.platform.readCurrentBranch
-          ? (() => {
-              try {
-                return spawnSync('git', ['rev-parse', 'HEAD'], {
-                  cwd: worktreePath,
-                  encoding: 'utf-8',
-                }).stdout.trim();
-              } catch {
-                return 'unknown';
-              }
-            })()
-          : 'unknown';
-
-        const reviewPrompt =
-          `Assume this implementation has holes — find them. ` +
-          `Review all code changes introduced in the current branch versus its base branch (${subagentTarget.baseBranch}). ` +
-          `Make any fixes you judge necessary. Commit all fixes with messages ending with " [subagent-review]". ` +
-          `Skip ticket doc files under docs/product/delivery/. ` +
-          `Do not rationalize away anything you notice — flag it and let the human decide.`;
+        const readHeadSha = () => {
+          try {
+            return spawnSync('git', ['rev-parse', 'HEAD'], {
+              cwd: worktreePath,
+              encoding: 'utf-8',
+            }).stdout.trim();
+          } catch {
+            return 'unknown';
+          }
+        };
+        const listDiffPaths = (...revisions: string[]) => {
+          const result = spawnSync(
+            'git',
+            ['diff', '--name-only', ...revisions],
+            {
+              cwd: worktreePath,
+              encoding: 'utf-8',
+            },
+          );
+          return (result.stdout ?? '')
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean);
+        };
+        const listDirtyPaths = () => {
+          const status = spawnSync('git', ['status', '--porcelain'], {
+            cwd: worktreePath,
+            encoding: 'utf-8',
+          });
+          return (status.stdout ?? '')
+            .split('\n')
+            .map((line) => line.slice(3).trim())
+            .map((path) => path.split(' -> ').pop() ?? path)
+            .filter(Boolean);
+        };
+        const headSha = readHeadSha();
+        const changedFiles = listDiffPaths(
+          `${subagentTarget.baseBranch}...HEAD`,
+        );
+        const reviewPrompt = buildSubagentReviewPrompt({
+          baseBranch: subagentTarget.baseBranch,
+          changedFiles,
+        });
 
         const RUNNER_TIMEOUT_MS = 10 * 60 * 1000;
 
@@ -510,6 +536,7 @@ export async function runDeliveryOrchestrator(
         let usedRunner: 'claude-cli' | 'codex-exec' | 'skipped' = 'skipped';
 
         for (const runner of runnerOrder) {
+          const runnerHeadBefore = readHeadSha();
           const result = tryRunner(
             () => {
               const args =
@@ -531,15 +558,28 @@ export async function runDeliveryOrchestrator(
               };
             },
             () => {
-              const status = spawnSync('git', ['status', '--porcelain'], {
-                cwd: worktreePath,
-                encoding: 'utf-8',
-              });
-              return (status.stdout ?? '').trim().length > 0;
+              return (
+                readHeadSha() !== runnerHeadBefore ||
+                listDirtyPaths().length > 0
+              );
             },
           );
 
           if (result.status === 'ran') {
+            const runnerHeadAfter = readHeadSha();
+            const deliveryDocChanges = findDeliveryDocPaths([
+              ...(runnerHeadBefore !== runnerHeadAfter
+                ? listDiffPaths(`${runnerHeadBefore}..${runnerHeadAfter}`)
+                : []),
+              ...listDirtyPaths(),
+            ]);
+
+            if (deliveryDocChanges.length > 0) {
+              throw new Error(
+                `Subagent review modified docs/product/delivery/**, which is outside the subagent write boundary. Revert these files before recording subagent-review: ${deliveryDocChanges.join(', ')}`,
+              );
+            }
+
             outcome = result.outcome;
             usedRunner = runner;
             break;

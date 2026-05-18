@@ -383,10 +383,12 @@ When `reviewPolicy.subagentReview` is `"required"`, the agent must record a suba
 
 The runner writes a `SubagentRunnerArtifact` to `reviews/<ticket>-subagent-runner.json`. `open-pr` fails closed when `subagentReview` is not `"disabled"` and a non-skipped outcome is recorded but the artifact file is missing.
 
+**Hard write boundary:** Review subagents must never modify files under `docs/product/delivery/**`. Those files are primary-agent delivery artifacts and historical workflow evidence. A subagent may report concerns about them under Findings for human review, but must not patch them. The programmatic runner fails the subagent-review step if a runner changes that path.
+
 **Running subagent review:**
 
-1. Read `docs/template/delivery/adversarial-review-template.md`. Fill in invariants, attack surfaces, and diff context from the current ticket diff and spec. Pass the completed template as the runner's prompt.
-2. The runner executes, patches what it finds, and exits. Outcome is detected via `git status --porcelain` (changes present → `patched`; no changes → `clean`).
+1. Read `docs/template/delivery/adversarial-review-template.md`. Fill in invariants, attack surfaces, and diff context from the current ticket diff and spec. Pass the completed template as the runner's prompt. The listed surfaces are the starting map; the runner may independently inspect directly related implementation code and add ticket-relevant attack surfaces.
+2. The runner executes, patches what it finds, and exits. Outcome is detected via commit movement or `git status --porcelain` (changes present → `patched`; no changes → `clean`).
 3. **Stay idle. No read-ahead.** Wait for the runner to complete before doing anything else.
 4. Record the outcome.
 
@@ -395,7 +397,7 @@ bun run deliver --plan <plan> subagent-review clean    # subagent found nothing 
 bun run deliver --plan <plan> subagent-review patched <sha...>  # subagent findings were applied
 ```
 
-The CLI is a state recorder only — it does not invoke the subagent or runner. A recorded subagent patch commit must use a subject suffix of `[subagent-review]`.
+Without `--preferred-runner`, the CLI is a state recorder only and does not invoke the subagent or runner. With `--preferred-runner`, the CLI invokes the runner, passes a prompt containing the `docs/product/delivery/**` hard write boundary, writes the runner artifact, and records the detected outcome. A recorded subagent patch commit must use a subject suffix of `[subagent-review]`.
 
 **Doc-only tickets** auto-skip subagent review only when `reviewPolicy.subagentReview` is `"skip_doc_only"`.
 
