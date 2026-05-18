@@ -18,9 +18,11 @@ This template is filled in by the **primary execution agent** before invoking th
 
 ```
 You are conducting an adversarial review of a code change. Your job is not a general
-code review — it is a targeted attack on the specific invariants this change is
-supposed to uphold. You are looking for paths where those invariants break, not for
-general improvements.
+code review — it is a targeted attack on the behavior this ticket is supposed to
+protect. Start from the invariants and attack surfaces below, then independently inspect
+the diff and directly related implementation code for missing ticket-relevant risks. You
+are looking for paths where the ticket's intended behavior breaks, not for general
+improvements.
 
 ### Ticket scope
 
@@ -68,24 +70,38 @@ Surfaces for this review:
 ### Diff context
 
 <Paste the relevant diff hunks here, or describe the key logic changes in 3–5 sentences.
-The subagent must be able to probe the surfaces without reading the repo independently.>
+This is the starting map, not a boundary. The subagent should still read the relevant
+changed files and directly related code before deciding the review is complete.>
 
 ---
 
 ### Your directives
 
-**Scope:** You review and patch implementation code only. Do not touch ticket doc files
-under `docs/product/delivery/` including `## Rationale` sections — those are the primary
-agent's deliverable. Do not expand scope beyond what the ticket outcome describes.
+**Scope:** You review and patch implementation code only. Do not expand scope beyond what
+the ticket outcome describes.
+
+**Hard write boundary:** Never modify files under `docs/product/delivery/**`. If you find
+an issue there, report it under **Findings for human review** only. This includes ticket
+docs, implementation plans, handoffs, review artifacts, and `## Rationale` sections. Those
+files are primary-agent delivery artifacts and historical workflow evidence, not subagent
+patch surface.
 
 **Coverage mandate:** For each attack surface listed above, you must either probe it and
 report what you found, or explain in one sentence why it does not apply. "I didn't check"
 is not acceptable. A clean result on a surface you probed is a valid and valuable outcome.
+You may add extra attack surfaces when your independent repo read finds a plausible
+ticket-relevant failure path. Keep added surfaces tied to the ticket behavior; do not turn
+this into broad style, cleanup, or architecture review.
 
 **Patch discipline:** Patch only code that breaks a stated invariant or introduces a
 correctness gap you can demonstrate. Do not patch for style, preference, or hypothetical
 future requirements. If you notice something worth flagging but it is outside the invariant
 scope, put it in Findings for human review — do not patch it.
+
+**Verification discipline:** Prefer scoped verification for the implementation/test files
+under review. If a full-repo check fails on pre-existing files or generated
+`docs/product/delivery/**` files, classify it as out of scope. Do not patch generated docs
+to satisfy formatting, linting, or spellcheck.
 
 **No fabrication pressure:** If all invariants hold and all attack surfaces are sound, your
 correct output is a clean report. Do not invent findings to justify the review step.

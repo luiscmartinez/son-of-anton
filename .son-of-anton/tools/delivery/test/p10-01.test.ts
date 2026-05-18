@@ -11,7 +11,10 @@ import {
 import { formatRunPolicy } from '../format';
 import { deriveRunPolicyFromConfig } from '../state';
 import {
+  buildSubagentReviewPrompt,
   buildRunnerArtifact,
+  findDeliveryDocPaths,
+  isDeliveryDocPath,
   tryRunner,
   validateRunnerArtifact,
 } from '../subagent-runner';
@@ -226,6 +229,50 @@ describe('P10.01 — tryRunner', () => {
       },
     );
     expect(checked).toBe(false);
+  });
+});
+
+// ─── subagent review prompt boundary ─────────────────────────────────────────
+
+describe('P10.01 — subagent review hard write boundary', () => {
+  it('injects docs/product/delivery write boundary into runner prompts', () => {
+    const prompt = buildSubagentReviewPrompt({
+      baseBranch: 'main',
+      changedFiles: ['tools/delivery/cli-runner.ts'],
+    });
+
+    expect(prompt).toContain(
+      'Never modify files under docs/product/delivery/**',
+    );
+    expect(prompt).toContain('Findings for human review');
+    expect(prompt).toContain('independently inspect directly related');
+    expect(prompt).toContain('add attack surfaces');
+    expect(prompt).toContain('- tools/delivery/cli-runner.ts');
+    expect(prompt).not.toContain('Make any fixes you judge necessary');
+  });
+
+  it('detects delivery doc paths across exact and nested paths', () => {
+    expect(isDeliveryDocPath('docs/product/delivery')).toBe(true);
+    expect(
+      isDeliveryDocPath('docs/product/delivery/phase-01/ticket-01.md'),
+    ).toBe(true);
+    expect(
+      isDeliveryDocPath('./docs/product/delivery/phase-01/reviews/a.json'),
+    ).toBe(true);
+    expect(isDeliveryDocPath('docs/product/retrospectives/phase-01.md')).toBe(
+      false,
+    );
+    expect(isDeliveryDocPath('tools/delivery/cli-runner.ts')).toBe(false);
+  });
+
+  it('filters delivery doc paths from runner-changed files', () => {
+    expect(
+      findDeliveryDocPaths([
+        'tools/delivery/cli-runner.ts',
+        'docs/product/delivery/phase-01/ticket-01.md',
+        'docs/template/delivery/delivery-orchestrator.md',
+      ]),
+    ).toEqual(['docs/product/delivery/phase-01/ticket-01.md']);
   });
 });
 
