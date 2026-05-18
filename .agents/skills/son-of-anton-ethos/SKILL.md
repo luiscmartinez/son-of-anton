@@ -54,11 +54,11 @@ Commit the delivery plan and all ticket docs to the default branch before creati
    4. Self-audit — `post-verify [clean|patched]`
       - Under `subagentReview: "skip_doc_only"`: doc-only tickets auto-record `skipped`
       - Under `subagentReview: "required"`: doc-only tickets still need an explicit `clean` or `patched`
-   5. Subagent review — if `subagentReview` is not `"disabled"` (see [Subagent Review](#subagent-review))
+   5. Subagent review — if `subagentReview` is not `"disabled"` (see [Subagent Review](#subagent-review)). Programmatic runner artifacts are committed and pushed by the orchestrator; do not add a second manual commit for those files unless you changed something else in the same step.
    6. Open / refresh PR — `open-pr`
    7. Run AI-review polling — `poll-review` (see [External Review](#external-review))
    8. Patch prudent findings
-   9. Record review — `record-review` (**skip** when `poll-review` already auto-recorded `clean` or `skipped`; only needed when `poll-review` leaves ticket in `needs_patch` state). The orchestrator commits updated `*-ai-review.{fetch,triage}.json` after a successful `record-review` when the ticket worktree is a git checkout — do **not** add a second manual commit for those files unless you changed something else in the same step.
+   9. Record review — `record-review` (**skip** when `poll-review` already auto-recorded `clean` or `skipped`; only needed when `poll-review` leaves ticket in `needs_patch` state). The orchestrator commits updated `*-pr-review.{fetch,triage}.json` after a successful `record-review` when the ticket worktree is a git checkout — do **not** add a second manual commit for those files unless you changed something else in the same step.
    10. Advance — `advance`
 5. During the external review window, stay idle.
 6. Do not write ahead across ticket boundaries.

@@ -18,6 +18,7 @@ import type {
 } from './types';
 
 import {
+  buildPrReviewArtifactStem,
   buildReviewArtifactPaths,
   readFetchArtifact,
   readTriageArtifact,
@@ -350,6 +351,7 @@ type ReviewCoreDependencies = {
 };
 
 export type TicketReviewDependencies = {
+  ensureBranchPushed?: (cwd: string, branch: string) => void;
   fetcher?: (worktreePath: string, prNumber: number) => AiReviewFetcherResult;
   now?: () => number;
   replyToReviewThread?: ReviewCoreDependencies['replyToReviewThread'];
@@ -968,17 +970,17 @@ async function writeCleanTriageArtifact(
   return triageArtifactPath;
 }
 
-async function commitAiReviewArtifactsAfterRecordReview(
+async function commitPrReviewArtifactsAfterRecordReview(
   repoRoot: string,
   ticketId: string,
   absolutePaths: string[],
   relativeToRepo: (cwd: string, absolutePath: string) => string,
   runProcess: (cwd: string, cmd: string[]) => string,
-): Promise<void> {
+): Promise<boolean> {
   try {
     runProcess(repoRoot, ['git', 'rev-parse', '--git-dir']);
   } catch {
-    return;
+    return false;
   }
 
   const relPaths: string[] = [];
@@ -995,7 +997,7 @@ async function commitAiReviewArtifactsAfterRecordReview(
 
   const unique = [...new Set(relPaths)];
   if (unique.length === 0) {
-    return;
+    return false;
   }
 
   for (const rel of unique) {
@@ -1017,7 +1019,7 @@ async function commitAiReviewArtifactsAfterRecordReview(
   })();
 
   if (!stagedNames.trim()) {
-    return;
+    return false;
   }
 
   try {
@@ -1025,12 +1027,14 @@ async function commitAiReviewArtifactsAfterRecordReview(
       'git',
       'commit',
       '-m',
-      `chore(delivery): commit AI review artifacts after record-review ${ticketId}`,
+      `chore(delivery): commit PR review artifacts after record-review ${ticketId}`,
     ]);
+    return true;
   } catch (error) {
     console.warn(
       `Could not commit staged review artifacts for ${ticketId}: ${formatError(error)}`,
     );
+    return false;
   }
 }
 
@@ -1041,7 +1045,10 @@ async function applyTicketReviewUpdate(
   updateTicket: (ticket: TicketState) => TicketState,
   dependencies: Pick<
     TicketReviewDependencies,
-    'updatePullRequestBody' | 'relativeToRepo' | 'runProcess'
+    | 'updatePullRequestBody'
+    | 'relativeToRepo'
+    | 'runProcess'
+    | 'ensureBranchPushed'
   >,
 ): Promise<DeliveryState> {
   const updatedTickets = state.tickets.map((ticket) =>
@@ -1135,13 +1142,19 @@ async function applyTicketReviewUpdate(
     (p): p is string => p !== undefined,
   );
   if (artifactPaths.length > 0) {
-    await commitAiReviewArtifactsAfterRecordReview(
+    const committed = await commitPrReviewArtifactsAfterRecordReview(
       cwd,
       ticketId,
       artifactPaths,
       dependencies.relativeToRepo,
       dependencies.runProcess,
     );
+    if (committed) {
+      dependencies.ensureBranchPushed?.(
+        persistedTarget.worktreePath,
+        persistedTarget.branch,
+      );
+    }
   }
 
   return nextState;
@@ -1280,7 +1293,7 @@ export async function runTicketReviewLifecycle(
         artifactStemPath: resolve(
           cwd,
           state.reviewsDirPath,
-          `${target.id}-ai-review`,
+          buildPrReviewArtifactStem(target.id),
         ),
         detectedReview: reviewPollResult.result,
         effectiveMaxWaitMinutes: reviewPollResult.effectiveMaxWaitMinutes,
@@ -1333,7 +1346,11 @@ export async function runTicketReviewLifecycle(
         previousOutcome: target.reviewOutcome,
       });
       const triageArtifactPath = await writeCleanTriageArtifact(
-        resolve(cwd, state.reviewsDirPath, `${target.id}-ai-review`),
+        resolve(
+          cwd,
+          state.reviewsDirPath,
+          buildPrReviewArtifactStem(target.id),
+        ),
         {
           incompleteAgents: processedReview.incompleteAgents,
           note: processedReview.note,
@@ -1420,7 +1437,7 @@ export async function runReconcileLateTicketReview(
         artifactStemPath: resolve(
           cwd,
           state.reviewsDirPath,
-          `${target.id}-ai-review`,
+          buildPrReviewArtifactStem(target.id),
         ),
         detectedReview: reviewPollResult.result,
         effectiveMaxWaitMinutes: reviewPollResult.effectiveMaxWaitMinutes,
@@ -1471,7 +1488,11 @@ export async function runReconcileLateTicketReview(
         previousOutcome: target.reviewOutcome,
       });
       const triageArtifactPath = await writeCleanTriageArtifact(
-        resolve(cwd, state.reviewsDirPath, `${target.id}-ai-review`),
+        resolve(
+          cwd,
+          state.reviewsDirPath,
+          buildPrReviewArtifactStem(target.id),
+        ),
         {
           incompleteAgents: processedReview.incompleteAgents,
           note: processedReview.note,
@@ -1713,7 +1734,7 @@ export async function recordTicketReview(
   const artifactStemPath = resolve(
     cwd,
     state.reviewsDirPath,
-    `${ticketId}-ai-review`,
+    buildPrReviewArtifactStem(ticketId),
   );
   let fetchArtifactPath = target.reviewFetchArtifactPath
     ? resolve(cwd, target.reviewFetchArtifactPath)

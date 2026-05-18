@@ -370,7 +370,7 @@ describe('delivery orchestrator', () => {
             worktreePath: '/tmp/p2_01',
             prUrl: 'https://example.test/pull/14',
             reviewFetchArtifactPath:
-              '.agents/delivery/phase-02/reviews/P2.01-ai-review.fetch.json',
+              '.agents/delivery/phase-02/reviews/P2.01-pr-review.fetch.json',
             reviewOutcome: 'patched',
             reviewNote: 'patched the two actionable correctness issues',
           },
@@ -405,7 +405,7 @@ describe('delivery orchestrator', () => {
     expect(handoff).toContain('Previous PR: https://example.test/pull/14');
     expect(handoff).toContain('Review outcome: `patched`');
     expect(handoff).toContain(
-      'Review fetch artifact: `.agents/delivery/phase-02/reviews/P2.01-ai-review.fetch.json`',
+      'Review fetch artifact: `.agents/delivery/phase-02/reviews/P2.01-pr-review.fetch.json`',
     );
   });
 
@@ -2282,16 +2282,16 @@ describe('delivery orchestrator', () => {
       expect(fetchCount).toBe(2);
       expect(nextState.tickets[0]?.status).toBe('needs_patch');
       expect(nextState.tickets[0]?.reviewFetchArtifactPath).toBe(
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.fetch.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.fetch.json',
       );
       expect(nextState.tickets[0]?.reviewTriageArtifactPath).toBe(
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
       );
       expect(nextState.tickets[0]?.reviewHeadSha).toBe('abcdef1234567890');
       expect(
         await readArtifactJson(
           cwd,
-          '.agents/delivery/phase-03/reviews/P3.01-ai-review.fetch.json',
+          '.agents/delivery/phase-03/reviews/P3.01-pr-review.fetch.json',
         ),
       ).toMatchObject({
         agents: [
@@ -2311,7 +2311,7 @@ describe('delivery orchestrator', () => {
       expect(
         await readArtifactJson(
           cwd,
-          '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+          '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
         ),
       ).toMatchObject({
         outcome: 'needs_patch',
@@ -2411,9 +2411,9 @@ describe('delivery orchestrator', () => {
       status: 'done',
       reviewOutcome: 'patched',
       reviewFetchArtifactPath:
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.fetch.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.fetch.json',
       reviewTriageArtifactPath:
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
     });
     expect(prBodyUpdates).toEqual(['phase-03:patched']);
   });
@@ -2479,12 +2479,12 @@ describe('delivery orchestrator', () => {
       status: 'done',
       reviewOutcome: 'clean',
       reviewTriageArtifactPath:
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
     });
     expect(
       await readArtifactJson(
         '/tmp/test_project',
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
       ),
     ).toMatchObject({
       incompleteAgents: ['coderabbit'],
@@ -2551,12 +2551,12 @@ describe('delivery orchestrator', () => {
       status: 'done',
       reviewOutcome: 'clean',
       reviewTriageArtifactPath:
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
     });
     expect(
       await readArtifactJson(
         '/tmp/test_project',
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
       ),
     ).toMatchObject({
       note: 'No AI review feedback was detected within the 12-minute polling window.',
@@ -2630,12 +2630,12 @@ describe('delivery orchestrator', () => {
       status: 'done',
       reviewOutcome: 'patched',
       reviewTriageArtifactPath:
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
     });
     expect(
       await readArtifactJson(
         '/tmp/test_project',
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
       ),
     ).toMatchObject({
       note: 'External AI review completed without prudent follow-up changes. Earlier review cycles led to prudent follow-up patches, and the latest review pass found no additional prudent follow-up changes.',
@@ -2696,12 +2696,12 @@ describe('delivery orchestrator', () => {
       status: 'done',
       reviewOutcome: 'patched',
       reviewTriageArtifactPath:
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
     });
     expect(
       await readArtifactJson(
         '/tmp/test_project',
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
       ),
     ).toMatchObject({
       note: 'No AI review feedback was detected within the 12-minute polling window. Earlier review cycles led to prudent follow-up patches, and the latest review pass found no additional prudent follow-up changes.',
@@ -3342,7 +3342,7 @@ describe('delivery orchestrator', () => {
       expect(nextState.tickets[0]?.status).toBe('done');
       expect(nextState.tickets[0]?.reviewOutcome).toBe('needs_patch');
       expect(nextState.tickets[0]?.reviewFetchArtifactPath).toBe(
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.fetch.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.fetch.json',
       );
       expect(nextState.tickets[0]?.reviewHeadSha).toBe('abcdef1234567890');
       expect(
@@ -3424,9 +3424,9 @@ describe('delivery orchestrator', () => {
           prOpenedAt: '2026-04-01T10:00:00.000Z',
           reviewOutcome: 'patched',
           reviewFetchArtifactPath:
-            '.agents/delivery/phase-03/reviews/P3.01-ai-review.fetch.json',
+            '.agents/delivery/phase-03/reviews/P3.01-pr-review.fetch.json',
           reviewTriageArtifactPath:
-            '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+            '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
           reviewNote: 'Earlier patched note.',
         },
       ],
@@ -3458,12 +3458,12 @@ describe('delivery orchestrator', () => {
 
     expect(nextState.tickets[0]?.status).toBe('done');
     expect(nextState.tickets[0]?.reviewTriageArtifactPath).toBe(
-      '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+      '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
     );
     expect(
       await readArtifactJson(
         '/tmp/test_project',
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
       ),
     ).toMatchObject({
       note: 'No AI review feedback was detected within the 1-minute polling window. Earlier review cycles led to prudent follow-up patches, and the latest review pass found no additional prudent follow-up changes.',
@@ -3538,7 +3538,7 @@ describe('delivery orchestrator', () => {
     expect(
       await readArtifactJson(
         '/tmp/test_project',
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
       ),
     ).toMatchObject({
       note: 'Actionable AI review findings were detected and still need follow-up.',
@@ -3601,7 +3601,7 @@ describe('delivery orchestrator', () => {
     expect(
       await readArtifactJson(
         '/tmp/test_project',
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
       ),
     ).toMatchObject({
       note: 'External AI review completed without prudent follow-up changes. Earlier review cycles led to prudent follow-up patches, and the latest review pass found no additional prudent follow-up changes.',
@@ -3657,7 +3657,7 @@ describe('delivery orchestrator', () => {
     expect(
       await readArtifactJson(
         '/tmp/test_project',
-        '.agents/delivery/phase-03/reviews/P3.01-ai-review.triage.json',
+        '.agents/delivery/phase-03/reviews/P3.01-pr-review.triage.json',
       ),
     ).toMatchObject({
       note: 'External AI review completed without prudent follow-up changes. Earlier review cycles led to prudent follow-up patches, and the latest review pass found no additional prudent follow-up changes.',

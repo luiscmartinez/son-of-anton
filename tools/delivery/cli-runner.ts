@@ -129,6 +129,52 @@ import {
 
 export const WORKTREE_EXEMPT = new Set(['status', 'sync', 'start']);
 
+export function commitDeliveryArtifactAndPush(input: {
+  absolutePath: string;
+  branch: string;
+  commitMessage: string;
+  ensureBranchPushed: (cwd: string, branch: string) => void;
+  relativeToRepo: (cwd: string, absolutePath: string) => string;
+  repoRoot: string;
+  runProcess: (cwd: string, cmd: string[]) => string;
+}): boolean {
+  try {
+    input.runProcess(input.repoRoot, ['git', 'rev-parse', '--git-dir']);
+  } catch {
+    return false;
+  }
+
+  if (!existsSync(input.absolutePath)) {
+    return false;
+  }
+
+  const relativePath = input.relativeToRepo(input.repoRoot, input.absolutePath);
+  if (relativePath.length === 0) {
+    return false;
+  }
+
+  input.runProcess(input.repoRoot, ['git', 'add', '--', relativePath]);
+  const stagedNames = input.runProcess(input.repoRoot, [
+    'git',
+    'diff',
+    '--cached',
+    '--name-only',
+  ]);
+
+  if (!stagedNames.trim()) {
+    return false;
+  }
+
+  input.runProcess(input.repoRoot, [
+    'git',
+    'commit',
+    '-m',
+    input.commitMessage,
+  ]);
+  input.ensureBranchPushed(input.repoRoot, input.branch);
+  return true;
+}
+
 export function assertWorktreeGuard(
   cwd: string,
   command: string,
@@ -611,6 +657,15 @@ export async function runDeliveryOrchestrator(
           subagentTarget.id,
           artifactRelPath,
         );
+        commitDeliveryArtifactAndPush({
+          absolutePath: artifactAbsPath,
+          branch: subagentTarget.branch,
+          commitMessage: `chore(${subagentTarget.id}): record subagent-review runner artifact`,
+          ensureBranchPushed: context.platform.ensureBranchPushed,
+          relativeToRepo,
+          repoRoot: cwd,
+          runProcess: context.platform.runProcess,
+        });
 
         if (outcome === 'skipped') {
           console.log(
@@ -1447,6 +1502,8 @@ export async function pollReview(
     resolveReviewFetcher,
     resolveReviewThread: platform.resolveReviewThread,
     resolveReviewTriager,
+    ensureBranchPushed:
+      resolvedDependencies.ensureBranchPushed ?? platform.ensureBranchPushed,
     runProcess: platform.runProcess,
     updatePullRequestBody:
       resolvedDependencies.updatePullRequestBody ??
@@ -1477,6 +1534,8 @@ export async function reconcileLateReview(
     resolveReviewFetcher,
     resolveReviewThread: platform.resolveReviewThread,
     resolveReviewTriager,
+    ensureBranchPushed:
+      resolvedDependencies.ensureBranchPushed ?? platform.ensureBranchPushed,
     runProcess: platform.runProcess,
     updatePullRequestBody:
       resolvedDependencies.updatePullRequestBody ??
@@ -1543,6 +1602,8 @@ export async function recordReview(
     resolveReviewFetcher,
     resolveReviewThread: platform.resolveReviewThread,
     resolveReviewTriager,
+    ensureBranchPushed:
+      resolvedDependencies.ensureBranchPushed ?? platform.ensureBranchPushed,
     runProcess: platform.runProcess,
     updatePullRequestBody:
       resolvedDependencies.updatePullRequestBody ??
@@ -1557,6 +1618,7 @@ async function advanceToNextTicketImpl(
 ): Promise<DeliveryState> {
   const platform = context.platform;
   return advanceToNextTicket(state, cwd, {
+    ensureBranchPushed: platform.ensureBranchPushed,
     updatePullRequestBody: platform.updatePullRequestBody,
   });
 }

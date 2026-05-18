@@ -381,7 +381,7 @@ When `reviewPolicy.subagentReview` is `"required"`, the agent must record a suba
 
 **Runner selection:** The execution agent declares its own identity via `--preferred-runner <claude-cli|codex-exec>`. The CLI tries the preferred runner first, falls back to the other, and records an honest `skipped` artifact if neither is available. No config change is needed when switching agent platforms (Claude Code, Codex, Cursor, etc.).
 
-The runner writes a `SubagentRunnerArtifact` to `reviews/<ticket>-subagent-runner.json`. `open-pr` fails closed when `subagentReview` is not `"disabled"` and a non-skipped outcome is recorded but the artifact file is missing.
+The runner writes a `SubagentRunnerArtifact` to `reviews/<ticket>-subagent-runner.json`, then stages, commits, and pushes that artifact from the ticket worktree. `open-pr` fails closed when `subagentReview` is not `"disabled"` and a non-skipped outcome is recorded but the artifact file is missing.
 
 **Hard write boundary:** Review subagents must never modify files under `docs/product/delivery/**`. Those files are primary-agent delivery artifacts and historical workflow evidence. A subagent may report concerns about them under Findings for human review, but must not patch them. The programmatic runner fails the subagent-review step if a runner changes that path.
 
@@ -711,7 +711,7 @@ PR descriptions are maintained as delivery metadata, not one-shot text.
 - `open-pr` creates the initial PR body
 - `open-pr` uses a human-readable Conventional-Commit-style title plus the delivery ticket suffix, for example `feat: add user-facing behavior [PN.NN]`
 - rerunning `open-pr` refreshes the existing PR title/body instead of failing on an already-open branch
-- `record-review` stores the triage result and optional note; when run inside a git checkout it then **stages and commits** the updated `*-ai-review.triage.json` (and the paired `*-ai-review.fetch.json` when present on disk) so the working tree does not stay dirty after a `needs_patch` → `record-review` cycle
+- `record-review` stores the triage result and optional note; when run inside a git checkout it then **stages and commits** the updated `*-pr-review.triage.json` (and the paired `*-pr-review.fetch.json` when present on disk) so the working tree does not stay dirty after a `needs_patch` → `record-review` cycle
 - `record-review ... patched` also makes a best-effort attempt to resolve mapped native GitHub inline review threads for patched findings
 - `poll-review` auto-records `clean` when no `pr-review` feedback is detected by the final check and refreshes the PR body immediately
 - PR-body AI-review notes now distinguish current-head review from stale-history review when the reviewed SHA no longer matches the branch head
