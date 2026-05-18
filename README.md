@@ -194,11 +194,15 @@ adapter automatically.
 ## Updating
 
 ```bash
-git subtree pull --prefix .son-of-anton https://github.com/cesarnml/son-of-anton.git main --squash
+git fetch https://github.com/cesarnml/son-of-anton.git main
+git subtree merge --prefix .son-of-anton FETCH_HEAD --squash
 bun run sync
 ```
 
 Migrations apply automatically on `bun run sync`.
+Fetching first and then merging `FETCH_HEAD` keeps the subtree update pinned to
+the fetched Son-of-Anton ref, even when the consumer repo also has a local
+`main` branch.
 
 <details>
 <summary>Claude Code shortcut</summary>

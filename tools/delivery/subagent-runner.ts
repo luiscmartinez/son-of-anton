@@ -17,6 +17,56 @@ export type RunnerAttemptResult =
   | { status: 'unavailable' }
   | { status: 'timeout' };
 
+export type BuildSubagentReviewPromptInput = {
+  baseBranch: string;
+  changedFiles: string[];
+};
+
+export function buildSubagentReviewPrompt({
+  baseBranch,
+  changedFiles,
+}: BuildSubagentReviewPromptInput): string {
+  const files = changedFiles.length
+    ? changedFiles.map((file) => `- ${file}`).join('\n')
+    : '- (no changed files detected)';
+
+  return [
+    'Assume this implementation has holes. Find demonstrable ticket-relevant behavior breaks, not repo-wide hygiene issues.',
+    '',
+    `Review all code changes introduced in the current branch versus its base branch (${baseBranch}).`,
+    '',
+    'Changed files:',
+    files,
+    '',
+    'Hard write boundary:',
+    '- Never modify files under docs/product/delivery/**.',
+    '- If you find an issue there, report it under Findings for human review only.',
+    '- This includes ticket docs, implementation plans, handoffs, review artifacts, and rationale sections.',
+    '',
+    'Review boundary:',
+    '- Start from the changed files, then independently inspect directly related implementation code before deciding the review is complete.',
+    '- You may add attack surfaces when your repo read finds plausible ticket-relevant failure paths.',
+    '- Patch only demonstrated correctness gaps relevant to the branch behavior.',
+    '- Do not patch for style, preference, formatting, linting, or spellcheck noise.',
+    '- If full-repo verification fails on pre-existing or generated-doc paths, classify it as out of scope.',
+    '',
+    'Commit any fixes with messages ending with " [subagent-review]".',
+    'Do not rationalize away anything you notice: patch valid invariant breaks and report non-patched concerns for the human.',
+  ].join('\n');
+}
+
+export function isDeliveryDocPath(filePath: string): boolean {
+  const normalized = filePath.replace(/\\/g, '/').replace(/^\.\//, '');
+  return (
+    normalized === 'docs/product/delivery' ||
+    normalized.startsWith('docs/product/delivery/')
+  );
+}
+
+export function findDeliveryDocPaths(paths: string[]): string[] {
+  return paths.filter(isDeliveryDocPath);
+}
+
 export function tryRunner(
   spawnProcess: () => SpawnResult,
   checkHasChanges: () => boolean,
