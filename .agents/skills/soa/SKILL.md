@@ -23,12 +23,12 @@ Add son-of-anton to the current repo for the first time:
 
 ```bash
 git subtree add --prefix .son-of-anton https://github.com/cesarnml/son-of-anton.git main --squash
-bash .son-of-anton/scripts/sync-skills.sh
+bash .son-of-anton/scripts/soa-sync.sh
 ```
 
 If `.son-of-anton` already exists, tell the user to use `update` instead.
 
-`sync-skills.sh` wires the Claude Code adapter as `/soa` plus `soa-*` helper
+`soa-sync.sh` wires the Claude Code adapter as `/soa` plus `soa-*` helper
 skills. The prefixed helper names are intentional so existing user skills named
 `grill-me`, `pr-review`, `enter-worktree`, etc. are not shadowed.
 
@@ -41,9 +41,25 @@ skills. The prefixed helper names are intentional so existing user skills named
 Pull the latest changes from son-of-anton, then re-sync skill symlinks:
 
 ```bash
-git subtree pull --prefix .son-of-anton https://github.com/cesarnml/son-of-anton.git main --squash
-bash .son-of-anton/scripts/sync-skills.sh
+git fetch https://github.com/cesarnml/son-of-anton.git main
+git subtree pull --prefix .son-of-anton https://github.com/cesarnml/son-of-anton.git FETCH_HEAD --squash
+bash .son-of-anton/scripts/soa-sync.sh
 ```
+
+Use `FETCH_HEAD`, not plain `main`, for the subtree pull. This makes the
+upstream revision unambiguous in consumer repos that also have their own `main`
+history.
+
+After the update, verify that a known subtree file matches the fetched upstream
+ref. At minimum:
+
+```bash
+git show FETCH_HEAD:docs/template/delivery/adversarial-review-template.md | git hash-object --stdin
+git hash-object .son-of-anton/docs/template/delivery/adversarial-review-template.md
+```
+
+Those hashes must match. If they do not, report the update as failed and do not
+claim the repo is current.
 
 Report what changed. If already up to date, say so.
 
