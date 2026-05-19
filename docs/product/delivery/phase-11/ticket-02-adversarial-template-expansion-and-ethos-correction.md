@@ -1,0 +1,49 @@
+# P11.02 Adversarial template expansion and ethos advisory-runner correction
+
+Size: 3 points
+Type: docs
+Scope: delivery
+
+## Outcome
+
+- `docs/template/delivery/adversarial-review-template.md` contains a new "Diff-derived attack surfaces" sub-section under "Attack surfaces" that enumerates, by name, the seven absorption-target finding classes from the product plan: output stability across schema-version drift, CLI flag/arg symmetry, error-class breadth in `catch` blocks, defensive layering at module boundaries, cross-file atomicity windows, test-contract strength, and doc-vs-code drift in the ticket Rationale. Each surface uses the coverage-mandate output form (`[probed]` / `[N/A — reason]` / `[blocked — missing-input]`).
+- The template's scope contract is relaxed from "skip ticket docs" to "do not patch ticket docs; do read the Rationale and contract docs and surface doc-vs-code drift in Findings for human review."
+- The "Patch discipline" directive includes a third patch-when clause: patch when the ticket's stated contract literally permits a behavior that is nevertheless unsafe in production (the "spec-permits-real-bug" case).
+- The template requires the subagent to emit a `runnerStatus` / `terminatedReason` field as part of its mandatory output, with allowed values `completed | rate_limit | sandbox_denied | runner_unavailable`.
+- The `son-of-anton-ethos` skill text (at the path resolved by `soa-sync` — typically `.agents/skills/son-of-anton-ethos/SKILL.md` and/or the source under `docs/template/`) describes the advisory-runner contract correctly: `subagent-review` returns findings; the primary agent applies patches and commits them with `[subagent-review]` suffix; exactly one `subagent-review` invocation per ticket via programmatic subprocess.
+- `bun run ci` is green; spellcheck includes any new terminology.
+
+## Red
+
+- **Doc-only ticket — skip Red.** Branch touches only `.md` files. No automated test required.
+
+## Green
+
+- Edit `docs/template/delivery/adversarial-review-template.md`:
+  - Add the "Diff-derived attack surfaces" sub-section beneath the existing "Attack surfaces" section. Name each of the seven classes explicitly. Include the coverage-mandate output form for each.
+  - Update the scope contract paragraph to the flag-only-doc-drift wording.
+  - Append the "spec-permits-real-bug" clause to "Patch discipline."
+  - Update the required-output section to include `runnerStatus` / `terminatedReason` with the four allowed values.
+- Edit the ethos skill source (the canonical one tracked under `docs/template/` — `soa-sync` is responsible for distributing it). Remove the "reviews and patches its own findings autonomously" claim. Replace with the advisory-runner contract.
+- Add any new terminology to the spellcheck allowlist if `bun run verify` flags it.
+
+## Refactor
+
+- Skim the rest of the template for now-stale phrasing that contradicts the new sub-section. Fix only contradictions; leave style cleanup alone.
+
+## Review Focus
+
+- Whether the seven-class enumeration is unambiguous to a future subagent reading cold. Each class needs enough definition that "[probed]" is verifiable, not aspirational.
+- The doc-drift relaxation must be unambiguous about flag-only-not-patch — the subagent must not start editing ticket docs.
+- Ethos correction wording — confirm it matches actual CLI behavior at HEAD before P11.03 lands (the contract is advisory *now*, even before the recorder-mode change).
+- Spellcheck/lint may flag new terms (`runnerStatus`, `terminatedReason`, `sandbox_denied`); update the allowlist deliberately.
+
+## Rationale
+
+> Append here (do not edit above) when behavior or trade-offs change during implementation.
+
+Red first: [what test failed first]
+Why this path: [why this implementation was the smallest acceptable]
+Alternative considered: [one rejected alternative and why]
+Deferred: [what was intentionally left out of this ticket]
+Contract note: record any deviation from the ticket metadata contract here, including missing/incorrect `Type:` or non-compliant `Scope:` fields, and why it happened.

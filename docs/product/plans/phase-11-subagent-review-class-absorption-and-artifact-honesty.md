@@ -1,6 +1,6 @@
 # Phase 11: Subagent-review class absorption and artifact honesty
 
-**Delivery status:** Product plan drafted; awaiting developer approval. Update this line when `/soa decompose` produces the implementation plan.
+**Delivery status:** Decomposed. See [`docs/product/delivery/phase-11/implementation-plan.md`](../delivery/phase-11/implementation-plan.md) for the five-ticket breakdown (P11.01–P11.05).
 
 ## TL;DR
 
