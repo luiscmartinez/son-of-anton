@@ -35,7 +35,7 @@ Scope: delivery
 
 - Whether the seven-class enumeration is unambiguous to a future subagent reading cold. Each class needs enough definition that "[probed]" is verifiable, not aspirational.
 - The doc-drift relaxation must be unambiguous about flag-only-not-patch — the subagent must not start editing ticket docs.
-- Ethos correction wording — confirm it matches actual CLI behavior at HEAD before P11.03 lands (the contract is advisory *now*, even before the recorder-mode change).
+- Ethos correction wording — confirm it matches actual CLI behavior at HEAD before P11.03 lands (the contract is advisory _now_, even before the recorder-mode change).
 - Spellcheck/lint may flag new terms (`runnerStatus`, `terminatedReason`, `sandbox_denied`); update the allowlist deliberately.
 
 ## Rationale

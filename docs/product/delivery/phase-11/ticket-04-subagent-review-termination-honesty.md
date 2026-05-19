@@ -13,7 +13,7 @@ Scope: delivery
 
 ## Red
 
-- Add a test that simulates a runner subprocess writing files *after* the CLI's old porcelain sample point. Assert the recorded outcome reflects the post-exit porcelain state (i.e., `patched` if files were written, not `clean`).
+- Add a test that simulates a runner subprocess writing files _after_ the CLI's old porcelain sample point. Assert the recorded outcome reflects the post-exit porcelain state (i.e., `patched` if files were written, not `clean`).
 - Add a test that constructs a runner result with `terminatedReason: 'rate_limit'` and confirms the CLI refuses to write `outcome: 'clean'`.
 - Add a test that simulates ambiguous runner output (e.g., a rate-limit signature in stdout with exit code 0) and confirms the CLI does **not** auto-fall-back to the other runner — it records `terminatedReason` honestly and exits.
 - Add a test that simulates the preferred runner binary missing from PATH (`unavailable`) and confirms auto-fallback **does** fire.
@@ -33,7 +33,7 @@ Scope: delivery
 ## Review Focus
 
 - Subprocess-wait correctness: confirm `await child.exited` or the chosen primitive handles abnormal exits (signal kill, parent timeout) without leaking the porcelain-read past a hung child.
-- The fallback predicate's new shape — confirm it is documented inline (a short comment naming the two allowed triggers and why ambiguous-output cases are excluded) since this is the rare case where a code comment captures non-obvious *why*.
+- The fallback predicate's new shape — confirm it is documented inline (a short comment naming the two allowed triggers and why ambiguous-output cases are excluded) since this is the rare case where a code comment captures non-obvious _why_.
 - Choice of outcome value when `terminatedReason !== 'completed'` and operator did not supply one. Whatever the chosen sentinel, confirm downstream artifact consumers handle it without assuming `clean | patched` exhaustiveness.
 - Whether `--force` from P11.03 interacts with these guards. Default: it should not — `--force` overrides idempotency, not honesty.
 

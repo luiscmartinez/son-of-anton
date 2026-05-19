@@ -16,7 +16,7 @@ Scope: delivery
 
 - Add a CLI integration test that invokes `subagent-review <ticket> clean <sha>` in a fixture worktree and asserts: no subprocess invocation happens (mock or spy on the runner dispatch), and the artifact at the expected path contains a single recorder-mode invocation with the supplied SHA and outcome.
 - Add a second test: pre-seed the artifact with a `reviewedHeadSha` matching the worktree's HEAD, invoke `subagent-review <ticket>` (no outcome), and assert no-op (no new invocation appended; no subprocess invoked).
-- Add a third test: same setup, invoke with `--force`, assert the runner *is* invoked and a new invocation is appended.
+- Add a third test: same setup, invoke with `--force`, assert the runner _is_ invoked and a new invocation is appended.
 - Run the test suite and confirm all three fail.
 - Commit with suffix `[red]`: `test(P11.03): recorder mode and HEAD idempotency [red]`
 
@@ -35,7 +35,7 @@ Scope: delivery
 
 - Recorder-mode runnerKind label — confirm it is distinct from real runner labels so downstream artifact consumers can filter operator-recorded invocations.
 - HEAD detection edge case from product plan risk #3: primary-agent commits between subagent run and artifact write. Document the chosen behavior in code comment or Rationale.
-- `--force` semantics: does it skip *only* the idempotency check, or also other safety checks added by P11.04? Keep it scoped to idempotency in this ticket.
+- `--force` semantics: does it skip _only_ the idempotency check, or also other safety checks added by P11.04? Keep it scoped to idempotency in this ticket.
 - Test fixture for the worktree — keep it minimal (a temp dir with a single commit is enough).
 
 ## Rationale
