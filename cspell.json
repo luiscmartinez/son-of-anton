@@ -139,9 +139,17 @@
 		"waka",
 		"idempotently",
 		"desaturated",
+		"desaturation",
 		"unparseable",
 		"inspectable",
-		"lookback"
+		"lookback",
+		"xcodeproj",
+		"LSUI",
+		"pawprint",
+		"pasteable",
+		"forwardable",
+		"xibs",
+		"prefs"
 	],
 	"dictionaries": ["typescript", "node", "software-terms"]
 }
