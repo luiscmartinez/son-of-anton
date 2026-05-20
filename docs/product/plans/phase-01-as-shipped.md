@@ -50,6 +50,34 @@ P1.02 carried a one-revision allowance for the hook ticket. P1.18 used
 it once, bumped `schema_version`, and the contract doc absorbed the
 change. The one-revision discipline held.
 
+### Signal ingest: forward-only, cumulative XP (post-closeout)
+
+The original plan and several delivery tickets described a **90-day
+first-sync lookback** for JSONL / Wakatime and a **last-90-days OR
+last-20-PRs** cap on GitHub. That shipped in the stacked PR chain but
+was **revised after closeout** to match product intent: reward activity
+**from codogotchi onward**, not pre-install history.
+
+**Current behavior (source of truth for agents and Phase 02):**
+
+- **No lookback:** when `last_signal_at_by_source` is null for a source,
+  `since` is the sync instant (`now`), not `now − 90 days`.
+- **Incremental windows:** later syncs read from each source’s
+  `last_signal_at` forward.
+- **Cumulative XP:** `syncProfile` **adds** each sync’s slice to
+  `xp_by_source`; null skips; zero tokens / zero hours / empty PR list
+  do not erase prior totals.
+- **GitHub:** no first-sync 20-PR / 90-day cap; merged PRs are those
+  at or after the forward cutoff only (`resolveGithubMergedSince` in
+  `packages/engine/src/sources/github.ts`).
+- **CLI:** readers return `null` when a window has no measurable activity
+  (skip that source for the POST). `codogotchi setup` prompts GitHub
+  **username then PAT** (both required for PR signals).
+
+Wakatime free tier still caps API history (~7 days); forward-only avoids
+*asking* for 90 days the API cannot return. Deploy Convex after changing
+`syncProfile` so server and CLI agree.
+
 ## Non-divergences worth restating
 
 - All three health knobs landed as planned with `weekend_decay: false`
@@ -67,5 +95,7 @@ change. The one-revision discipline held.
    the optional explicit-gate stream the hook merges in.
 3. [`docs/product/retrospectives/phase-01-cli-convex-plumbing-retrospective.md`](../retrospectives/phase-01-cli-convex-plumbing-retrospective.md) —
    what worked, what bit, and the validation-window followup.
+4. [`README.md`](../../../README.md) — CLI install + **forward-only** signal
+   ingest summary (kept current for operators).
 
-_Created: 2026-05-19._
+_Created: 2026-05-19. Signal-ingest amendment: 2026-05-20._

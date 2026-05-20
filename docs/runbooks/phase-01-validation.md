@@ -4,6 +4,8 @@ Phase 01 is "done" when **all eight** exit conditions in `docs/product/plans/pha
 
 The runbook is intentionally concrete — every check is a command, query, or screenshot, not a feeling.
 
+**Signal ingest (as-shipped):** XP counts activity **from install forward** only—no 90-day / 20-PR backfill on first sync. Run Day 0 before the week you intend to measure, and expect EC2 to need real sessions (or flagged seeds) after setup. See [`docs/product/plans/phase-01-as-shipped.md`](../product/plans/phase-01-as-shipped.md).
+
 ## Day 0 — Walkthrough (kickoff)
 
 Before any day-counting begins:

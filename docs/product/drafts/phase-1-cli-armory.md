@@ -76,7 +76,7 @@ Ship `npm install -g codogotchi-xp` and `codogotchi.pro/username` good enough to
 | SoA animation states | Yes — ship in Phase 1 |
 | Pet preview | Static placeholder. Live codex-pets API in Phase 3 |
 | Domain | `codogotchi.pro` (also grab `codogotchi.app` as redirect) |
-| `enrichPRQuality()` rate limit | Cap to last 90 days **or** last 20 PRs on first sync, whichever is smaller |
+| `enrichPRQuality()` rate limit | ~~Cap to last 90 days **or** last 20 PRs on first sync~~ **Superseded:** forward-only from install ([`phase-01-as-shipped.md`](../plans/phase-01-as-shipped.md)) |
 
 ---
 

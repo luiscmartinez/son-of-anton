@@ -103,6 +103,23 @@ for launchd + cron and a `scorePR` debug log; validation runbook skeleton at
   interesting — the runbook landed on schedule, the live 7-day
   execution did not. See _Net assessment_.
 
+## Post-closeout amendments (2026-05-20)
+
+After the stacked PR chain landed, signal ingest was revised to match
+product intent (documented in
+[`phase-01-as-shipped.md`](../plans/phase-01-as-shipped.md)):
+
+- **Removed historical lookback** (90-day JSONL/Wakatime, 90-day / 20-PR GitHub
+  first-sync cap). Only activity from install forward counts.
+- **`syncProfile` accumulates XP** per sync instead of replacing per-source
+  totals with the latest window (which had zeroed Claude/Codex on quiet
+  15-minute ticks).
+- **Setup** prompts GitHub username + PAT together.
+
+The pain-point bullet above praising the 90-day/20-PR cap describes what
+shipped in PRs #2–#23, not the amended behavior agents should implement
+against today.
+
 ## What we'd do differently
 
 - **Materialize the full prior `reviews/` tree into a fresh worktree

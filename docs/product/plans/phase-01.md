@@ -63,9 +63,11 @@ GitHub authentication in Phase 01 is a **Personal Access Token stored in `~/.cod
 
 All four signal sources must work end-to-end in Phase 01. None are deferred. None are stubbed.
 
+> **As-shipped (2026-05-20):** Signal ingest is **forward-only** (no historical backfill on first sync) and per-source XP **accumulates** each sync. The bullets below state the **original plan**; see [`phase-01-as-shipped.md`](phase-01-as-shipped.md) for current behavior.
+
 - **Claude Code JSONL** parsing for token counts via `~/.claude/projects/**/*.jsonl`.
 - **Codex JSONL** parsing through the same parser path. The two formats are compatible enough to share most logic, and shipping Codex support in Phase 01 doubles the addressable validation surface for almost no cost.
-- **GitHub merged PRs** via the GitHub REST API, including `enrichPRQuality()` for review-comment counts and revert detection, **with the locked rate-limit cap of last-90-days OR last-20-PRs whichever is smaller on first sync.**
+- **GitHub merged PRs** via the GitHub REST API, including `enrichPRQuality()` for review-comment counts and revert detection. _(Original plan: last-90-days OR last-20-PRs cap on first sync — superseded by forward-only ingest.)_
 - **Wakatime hours** via the Wakatime API.
 
 ### XP / HP / loot engine wiring
@@ -106,7 +108,7 @@ Granularity from tool-call inspection is acknowledged as **best-effort heuristic
 Convex is the canonical source of truth. Phase 01 commits to:
 
 - A schema covering `profiles` (with all health fields — `hp`, `died_at`, `cause`, `death_count`), `loot_events`, and `users`.
-- A `syncProfile` mutation that accepts raw signals, recomputes XP server-side (never trusts client-computed totals), and persists.
+- A `syncProfile` mutation that accepts raw signals, computes XP server-side (never trusts client-computed totals), **accumulates** per-source totals each sync, and persists.
 - An HTTP action so the CLI can post sync payloads.
 - Deployment to Convex Cloud production.
 
@@ -164,7 +166,7 @@ Three product-level risks worth surfacing now:
 | Risk | Likelihood | Mitigation |
 |---|---|---|
 | Claude Code or Codex change hook event format mid-Phase-01 | Medium — both are evolving products | Pin to current schema; capture event fixtures during decompose; document the contract explicitly. |
-| `enrichPRQuality()` rate-limit cap inadequate or wrong calibration | Medium — owner's account has many merged PRs | Locked cap is last-90-days OR last-20-PRs whichever is smaller on first sync. Log when the cap is hit. Revisit at Phase 01 exit if it bit. |
+| `enrichPRQuality()` / GitHub search volume on active accounts | Medium — many merged PRs | _(Original: 90-day / 20-PR first-sync cap.)_ **As-shipped:** forward-only cutoff from install; no backfill. GitHub API rate limits still apply; `scorePR.log` + `sync.log` for ops. |
 | PR-quality heuristic produces false-positive HP damage (legitimate reverts, normal review comments mis-scored) | Medium — heuristics are inherently noisy | Log every `scorePR()` decision to a debug file. Review weekly during the 7-day window. Tuning is ongoing post-Phase-01. |
 
 A fourth risk — **owner abandons Phase 01 because it produces nothing shareable** — is real but unmitigated by design. The whole framing of "no public anything until the macOS pet is near release" accepts this as a deliberate trade. If it bites, the response is to revisit the phase ladder, not to half-launch.
