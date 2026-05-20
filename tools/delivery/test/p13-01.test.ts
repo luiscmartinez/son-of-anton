@@ -29,10 +29,12 @@ describe('P13.01 — runner spawn command shapes', () => {
 });
 
 describe('P13.01 — raw runner response artifact evidence', () => {
-  it('persists raw runner output and fallback metadata on invocations', () => {
+  it('persists rawOutput path ref and fallback metadata on invocations', () => {
+    const outcomePath =
+      'docs/product/delivery/phase-13/reviews/P13.01-subagent-review-outcome.md';
     const invocation = buildRunnerInvocation('codex-exec', 'abc123', 'clean', {
       fallbackLevel: 'preferred',
-      rawOutput: 'Invariant results\nAll held.',
+      rawOutput: outcomePath,
     });
     const artifact: SubagentRunnerArtifact = {
       ticket: 'P13.01',
@@ -40,9 +42,7 @@ describe('P13.01 — raw runner response artifact evidence', () => {
     };
 
     expect(validateRunnerArtifact(artifact)).toEqual(artifact);
-    expect(artifact.invocations[0]?.rawOutput).toBe(
-      'Invariant results\nAll held.',
-    );
+    expect(artifact.invocations[0]?.rawOutput).toBe(outcomePath);
     expect(artifact.invocations[0]?.fallbackLevel).toBe('preferred');
   });
 });

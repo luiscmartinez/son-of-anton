@@ -85,22 +85,22 @@ function baseTicket(overrides: Partial<TicketState> = {}): TicketState {
   };
 }
 
-describe('P13.03 — runner invocation persists inline filled prompt', () => {
-  it('round-trips the filledPrompt field through buildRunnerInvocation and validateRunnerArtifact', () => {
+describe('P13.03 — runner invocation records prompt and outcome path refs', () => {
+  it('round-trips filledPrompt and rawOutput path refs through validateRunnerArtifact', () => {
     const filledPrompt =
-      '# Adversarial review for P13.03\n\n' +
-      'Invariants: prompt is read from artifact, runner writes blocked.\n' +
-      'Attack surfaces: cli-runner.ts subagent-review dispatch, no-write enforcement.\n' +
-      'Diff context: tools/delivery/subagent-runner.ts.\n';
+      'docs/product/delivery/phase-13/reviews/P13.03-subagent-adversarial-prompt.md';
+    const rawOutput =
+      'docs/product/delivery/phase-13/reviews/P13.03-subagent-review-outcome.md';
 
     const invocation = buildRunnerInvocation('codex-exec', 'abc1234', 'clean', {
       terminatedReason: 'completed',
       fallbackLevel: 'preferred',
-      rawOutput: 'No invariants broken.',
+      rawOutput,
       filledPrompt,
     });
 
     expect(invocation.filledPrompt).toBe(filledPrompt);
+    expect(invocation.rawOutput).toBe(rawOutput);
 
     const artifact: SubagentRunnerArtifact = {
       ticket: 'P13.03',
@@ -109,6 +109,7 @@ describe('P13.03 — runner invocation persists inline filled prompt', () => {
     const validated = validateRunnerArtifact(artifact);
     expect(validated).not.toBeNull();
     expect(validated?.invocations[0]?.filledPrompt).toBe(filledPrompt);
+    expect(validated?.invocations[0]?.rawOutput).toBe(rawOutput);
   });
 
   it('rejects non-string filledPrompt values via validateRunnerArtifact', () => {
@@ -139,7 +140,8 @@ describe('P13.03 — runner is advisory-only (no-write contract)', () => {
       invocations: [
         buildRunnerInvocation('codex-exec', 'abc1234', 'skipped', {
           terminatedReason: 'advisory_violation',
-          rawOutput: 'Runner attempted to patch — contract violated.',
+          rawOutput:
+            'docs/product/delivery/phase-13/reviews/P13.03-subagent-review-outcome.md',
         }),
       ],
     };

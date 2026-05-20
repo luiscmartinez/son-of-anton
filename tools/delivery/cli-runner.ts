@@ -127,6 +127,7 @@ import {
   shouldFallbackToOtherRunner,
   tryReadSubagentRunnerArtifact,
   tryRunner,
+  writeSubagentReviewOutcome,
   type SubagentRunnerTerminatedReason,
 } from './subagent-runner';
 import {
@@ -140,6 +141,8 @@ export const WORKTREE_EXEMPT = new Set(['status', 'sync', 'start']);
 
 export function commitDeliveryArtifactAndPush(input: {
   absolutePath: string;
+  /** Additional repo files to include in the same commit (e.g. review sidecars). */
+  alsoCommitAbsolutePaths?: string[];
   branch: string;
   commitMessage: string;
   ensureBranchPushed: (cwd: string, branch: string) => void;
@@ -153,16 +156,24 @@ export function commitDeliveryArtifactAndPush(input: {
     return false;
   }
 
-  if (!existsSync(input.absolutePath)) {
+  const pathsToStage = [
+    input.absolutePath,
+    ...(input.alsoCommitAbsolutePaths ?? []),
+  ].filter((path) => existsSync(path));
+
+  if (pathsToStage.length === 0) {
     return false;
   }
 
-  const relativePath = input.relativeToRepo(input.repoRoot, input.absolutePath);
-  if (relativePath.length === 0) {
+  const relativePaths = pathsToStage
+    .map((path) => input.relativeToRepo(input.repoRoot, path))
+    .filter((path) => path.length > 0);
+
+  if (relativePaths.length === 0) {
     return false;
   }
 
-  input.runProcess(input.repoRoot, ['git', 'add', '--', relativePath]);
+  input.runProcess(input.repoRoot, ['git', 'add', '--', ...relativePaths]);
   const stagedNames = input.runProcess(input.repoRoot, [
     'git',
     'diff',
@@ -782,7 +793,7 @@ export async function runDeliveryOrchestrator(
         let usedRunner: 'claude-cli' | 'codex-exec' | 'skipped' = 'skipped';
         let terminatedReason: SubagentRunnerTerminatedReason =
           'runner_unavailable';
-        let rawOutput: string | undefined;
+        let runnerOutputText: string | undefined;
         let fallbackLevel: 'preferred' | 'fallback' | 'failed_all' =
           'failed_all';
 
@@ -846,7 +857,7 @@ export async function runDeliveryOrchestrator(
             });
             outcome = decided.outcome;
             terminatedReason = decided.terminatedReason;
-            rawOutput = result.rawOutput;
+            runnerOutputText = result.rawOutput;
             usedRunner = runner;
             fallbackLevel = runnerIndex === 0 ? 'preferred' : 'fallback';
 
@@ -881,12 +892,30 @@ export async function runDeliveryOrchestrator(
         }
 
         // Write runner artifact (append-only invocations[] per ticket).
-        // P13.03: persist the exact prompt bytes sent to the runner inline on
-        // the invocation so the artifact is a complete audit record.
+        // Sidecar files hold prompt and outcome prose; JSON stores path refs only.
+        const promptPath = subagentTarget.subagentAdversarialPromptPath;
+        if (!promptPath) {
+          throw new Error(
+            `Ticket ${subagentTarget.id} is missing subagentAdversarialPromptPath after prompt gate.`,
+          );
+        }
+
+        let outcomeSidecar:
+          | { absolutePath: string; relativePath: string }
+          | undefined;
+        if (runnerOutputText !== undefined) {
+          outcomeSidecar = writeSubagentReviewOutcome({
+            repoRoot: cwd,
+            reviewsDirPath: state.reviewsDirPath,
+            ticketId: subagentTarget.id,
+            content: runnerOutputText,
+          });
+        }
+
         const invocation = buildRunnerInvocation(usedRunner, headSha, outcome, {
           terminatedReason,
-          rawOutput,
-          filledPrompt: reviewPrompt,
+          rawOutput: outcomeSidecar?.relativePath,
+          filledPrompt: promptPath,
           fallbackLevel,
         });
         appendInvocationToArtifact(
@@ -907,6 +936,9 @@ export async function runDeliveryOrchestrator(
         );
         commitDeliveryArtifactAndPush({
           absolutePath: artifactAbsPath,
+          alsoCommitAbsolutePaths: outcomeSidecar
+            ? [outcomeSidecar.absolutePath]
+            : undefined,
           branch: subagentTarget.branch,
           commitMessage: `chore(${subagentTarget.id}): record subagent-review runner artifact`,
           ensureBranchPushed: context.platform.ensureBranchPushed,

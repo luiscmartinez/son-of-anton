@@ -1,5 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 
 export type SubagentRunnerOutcome = 'clean' | 'patched' | 'skipped';
 
@@ -29,11 +29,14 @@ export type SubagentRunnerInvocation = {
   outcome: SubagentRunnerOutcome;
   completedAt: string;
   terminatedReason: SubagentRunnerTerminatedReason;
+  /**
+   * Repo-relative path to `reviews/<ticket>-subagent-review-outcome.md` (runner
+   * prose). Legacy artifacts may still store inline stdout/stderr text.
+   */
   rawOutput?: string;
   /**
-   * The exact prompt bytes sent to the runner for this invocation. Captured
-   * inline so the runner artifact is a complete audit record without requiring
-   * a sidecar file. Recorder-mode and skipped invocations may omit this field.
+   * Repo-relative path to `reviews/<ticket>-subagent-adversarial-prompt.md`.
+   * Legacy artifacts may still store inline prompt text.
    */
   filledPrompt?: string;
   fallbackLevel?: SubagentRunnerFallbackLevel;
@@ -80,11 +83,63 @@ export function buildRunnerSpawnCommand(
     : { bin: 'codex', args: ['exec', reviewPrompt] };
 }
 
+export const SUBAGENT_REVIEW_OUTCOME_SUFFIX = '-subagent-review-outcome.md';
+
+export function deriveSubagentReviewOutcomePath(
+  reviewsDirPath: string,
+  ticketId: string,
+): string {
+  return `${reviewsDirPath}/${ticketId}${SUBAGENT_REVIEW_OUTCOME_SUFFIX}`;
+}
+
 export function formatRawRunnerOutput(stdout = '', stderr = ''): string {
   const sections: string[] = [];
   if (stdout.trim() !== '') sections.push(`stdout:\n${stdout.trimEnd()}`);
   if (stderr.trim() !== '') sections.push(`stderr:\n${stderr.trimEnd()}`);
   return sections.join('\n\n');
+}
+
+export type SubagentReviewOutcomeWriteResult = {
+  absolutePath: string;
+  relativePath: string;
+};
+
+/**
+ * Format runner stdout/stderr and persist under the plan reviews directory.
+ * The runner artifact stores `relativePath` in `rawOutput`, not the prose body.
+ */
+export function writeSubagentReviewOutcome(input: {
+  repoRoot: string;
+  reviewsDirPath: string;
+  ticketId: string;
+  stdout?: string;
+  stderr?: string;
+  /** When set, written as-is (must already be formatRawRunnerOutput-shaped). */
+  content?: string;
+}): SubagentReviewOutcomeWriteResult {
+  const body =
+    input.content ??
+    formatRawRunnerOutput(input.stdout ?? '', input.stderr ?? '');
+  const relativePath = deriveSubagentReviewOutcomePath(
+    input.reviewsDirPath,
+    input.ticketId,
+  );
+  const absolutePath = join(input.repoRoot, relativePath);
+  mkdirSync(dirname(absolutePath), { recursive: true });
+  writeFileSync(
+    absolutePath,
+    body.endsWith('\n') ? body : `${body}\n`,
+    'utf-8',
+  );
+  return { absolutePath, relativePath };
+}
+
+export function isSubagentReviewOutcomePath(value: string): boolean {
+  return value.endsWith(SUBAGENT_REVIEW_OUTCOME_SUFFIX);
+}
+
+export function isSubagentAdversarialPromptReference(value: string): boolean {
+  return value.endsWith('-subagent-adversarial-prompt.md');
 }
 
 export function classifyRunnerTermination(
