@@ -28,6 +28,7 @@ The code and docs currently diverge in the important places phase-13 addresses:
 - `tools/delivery/subagent-runner.ts` builds a generic prompt from base branch and changed files only. It does not read or consume `docs/template/delivery/adversarial-review-template.md`.
 - `tools/delivery/cli-runner.ts` invokes `claude --print ... --output-format text` and `codex <prompt>`, not the verified headless forms `claude -p <prompt>` and `codex exec <prompt>`.
 - Runner stdout/stderr are discarded after termination sniffing. The artifact does not preserve the runner's response.
+- The runner result ignores non-zero exit status. A direct `claude -p` smoke test currently resolves the binary and runs in headless mode, but returns `You've hit your limit ...` on stdout with exit status 1. That must be recorded as a non-clean runner failure, not as a completed clean review.
 - Artifact arrays `findings`, `probedSurfaces`, and `patches` exist but are not populated from runner prose.
 - The docs and `son-of-anton-ethos` already describe a filled-template/advisory model, but the template still includes subagent patching directives and the code still uses worktree modification as the runner outcome heuristic.
 - The only enforced write boundary today is `docs/product/delivery/**`. Phase-13 changes that to an advisory-only no-write contract for runner subprocesses.
