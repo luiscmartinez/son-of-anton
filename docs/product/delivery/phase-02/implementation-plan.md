@@ -60,17 +60,69 @@ When this phase is complete:
 - `ticket-10-lifecycle-hardening.md`
 - `ticket-11-retrospective-doc-sweep.md`
 
-## Stage gates within the phase
+## Exit Condition
+
+All five conditions from the product contract are demonstrably true:
+
+1. The owner has run the menu bar app throughout a normal working day and judged "kept it running" — empirically used for a few working days (no calendar gate).
+2. Each of the four floor states (`idle`, `implementing`, `running-tests`, `celebrating`) has visibly fired at least once on real agent activity, verifiable in `~/.codogotchi/state-transitions.log`.
+3. The three failure visuals (missing `state.json`, unparseable `state.json`, newer-than-supported `schema_version`) have each been confirmed by deliberate trigger — desaturated icon + tooltip, never silent.
+4. The Swift codebase is positioned as a credible foundation for Phase 03's floating-window + SpriteKit extension; the `state.json` polling, transition-logging, and demo-mode patterns survive without rework.
+5. Any Phase 01 pipeline issues surfaced by live use have been patched on `main` as standalone PRs before Phase 03 opens; cross-linked in P2.11 retrospective.
+
+Stage gates inside the phase:
 
 - **After P2.06.** First visible-progress milestone — `CODOGOTCHI_DEMO=1` cycles the four floor states from fixtures, with no hook running. Agent-implementable without Phase 01 pipeline involvement at all.
 - **After P2.07.** First "lives in my menu bar" milestone — app pointed at real `state.json`, soul-first usage begins. Phase 01 patch-on-main mechanic activates here if needed.
 - **After P2.10.** Implementation complete. Owner uses app empirically for "a few working days" (no calendar gate). All four floor states confirmed in log; failure visuals confirmed by deliberate triggers; "kept running" judgment satisfied.
-- **P2.11.** Retrospective written; phase closed; closeout-stack squash-merges to `main`. Phase 03 opens.
+- **P2.11.** Retrospective written; phase closed; `closeout-stack` squash-merges to `main`. Phase 03 opens.
 
-## Stack & branch model
+## CI Baseline
 
-Same convention as Phase 01: one PR per ticket, stacked on the previous, closed out with `bun run closeout-stack` at the end. Phase 01 patches land as standalone PRs to `main` during the live-integration / hardening stages; the Phase 02 stack is rebased after each lands.
+> Baseline to be recorded at P2.01 — `bun run ci:quiet` on `main` immediately before the first ticket branch is created. `apps/**` is excluded from biome and from cspell non-md scanning per the toolchain seam decision, so the TS-only CI surface is unchanged by Phase 02. Swift build/test (`bun run mac:build`, `bun run mac:test`) is a manual local step the owner runs and pastes into ticket PR bodies; it does not enter `bun run ci`.
 
-## Retrospective
+Per-ticket CI diffs are evaluated against this baseline. Any newly introduced biome diagnostic or cspell issue blocks the ticket. Swift verification is owner-attested in the PR body, not gated by `bun run ci`.
 
-`required` — first native Swift surface; locks state.json polling + transition-logging patterns Phase 03 inherits. P2.11 owns the retro and the swift-notes `INDEX.md`.
+## Review Rules
+
+- Tickets merge in order. One PR per ticket, stacked on the previous; closed out with `bun run closeout-stack` at the end.
+- Each ticket PR must pass `bun run ci:quiet` before the next ticket starts. Swift-touching tickets (P2.03–P2.10) additionally require an owner-pasted `bun run mac:build` + `bun run mac:test` result in the PR body.
+- Pre-existing CI failures recorded in CI Baseline above do not block; new failures do.
+- The `apps/menubar/` Xcode project is committed (`.xcodeproj`); reviewers may not delete it. Resources, `Info.plist` (`LSUIElement=true`), and entitlements stay Xcode-native.
+- No extension of `pet.json` or any sibling pet-format file in this phase. The Mali row-map is a hardcoded `[ActivityState: RowSpec]` table in Swift only. Pet-format extension is reserved for Phase 06.
+- No `DispatchSource` / `FSEvents` for state watching. Pure 1-second polling of `~/.codogotchi/state.json` only.
+- Animation tickets (P2.05+) use the continuous-loop policy (1s per cycle, infinite, swap on transition). No Codex-style 3-cycle burst pattern.
+- Schema-version policy is `got ≤ expected` (accept) / `got > expected` (refuse with tooltip). P2.02 lands the contract clause before any Swift code consumes it.
+- Demo mode (P2.06+) must never touch real `~/.codogotchi/state.json`. Sandboxed path under `$TMPDIR/codogotchi-demo/`.
+- Phase 01 pipeline bugs surfaced during live Phase 02 use land as **standalone PRs on `main`**, not as Phase 02 tickets. The Phase 02 stack is rebased after each lands.
+- Swift-touching tickets (P2.03–P2.10) land `notes/private/phase-02-swift-notes/P2.NN-<slug>.md` in the same PR as their code, as an Outcome bullet deliverable. P2.11 lands the `INDEX.md`.
+
+## Explicit Deferrals
+
+Carried verbatim from the product plan, restated here so they cannot drift into a ticket:
+
+- **Floating window + SpriteKit animation surface** → Phase 03.
+- **Multi-pet catalog and pet-format extension (`codogotchi-rows.json` or similar)** → Phase 06.
+- **`DispatchSource` / `FSEvents` state-file watching and energy-impact tuning** → deferred until a distribution phase that doesn't exist yet.
+- **Codex-style one-shot burst animations** → intentionally diverged; continuous-loop is the lock.
+- **`bun run ci` integration of Swift build/test** → manual owner step this phase; revisit only if/when a CI runner with Xcode is in scope.
+- **Automated exit verification (log parsers, dashboards)** → owner reads log and judges. P2.11 retro may paste excerpts; no required format.
+- **Cross-pet animation contract** → Mali-specific table only; contract emerges in Phase 06 when there are real consumers.
+
+## Stop Conditions
+
+- Broken `bun run ci:quiet` that cannot be resolved within the ticket scope.
+- Xcode project corruption or `.xcodeproj` merge conflict that cannot be cleanly resolved (escalate before re-generating).
+- `state.json` schema change required mid-phase that would alter the P2.02 contract clause (escalate; revise contract before continuing Swift work that consumes it).
+- Phase 01 hook ever found to be writing a malformed `state.json` that the Swift reader cannot defensively handle without changing the contract (escalate; patch Phase 01 on `main` first).
+- macOS API behavior divergence between the owner's macOS version and the deployment target that breaks `NSStatusItem` or `LSUIElement=true` semantics (escalate; do not silently raise the deployment target).
+- Ambiguous triage where the right action is genuinely unclear.
+
+## Phase Closeout
+
+Retrospective: required
+Why: First native Swift surface in the repo; locks the `state.json` polling cadence, transition-logging shape, and demo-mode pattern that Phase 03's floating-window + SpriteKit surface will inherit. Post-merge empirical patches against Phase 01 during live use also need an honest record before Phase 03 opens.
+Trigger: architecture/process impact + durable-learning risk
+Artifact: `docs/product/retrospectives/phase-02-menubar-pet-retrospective.md`
+
+Retrospective writing, the README/AGENTS/CLAUDE/`docs/` drift sweep, and the `notes/private/phase-02-swift-notes/INDEX.md` are executed inside P2.11 via the `soa-write-retrospective` skill at phase closeout.
