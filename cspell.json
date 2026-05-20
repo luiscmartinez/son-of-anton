@@ -137,7 +137,11 @@
 		"codegen",
 		"cmejia",
 		"waka",
-		"idempotently"
+		"idempotently",
+		"desaturated",
+		"unparseable",
+		"inspectable",
+		"lookback"
 	],
 	"dictionaries": ["typescript", "node", "software-terms"]
 }
