@@ -21,8 +21,9 @@ plan and explicit deferrals.
   `syncProfile` mutation, so XP is computed server-side and the CLI is a dumb
   pipe + cache reader.
 - Four signal sources: Claude Code JSONL, Codex JSONL, GitHub merged PRs (with
-  `scorePR` quality enrichment, capped at last-90-days OR last-20-PRs),
-  Wakatime hours.
+  `scorePR` quality enrichment), Wakatime hours. **Forward-only:** each source
+  reads activity since the last sync (or since install time on first sync)—no
+  historical backfill. Per-source XP **accumulates** on each successful sync.
 - Convex Cloud schema covering `profiles` (with HP fields), `loot_events`,
   `users`; a `syncProfile` mutation; an HTTP action receiving signals from
   the CLI.
@@ -55,6 +56,11 @@ There is no npm publish yet. The CLI runs from source via Bun.
 bun install
 bun run packages/cli/bin/codogotchi.ts setup
 ```
+
+`setup` prompts for your codogotchi **handle**, then **GitHub username** and **PAT**
+(one after the other). Merged-PR signals only work when **both** are set; skipping
+either leaves GitHub PR XP off until you fix it with `codogotchi config set` or
+`setup --force`. Wakatime and GitHub credentials are optional.
 
 Both binaries live under `packages/cli/bin/`. Wire them into your `PATH` (or
 symlink them into `~/.local/bin/`) for convenience.

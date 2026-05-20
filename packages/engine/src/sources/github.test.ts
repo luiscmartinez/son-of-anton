@@ -1,9 +1,9 @@
 import { describe, expect, it } from "bun:test";
 import {
-	applyFirstSyncCap,
 	type HttpFetch,
 	type HttpResponse,
 	readGithubSignals,
+	resolveGithubMergedSince,
 } from "./github";
 
 interface PRFixture {
@@ -68,9 +68,9 @@ function mockHttp(canned: CannedRouting): {
 				items: canned.searchItems.map(searchItem),
 			});
 		}
-		const m = url.match(/\/repos\/[^/]+\/[^/]+\/pulls\/(\d+)/);
+		const m = url.match(/\/repos\/([^/]+)\/([^/]+)\/pulls\/(\d+)/);
 		if (m) {
-			const num = Number(m[1]);
+			const num = Number(m[3]);
 			if (canned.rateLimitOnPR === num) {
 				return {
 					ok: false,
@@ -88,71 +88,59 @@ function mockHttp(canned: CannedRouting): {
 	return { fetch, calls };
 }
 
-describe("applyFirstSyncCap", () => {
-	it("returns the 'last-20' arm when the 90-day window has more than 20 PRs", () => {
-		const cap = applyFirstSyncCap({
-			candidateCount: 50,
-			perPageLimit: 20,
-		});
-		expect(cap).toBe("last-20");
+describe("resolveGithubMergedSince", () => {
+	const now = new Date("2026-05-18T12:00:00.000Z");
+
+	it("uses now when since is null (forward-only, no backfill)", () => {
+		expect(resolveGithubMergedSince(null, now).toISOString()).toBe(
+			now.toISOString(),
+		);
 	});
 
-	it("returns the 'ninety-day' arm when the 90-day window has fewer than 20", () => {
-		const cap = applyFirstSyncCap({
-			candidateCount: 5,
-			perPageLimit: 20,
-		});
-		expect(cap).toBe("ninety-day");
+	it("uses the provided since on subsequent syncs", () => {
+		const since = new Date("2026-05-17T00:00:00.000Z");
+		expect(resolveGithubMergedSince(since, now).toISOString()).toBe(
+			since.toISOString(),
+		);
 	});
 });
 
-describe("readGithubSignals — first sync", () => {
+describe("readGithubSignals — forward-only first sync", () => {
 	const now = new Date("2026-05-18T00:00:00.000Z");
 
-	it("honors the 20-PR / 90-day cap on first sync (last-20 arm)", async () => {
-		// 25 PRs in the candidate set, all within 90d — cap forces 20.
-		const prs: PRFixture[] = Array.from({ length: 25 }, (_, i) => ({
-			number: 100 + i,
-			title: `feat: thing ${i}`,
-			additions: 10 + i,
-			deletions: 5,
-			reviewComments: 0,
-			mergedAt: "2026-05-10T00:00:00.000Z",
-			repoFullName: "owner/repo",
-		}));
-		// Search endpoint already obeys per_page=20, so canned only returns 20.
-		const { fetch, calls } = mockHttp({
-			searchItems: prs.slice(0, 20),
-			prs,
-		});
+	it("does not ingest PRs merged before the sync instant", async () => {
+		const prs: PRFixture[] = [
+			{
+				number: 1,
+				title: "feat: old",
+				additions: 10,
+				deletions: 5,
+				reviewComments: 0,
+				mergedAt: "2026-05-10T00:00:00.000Z",
+				repoFullName: "owner/repo",
+			},
+		];
+		const { fetch, calls } = mockHttp({ searchItems: [], prs });
 		const result = await readGithubSignals({
 			token: "t",
 			username: "alice",
 			since: null,
 			now,
 			http: fetch,
-			concurrency: 4,
 		});
-		expect(result.prs.length).toBe(20);
-		expect(result.capApplied).toBe("last-20");
-		expect(result.rateLimitHit).toBe(false);
-		// Search URL must include the 90-day floor and per_page=20.
-		const decoded = decodeURIComponent(calls[0] ?? "");
-		expect(calls[0]).toContain("per_page=20");
-		expect(decoded).toContain("author:alice");
-		expect(decoded).toContain("is:merged");
-		expect(decoded).toContain("merged:>=2026-02-17");
+		expect(result.prs.length).toBe(0);
+		expect(decodeURIComponent(calls[0] ?? "")).toContain("merged:>=2026-05-18");
 	});
 
-	it("falls into the 'ninety-day' arm when fewer than 20 PRs exist in the window", async () => {
+	it("ingests PRs merged on or after the first-sync calendar day", async () => {
 		const prs: PRFixture[] = [
 			{
 				number: 1,
-				title: "feat: small one",
+				title: "feat: today",
 				additions: 30,
 				deletions: 5,
 				reviewComments: 0,
-				mergedAt: "2026-05-15T00:00:00.000Z",
+				mergedAt: "2026-05-18T10:00:00.000Z",
 				repoFullName: "o/r",
 			},
 		];
@@ -165,15 +153,12 @@ describe("readGithubSignals — first sync", () => {
 			http: fetch,
 		});
 		expect(result.prs.length).toBe(1);
-		expect(result.capApplied).toBe("ninety-day");
 		expect(result.prs[0]?.number).toBe(1);
-		expect(result.prs[0]?.score).toBeGreaterThan(0.7);
-		expect(result.prs[0]?.scoreExplanation).toContain("+30/-5");
 	});
 });
 
 describe("readGithubSignals — subsequent sync", () => {
-	it("uses since cutoff and reports null capApplied", async () => {
+	it("uses since cutoff for merged search", async () => {
 		const prs: PRFixture[] = [
 			{
 				number: 7,
@@ -193,7 +178,6 @@ describe("readGithubSignals — subsequent sync", () => {
 			now: new Date("2026-05-18T00:00:00.000Z"),
 			http: fetch,
 		});
-		expect(result.capApplied).toBeNull();
 		expect(result.prs.length).toBe(1);
 		expect(decodeURIComponent(calls[0] ?? "")).toContain("merged:>=2026-05-17");
 	});
@@ -210,7 +194,7 @@ describe("readGithubSignals — enrichment + scoring", () => {
 				additions: 60,
 				deletions: 60,
 				reviewComments: 2,
-				mergedAt: "2026-05-15T00:00:00.000Z",
+				mergedAt: "2026-05-18T12:00:00.000Z",
 				repoFullName: "o/r",
 			},
 		];
@@ -234,7 +218,7 @@ describe("readGithubSignals — enrichment + scoring", () => {
 				additions: 50,
 				deletions: 10,
 				reviewComments: 0,
-				mergedAt: "2026-05-15T00:00:00.000Z",
+				mergedAt: "2026-05-18T12:00:00.000Z",
 				repoFullName: "o/r",
 			},
 			{
@@ -243,7 +227,7 @@ describe("readGithubSignals — enrichment + scoring", () => {
 				additions: 50,
 				deletions: 10,
 				reviewComments: 30,
-				mergedAt: "2026-05-15T00:00:00.000Z",
+				mergedAt: "2026-05-18T13:00:00.000Z",
 				repoFullName: "o/r",
 			},
 		];
@@ -271,7 +255,7 @@ describe("readGithubSignals — rate limit", () => {
 				additions: 10,
 				deletions: 1,
 				reviewComments: 0,
-				mergedAt: "2026-05-15T00:00:00.000Z",
+				mergedAt: "2026-05-18T12:00:00.000Z",
 				repoFullName: "o/r",
 			},
 			{
@@ -280,7 +264,7 @@ describe("readGithubSignals — rate limit", () => {
 				additions: 10,
 				deletions: 1,
 				reviewComments: 0,
-				mergedAt: "2026-05-15T00:00:00.000Z",
+				mergedAt: "2026-05-18T13:00:00.000Z",
 				repoFullName: "o/r",
 			},
 		];
@@ -295,7 +279,7 @@ describe("readGithubSignals — rate limit", () => {
 			since: null,
 			now: new Date("2026-05-18T00:00:00.000Z"),
 			http: fetch,
-			concurrency: 1, // deterministic order
+			concurrency: 1,
 		});
 		expect(result.rateLimitHit).toBe(true);
 		expect(result.prs.length).toBe(1);
@@ -318,6 +302,5 @@ describe("readGithubSignals — rate limit", () => {
 		});
 		expect(result.rateLimitHit).toBe(true);
 		expect(result.prs.length).toBe(0);
-		expect(result.capApplied).toBeNull();
 	});
 });

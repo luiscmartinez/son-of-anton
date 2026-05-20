@@ -146,6 +146,86 @@ describe("syncProfile mutation", () => {
 		expect(stored.length).toBe(out.new_loot_events.length);
 	});
 
+	test("accumulates per-source XP across syncs", async () => {
+		spyOn(Math, "random").mockReturnValue(0.99);
+		const t = convexTest(schema, convexTestModules);
+
+		await t.mutation(
+			api.mutations.syncProfile.syncProfile,
+			req({
+				signals: {
+					claude: { tokens: 1000 },
+					codex: null,
+					github: null,
+					wakatime: null,
+				},
+			}),
+		);
+
+		const after = await t.mutation(
+			api.mutations.syncProfile.syncProfile,
+			req({
+				now: "2026-05-18T13:00:00.000Z",
+				signals: {
+					claude: { tokens: 500 },
+					codex: null,
+					github: null,
+					wakatime: null,
+				},
+			}),
+		);
+		expect(after.profile.xp_by_source.claude_code).toBe(1500);
+	});
+
+	test("zero-token claude signal does not erase prior XP", async () => {
+		spyOn(Math, "random").mockReturnValue(0.99);
+		const t = convexTest(schema, convexTestModules);
+
+		await t.mutation(
+			api.mutations.syncProfile.syncProfile,
+			req({
+				signals: {
+					claude: { tokens: 2000 },
+					codex: null,
+					github: null,
+					wakatime: null,
+				},
+			}),
+		);
+
+		const after = await t.mutation(
+			api.mutations.syncProfile.syncProfile,
+			req({
+				signals: {
+					claude: { tokens: 0 },
+					codex: null,
+					github: null,
+					wakatime: null,
+				},
+			}),
+		);
+		expect(after.profile.xp_by_source.claude_code).toBe(2000);
+	});
+
+	test("does not roll claude/codex loot when token count is zero", async () => {
+		spyOn(Math, "random").mockReturnValue(0.0001);
+		const t = convexTest(schema, convexTestModules);
+
+		const out = await t.mutation(
+			api.mutations.syncProfile.syncProfile,
+			req({
+				signals: {
+					claude: { tokens: 0 },
+					codex: { tokens: 0 },
+					github: null,
+					wakatime: null,
+				},
+			}),
+		);
+
+		expect(out.new_loot_events.length).toBe(0);
+	});
+
 	test("HP changes when idle period exceeds grace through synthetic time", async () => {
 		spyOn(Math, "random").mockReturnValue(0.99);
 		const t = convexTest(schema, convexTestModules);

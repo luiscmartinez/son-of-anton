@@ -74,7 +74,7 @@ All four signal sources must work end-to-end in Phase 01. None are deferred. Non
 
 - `tickHealth()` is called on every `sync`.
 - `scorePR()` is called inside `applyPRMerge` for every new merged PR.
-- Loot rolls via `rollLootDrop()` and `rollPRLootDropWithQuality()` fire on the appropriate events and persist to Convex `loot_events`.
+- Loot rolls via `rollLootDrop()` and `rollPRLootDropWithQuality()` fire on the appropriate events and persist to Convex `loot_events` (Claude/Codex only when that sync reports a positive token total for the source).
 - Stage advancement (Stage 1 → 5) is computed and persisted.
 - HP, death, and revival logic ticks silently — there is no UI surface for it in Phase 01. The numbers accumulate; the drama is held for the Social Drama phase.
 

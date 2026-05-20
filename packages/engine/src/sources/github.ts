@@ -25,12 +25,9 @@ export interface GithubPRSignal {
 	scoreExplanation: string;
 }
 
-export type FirstSyncCap = "ninety-day" | "last-20";
-
 export interface GithubSignalSet {
 	prs: GithubPRSignal[];
 	rateLimitHit: boolean;
-	capApplied: FirstSyncCap | null;
 	fetchedAt: string;
 }
 
@@ -44,21 +41,14 @@ export interface ReadGithubSignalsOpts {
 	debugLog?: (event: GithubDebugEvent) => void;
 }
 
-export type GithubDebugEvent =
-	| { kind: "rate_limit_hit"; phase: "search" | "enrichment"; url: string }
-	| { kind: "first_sync_cap"; cap: FirstSyncCap; count: number };
+export type GithubDebugEvent = {
+	kind: "rate_limit_hit";
+	phase: "search" | "enrichment";
+	url: string;
+};
 
-const FIRST_SYNC_PER_PAGE = 20;
-const SUBSEQUENT_SYNC_PER_PAGE = 100;
-const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
+const SEARCH_PER_PAGE = 100;
 const DEFAULT_CONCURRENCY = 4;
-
-export function applyFirstSyncCap(input: {
-	candidateCount: number;
-	perPageLimit: number;
-}): FirstSyncCap {
-	return input.candidateCount >= input.perPageLimit ? "last-20" : "ninety-day";
-}
 
 function defaultFetch(): HttpFetch {
 	return async (url, init) => {
@@ -85,6 +75,11 @@ function isRateLimited(res: HttpResponse): boolean {
 
 function formatDate(d: Date): string {
 	return d.toISOString().slice(0, 10);
+}
+
+/** Forward-only: null `since` means merges from `now`, not historical backfill. */
+export function resolveGithubMergedSince(since: Date | null, now: Date): Date {
+	return since ?? now;
 }
 
 function buildSearchUrl(args: {
@@ -219,22 +214,17 @@ export async function readGithubSignals(
 	const debugLog = opts.debugLog ?? (() => {});
 	const headers = ghHeaders(opts.token);
 
-	const isFirstSync = opts.since === null;
-	const cutoff = isFirstSync
-		? new Date(now.getTime() - NINETY_DAYS_MS)
-		: (opts.since as Date);
-	const perPage = isFirstSync ? FIRST_SYNC_PER_PAGE : SUBSEQUENT_SYNC_PER_PAGE;
+	const cutoff = resolveGithubMergedSince(opts.since, now);
 	const searchUrl = buildSearchUrl({
 		username: opts.username,
 		mergedSince: formatDate(cutoff),
-		perPage,
+		perPage: SEARCH_PER_PAGE,
 	});
 
 	const fetchedAt = now.toISOString();
 	const empty: GithubSignalSet = {
 		prs: [],
 		rateLimitHit: false,
-		capApplied: null,
 		fetchedAt,
 	};
 
@@ -248,15 +238,6 @@ export async function readGithubSignals(
 	}
 
 	const items = parseSearchItems(await searchRes.json());
-
-	let capApplied: FirstSyncCap | null = null;
-	if (isFirstSync) {
-		capApplied = applyFirstSyncCap({
-			candidateCount: items.length,
-			perPageLimit: FIRST_SYNC_PER_PAGE,
-		});
-		debugLog({ kind: "first_sync_cap", cap: capApplied, count: items.length });
-	}
 
 	const concurrency = opts.concurrency ?? DEFAULT_CONCURRENCY;
 	const detailUrls: { url: string; number: number }[] = [];
@@ -306,7 +287,6 @@ export async function readGithubSignals(
 	return {
 		prs,
 		rateLimitHit: rateLimited,
-		capApplied,
 		fetchedAt,
 	};
 }

@@ -10,9 +10,9 @@ Scope: cli
 - `codogotchi setup` interactive flow:
   - Prompts for handle (alphanumeric + dash, validates).
   - Generates a UUID locally via `crypto.randomUUID()`.
-  - Prompts for GitHub Personal Access Token (skippable; warns about reduced functionality).
+  - Prompts for GitHub **username** then **PAT** (each skippable); merged-PR signals need both—if either is blank, a notice explains GitHub PR XP stays off until both are configured.
   - Prompts for Wakatime API key (skippable).
-  - Prompts for Convex HTTP action URL (defaults to a baked-in production URL if owner-side; buddy provides theirs explicitly).
+  - Prompts for Convex HTTP action URL (buddy provides explicitly; no baked-in default).
   - Writes `~/.codogotchi/config.json` with all of the above + default `health.*` values.
   - Installs Claude Code hook + Codex hook (writes hook config to `~/.claude/...` and `~/.codex/...` invoking `codogotchi-hook`).
   - Registers the profile by POSTing to `${convex_http_url}/sync` with a zero-signals payload.
@@ -58,5 +58,6 @@ Scope: cli
   1. **Setup ordering.** `writeConfig` was originally called before the Convex `/sync` POST and `installHooks`. A failure in either step left `~/.codogotchi/config.json` on disk and blocked retry with `ConfigExistsError` (no `--force`). Reordered so the on-disk config is the *last* side effect — `/sync` and `installHooks` must both succeed before persisting. Added two regression tests.
   2. **Codex TOML escaping.** `~/.codex/hooks/codogotchi.toml` interpolated `CODOGOTCHI_HOME` and the Convex URL directly into double-quoted strings; a `"` or `\` in either would have produced invalid TOML. Switched to `JSON.stringify(value)` for the value side, which yields a valid JSON literal that is also a valid TOML basic string.
   3. **`setup --help`.** `codogotchi setup --help` previously started the interactive flow because the help flag fell through `parseSetupFlags`. Now prints usage and exits 0.
+- **GitHub username + PAT pair (post–P1.12).** `setup` prompts for GitHub username first, then PAT. Merged-PR signals require both; if either is omitted, a single notice explains GitHub PR XP stays off until both are set (`config set` or `--force`).
 - **Findings deferred for human review.** Two non-blocking surfaces flagged but not patched: (a) `promptConvexUrl` accepts https URLs with non-root path components (e.g. `https://x.convex.site/api`) and naively appends `/sync`; user input correctness, not a code defect — punt unless production deployments need a stricter check. (b) `writeConfig` leaves a `${target}.tmp-*` file behind if `writeFile` succeeds but `rename` fails; cleanup-on-error not added to keep the atomic write surface minimal.
 

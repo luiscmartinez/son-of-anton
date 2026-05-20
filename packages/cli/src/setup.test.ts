@@ -126,7 +126,13 @@ describe("runSetup", () => {
 
 	it("happy path writes config, registers profile, installs hooks", async () => {
 		const { deps, fetchRec, hooksRec } = makeDeps(
-			["user-1", "ghp_secret", "waka_secret", "https://example.convex.site"],
+			[
+				"user-1",
+				"cmejia",
+				"ghp_secret",
+				"waka_secret",
+				"https://example.convex.site",
+			],
 			home,
 		);
 
@@ -136,6 +142,7 @@ describe("runSetup", () => {
 		expect(result.config.profile_id).toBe(
 			"11111111-2222-3333-4444-555555555555",
 		);
+		expect(result.config.github_username).toBe("cmejia");
 		expect(result.config.github_token).toBe("ghp_secret");
 		expect(result.config.wakatime_key).toBe("waka_secret");
 		expect(result.config.convex_http_url).toBe("https://example.convex.site");
@@ -146,6 +153,7 @@ describe("runSetup", () => {
 		expect(existsSync(configPath(home))).toBe(true);
 		const onDisk = await readConfig(home);
 		expect(onDisk?.handle).toBe("user-1");
+		expect(onDisk?.github_username).toBe("cmejia");
 		expect(onDisk?.profile_id).toBe(result.config.profile_id);
 
 		// profile registered via Convex /sync with zero signals
@@ -170,18 +178,19 @@ describe("runSetup", () => {
 
 	it("skipped optional credentials store as null and warn", async () => {
 		const { deps, prompterRec, fetchRec } = makeDeps(
-			["user-2", "", "", "https://example.convex.site"],
+			["user-2", "", "", "", "https://example.convex.site"],
 			home,
 		);
 
 		const result = await runSetup(deps);
 
+		expect(result.config.github_username).toBeNull();
 		expect(result.config.github_token).toBeNull();
 		expect(result.config.wakatime_key).toBeNull();
 
 		// warning surfaced to the user
 		const allNotices = prompterRec.notices.join("\n");
-		expect(allNotices).toContain("GitHub");
+		expect(allNotices).toMatch(/merged-PR|GitHub/i);
 		expect(allNotices).toContain("Wakatime");
 
 		// still registers profile
@@ -194,6 +203,7 @@ describe("runSetup", () => {
 				"bad name!",
 				"also bad ",
 				"good-handle-2",
+				"",
 				"",
 				"",
 				"https://example.convex.site",
@@ -210,14 +220,14 @@ describe("runSetup", () => {
 	it("refuses to overwrite pre-existing config without force", async () => {
 		// First run creates the config.
 		const { deps: firstDeps } = makeDeps(
-			["user-3", "", "", "https://example.convex.site"],
+			["user-3", "", "", "", "https://example.convex.site"],
 			home,
 		);
 		await runSetup(firstDeps);
 
 		// Second run without force must throw.
 		const { deps: secondDeps } = makeDeps(
-			["user-other", "", "", "https://example.convex.site"],
+			["user-other", "", "", "", "https://example.convex.site"],
 			home,
 		);
 		await expect(runSetup(secondDeps)).rejects.toBeInstanceOf(
@@ -231,7 +241,7 @@ describe("runSetup", () => {
 
 	it("force overwrites pre-existing config and re-installs hooks idempotently", async () => {
 		const { deps: firstDeps, hooksRec: firstHooks } = makeDeps(
-			["user-a", "", "", "https://example.convex.site"],
+			["user-a", "", "", "", "https://example.convex.site"],
 			home,
 			"aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
 		);
@@ -239,7 +249,7 @@ describe("runSetup", () => {
 		expect(firstHooks.calls).toHaveLength(1);
 
 		const { deps: secondDeps, hooksRec: secondHooks } = makeDeps(
-			["user-b", "", "", "https://example.convex.site"],
+			["user-b", "", "", "", "https://example.convex.site"],
 			home,
 			"bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
 		);
@@ -259,6 +269,7 @@ describe("runSetup", () => {
 	it("does not write config when Convex /sync fails", async () => {
 		const { prompter } = scriptedPrompter([
 			"user-x",
+			"",
 			"",
 			"",
 			"https://example.convex.site",
@@ -286,6 +297,7 @@ describe("runSetup", () => {
 	it("does not write config when installHooks fails", async () => {
 		const { prompter } = scriptedPrompter([
 			"user-y",
+			"",
 			"",
 			"",
 			"https://example.convex.site",

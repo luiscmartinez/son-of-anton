@@ -26,7 +26,8 @@ Usage:
 
 Commands:
   setup            Interactive first-time setup. Writes ~/.codogotchi/config.json
-                   and installs Claude Code + Codex hook entries.
+                   (handle, GitHub username+PAT pair, Wakatime, Convex URL) and
+                   installs Claude Code + Codex hook entries.
   sync             Run one sync cycle: poll each source, POST to Convex, update
                    the local profile cache and append a sync.log entry.
   status           Print the cached profile, HP, current activity, recent loot,

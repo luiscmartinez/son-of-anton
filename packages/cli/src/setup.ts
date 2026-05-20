@@ -67,6 +67,30 @@ async function promptOptionalSecret(
 	return raw;
 }
 
+/** GitHub PR signals require both username and PAT. */
+async function promptGithubPair(
+	prompter: Prompter,
+): Promise<{ github_username: string | null; github_token: string | null }> {
+	const rawUser = (
+		await prompter.ask("GitHub username (press Enter to skip): ")
+	).trim();
+	const rawToken = (
+		await prompter.ask("GitHub Personal Access Token (press Enter to skip): ")
+	).trim();
+
+	const github_username = rawUser.length > 0 ? rawUser : null;
+	const github_token = rawToken.length > 0 ? rawToken : null;
+
+	if (github_username !== null && github_token !== null) {
+		return { github_username, github_token };
+	}
+
+	prompter.notice(
+		"Merged-PR signals need both GitHub username and PAT together. Skipping either leaves github PR XP off until both are set (e.g. `codogotchi config set …` or `codogotchi setup --force`).",
+	);
+	return { github_username, github_token };
+}
+
 async function promptConvexUrl(prompter: Prompter): Promise<string> {
 	for (;;) {
 		const raw = (
@@ -98,11 +122,7 @@ export async function runSetup(
 
 	const handle = await promptHandle(prompter);
 	const profile_id = randomUUID();
-	const github_token = await promptOptionalSecret(
-		prompter,
-		"GitHub",
-		"GitHub Personal Access Token (press Enter to skip): ",
-	);
+	const { github_username, github_token } = await promptGithubPair(prompter);
 	const wakatime_key = await promptOptionalSecret(
 		prompter,
 		"Wakatime",
@@ -115,6 +135,7 @@ export async function runSetup(
 	const config: CodogotchiConfig = {
 		profile_id,
 		handle,
+		github_username,
 		github_token,
 		wakatime_key,
 		convex_http_url,

@@ -8,7 +8,7 @@ The runbook is intentionally concrete — every check is a command, query, or sc
 
 Before any day-counting begins:
 
-1. Both users run `codogotchi setup` (P1.12) and confirm `~/.codogotchi/config.json` exists with `profile_id`, `handle`, `convex_http_url`.
+1. Both users run `codogotchi setup` (P1.12) and confirm `~/.codogotchi/config.json` exists with `profile_id`, `handle`, `convex_http_url`. If they rely on merged-PR XP, both `github_username` and `github_token` must be populated (setup prompts for the pair together).
 2. Confirm the two `profile_id`s differ. Record the pair at the top of `phase-01-validation-log.md`.
 3. Install the scheduled sync per `docs/runbooks/scheduled-sync.md`. Owner uses launchd; buddy uses launchd or cron depending on platform.
 4. Verify the codogotchi hook binary is on PATH (`command -v codogotchi-hook`) and that `~/.claude/settings.json` references it (P1.18 setup wired this).

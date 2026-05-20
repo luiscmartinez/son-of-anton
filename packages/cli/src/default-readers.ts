@@ -9,8 +9,6 @@ import { type CodogotchiConfig, getCodogotchiHome } from "./config";
 import { appendScorePRLog } from "./score-pr-log";
 import type { SourceReaders } from "./sync";
 
-const NINETY_DAYS_MS = 90 * 24 * 60 * 60 * 1000;
-
 function claudeRoot(): string {
 	return (
 		process.env.CODOGOTCHI_CLAUDE_ROOT ?? join(homedir(), ".claude", "projects")
@@ -23,19 +21,25 @@ function codexRoot(): string {
 	);
 }
 
+/** Forward-only: first read for a source starts at `now`, not a historical window. */
+function forwardSince(since: Date | null, now: Date): Date {
+	return since ?? now;
+}
+
 // Default readers wrap the engine source clients with the config-driven
 // credentials and per-source defaults. A source returns null when it is not
 // configured (e.g. no token, no key) so the heartbeat sync still goes through.
 export function defaultReaders(config: CodogotchiConfig): SourceReaders {
 	return {
 		async claude(since, now) {
-			const sinceDate = since ?? new Date(now.getTime() - NINETY_DAYS_MS);
+			const sinceDate = forwardSince(since, now);
 			try {
 				const set = await readJsonlSignals({
 					source: "claude",
 					rootDir: claudeRoot(),
 					since: sinceDate,
 				});
+				if (set.totalTokens <= 0) return null;
 				return { tokens: set.totalTokens };
 			} catch (err) {
 				if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
@@ -43,13 +47,14 @@ export function defaultReaders(config: CodogotchiConfig): SourceReaders {
 			}
 		},
 		async codex(since, now) {
-			const sinceDate = since ?? new Date(now.getTime() - NINETY_DAYS_MS);
+			const sinceDate = forwardSince(since, now);
 			try {
 				const set = await readJsonlSignals({
 					source: "codex",
 					rootDir: codexRoot(),
 					since: sinceDate,
 				});
+				if (set.totalTokens <= 0) return null;
 				return { tokens: set.totalTokens };
 			} catch (err) {
 				if ((err as NodeJS.ErrnoException).code === "ENOENT") return null;
@@ -100,7 +105,7 @@ export function defaultReaders(config: CodogotchiConfig): SourceReaders {
 		},
 		async wakatime(since, now) {
 			if (!config.wakatime_key) return null;
-			const sinceDate = since ?? new Date(now.getTime() - NINETY_DAYS_MS);
+			const sinceDate = forwardSince(since, now);
 			const set = await readWakatimeSignals({
 				apiKey: config.wakatime_key,
 				since: sinceDate,
@@ -111,6 +116,7 @@ export function defaultReaders(config: CodogotchiConfig): SourceReaders {
 			// runSync records it in `errors[]` instead of treating a possibly
 			// partial `totalHours` as a clean signal.
 			if (set.error !== null) throw new Error(`Wakatime: ${set.error}`);
+			if (set.totalHours <= 0) return null;
 			return { hours: set.totalHours };
 		},
 	};

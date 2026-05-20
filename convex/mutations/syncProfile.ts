@@ -103,30 +103,37 @@ export const syncProfile = mutation({
 		const xpBySource = { ...baseProfile.xp_by_source };
 		const lastSignalBySource = { ...baseProfile.last_signal_at_by_source };
 
-		// Per-source null = skip semantics: a source going dark for a run must
-		// not zero its prior total (see P1.07 ticket scope + plan invariants).
-		if (args.signals.claude !== null) {
+		// Per-source null = skip (source down or no activity this window).
+		// Non-null signals add XP for this sync's slice only — never replace
+		// lifetime totals. Zero-token / zero-hour payloads are treated as skip.
+		if (
+			args.signals.claude !== null &&
+			args.signals.claude.tokens > 0 &&
+			Number.isFinite(args.signals.claude.tokens)
+		) {
 			const claudeXp = computeXp({
 				claudeTokens: args.signals.claude.tokens,
 				codexTokens: 0,
 				githubPRs: 0,
 				wakatimeHours: 0,
 			});
-			xpBySource.claude_code = claudeXp.byClaude;
+			xpBySource.claude_code += claudeXp.byClaude;
 			lastSignalBySource.claude_code = args.now;
 		}
-		if (args.signals.codex !== null) {
+		if (
+			args.signals.codex !== null &&
+			args.signals.codex.tokens > 0 &&
+			Number.isFinite(args.signals.codex.tokens)
+		) {
 			const codexXp = computeXp({
 				claudeTokens: 0,
 				codexTokens: args.signals.codex.tokens,
 				githubPRs: 0,
 				wakatimeHours: 0,
 			});
-			xpBySource.codex = codexXp.byCodex;
+			xpBySource.codex += codexXp.byCodex;
 			lastSignalBySource.codex = args.now;
 		}
-		// Empty prs array means no PRs this window — treat as null for XP/signal
-		// purposes so a quiet GitHub period doesn't zero prior cumulative XP.
 		if (args.signals.github !== null && args.signals.github.prs.length > 0) {
 			const githubXp = computeXp({
 				claudeTokens: 0,
@@ -134,17 +141,21 @@ export const syncProfile = mutation({
 				githubPRs: args.signals.github.prs.length,
 				wakatimeHours: 0,
 			});
-			xpBySource.github = githubXp.byGithub;
+			xpBySource.github += githubXp.byGithub;
 			lastSignalBySource.github = args.now;
 		}
-		if (args.signals.wakatime !== null) {
+		if (
+			args.signals.wakatime !== null &&
+			args.signals.wakatime.hours > 0 &&
+			Number.isFinite(args.signals.wakatime.hours)
+		) {
 			const wakatimeXp = computeXp({
 				claudeTokens: 0,
 				codexTokens: 0,
 				githubPRs: 0,
 				wakatimeHours: args.signals.wakatime.hours,
 			});
-			xpBySource.wakatime = wakatimeXp.byWakatime;
+			xpBySource.wakatime += wakatimeXp.byWakatime;
 			lastSignalBySource.wakatime = args.now;
 		}
 
@@ -177,19 +188,26 @@ export const syncProfile = mutation({
 		const mood = hpToOverlay(healthOut.hp);
 		const cause: "decay" | null = healthOut.cause ?? null;
 
-		// Loot rolls. Each non-null source rolls once via base probability;
-		// github rolls per-PR using rollPRLootDropWithQuality so high-quality
-		// merges actually shift the drop curve.
+		// Loot rolls. Claude/Codex only roll when tokens > 0 (no rewards for idle
+		// pings). GitHub rolls per merged PR via rollPRLootDropWithQuality.
 		const rolledLoot: LootEvent[] = [];
 		const lootExplanations: (string | null)[] = [];
-		if (args.signals.claude !== null) {
+		if (
+			args.signals.claude !== null &&
+			args.signals.claude.tokens > 0 &&
+			Number.isFinite(args.signals.claude.tokens)
+		) {
 			const drop = rollLootDrop(Math.random, { source: "claude_code" });
 			if (drop) {
 				rolledLoot.push(drop);
 				lootExplanations.push(null);
 			}
 		}
-		if (args.signals.codex !== null) {
+		if (
+			args.signals.codex !== null &&
+			args.signals.codex.tokens > 0 &&
+			Number.isFinite(args.signals.codex.tokens)
+		) {
 			const drop = rollLootDrop(Math.random, { source: "codex" });
 			if (drop) {
 				rolledLoot.push(drop);
@@ -206,7 +224,11 @@ export const syncProfile = mutation({
 				}
 			}
 		}
-		if (args.signals.wakatime !== null) {
+		if (
+			args.signals.wakatime !== null &&
+			args.signals.wakatime.hours > 0 &&
+			Number.isFinite(args.signals.wakatime.hours)
+		) {
 			const drop = rollLootDrop(Math.random, { source: "wakatime" });
 			if (drop) {
 				rolledLoot.push(drop);

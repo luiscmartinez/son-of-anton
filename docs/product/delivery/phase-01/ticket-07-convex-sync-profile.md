@@ -12,7 +12,7 @@ Scope: convex
   - For each null source, skips (preserves prior totals).
   - Recomputes aggregate `total_xp`, `stage` via `stageForXp`.
   - Calls `tickHealth` with `now`, current profile health, merged signals, and `config`. Persists resulting HP / mood / death fields.
-  - Rolls loot via `rollLootDrop` / `rollPRLootDropWithQuality` and inserts each non-null result into `loot_events`.
+  - Rolls loot via `rollLootDrop` / `rollPRLootDropWithQuality`: Claude and Codex only roll when that source's `tokens > 0`; GitHub rolls per merged PR in the payload; Wakatime rolls when the wakatime signal is non-null. Inserts each non-null drop into `loot_events`.
   - Returns the updated profile + any new loot events from this call.
 - `convex/http.ts` registers an HTTP action at path `/sync` that parses the JSON body via zod (using `@codogotchi/contracts` schemas), invokes `syncProfile`, returns the updated profile + new loot events. Bad payloads return 400 with the zod error.
 - No authentication on the HTTP action (Phase 01 policy).
