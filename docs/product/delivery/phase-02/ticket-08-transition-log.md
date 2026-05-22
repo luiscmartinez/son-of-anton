@@ -52,11 +52,43 @@ Red: required
 - NDJSON line format matches the product plan's stated shape; field names match the contract doc's `source_event` field names (`origin`, `kind`, `name`).
 - Rotation threshold (10MB) matches `sync.log`'s convention. If `sync.log`'s actual rotation differs (e.g., 10MiB vs. 10MB), match it.
 - Heartbeat cadence is honestly tested with an injectable clock — no `Thread.sleep(60 * 60)` in tests.
-- File handle lifecycle: opened once on first write, kept open for the process lifetime, closed on shutdown.
+- File handle lifecycle: a fresh `FileHandle(forWritingTo:)` is opened per
+  write, `seekToEnd()` ensures append semantics, and `defer { try? close() }`
+  closes it on every code path. This trades one open syscall per line for
+  straightforward crash semantics and trivial rotation (the writer owns the
+  file only at the moment it is closing it). The Swift notes
+  (`notes/private/phase-02-swift-notes/P2.08-transition-log.md`) record this
+  decision and why an `O_APPEND` long-lived handle was not chosen.
 
 ## Rationale
 
 > Append here (do not edit above) when behavior or trade-offs change during implementation.
+
+### Implementation notes (P2.08 delivery)
+
+- Heartbeat-vs-rotation accounting decision: heartbeat lines **do** count
+  toward the rotation byte threshold. Excluding them would track a number
+  the filesystem disagrees with; the test asserts only rotation triggered
+  by transitions (which is the realistic high-volume path).
+- Heartbeat timer cadence: the `Timer` polls every 60 seconds and consults
+  the injected clock; it only emits when the heartbeat interval has
+  actually elapsed. A single 60-minute `Timer` would drift too far
+  across sleep/wake to recover. The product spec ("every 60 minutes") still holds
+  within ~1 minute of slack.
+- `SourceEvent` was added to `StateSnapshot` and `StateJsonReader` so the
+  transition log can record `source_origin`/`source_kind`/`source_name`
+  from the hook payload without parsing JSON twice. Field names match the
+  contract doc (`origin`, `kind`, `name`).
+- Transition log path defaults to `~/.codogotchi/state-transitions.log`.
+  Demo mode writes a sibling `state-transitions.log` under its sandboxed
+  polling target so a live run is never trampled by a demo session.
+- `LivePollingDriver` only records transitions on `.success` reads —
+  failure visuals collapse to `.idle` regardless of agent state and would
+  otherwise flood the log with phantom `prev=idle` entries every time the
+  hook hiccups.
+- Test relaxation: the NDJSON shape assertion checks ISO-8601 regex shape
+  (`^\d{4}-\d{2}-\d{2}T...Z$`) rather than a hardcoded year. The fixture
+  `timeIntervalSince1970` value is a stable seed, not a behavior contract.
 
 Red first: log line shape, rotation, and heartbeat each have failing tests before code lands.
 Why this path: per-state-change + hourly heartbeat balances "activity-proportional file size" with "liveness signal in the log itself." Chosen over per-poll-tick (too noisy) and per-change-only (no liveness).
