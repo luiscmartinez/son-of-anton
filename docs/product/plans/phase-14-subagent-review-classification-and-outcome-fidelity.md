@@ -1,6 +1,6 @@
 # Phase 14: Subagent-review classification and outcome fidelity
 
-**Delivery status:** Product plan drafted, awaiting developer approval. Update this line when decomposition starts or completes so it matches repo reality.
+**Delivery status:** Decomposed into 6 tickets at `docs/product/delivery/phase-14/`; ready for execution. Update this line when execution starts and again when the phase ships.
 
 ## TL;DR
 

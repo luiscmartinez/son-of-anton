@@ -167,9 +167,6 @@ Add `.son-of-anton/` to `.prettierignore`, `.eslintignore`, or your linter's
 equivalent. The subtree must stay tracked and unignored by git, but your
 formatter should not touch it.
 
-Add `docs/product/delivery/*/reviews/**` to your `cspell.json` `ignorePaths` to
-prevent spellcheck failures on review artifacts.
-
 `soa-sync.sh` creates `orchestrator.config.json` at your repo root if it does not
 exist yet. Review it and adjust `defaultBranch`, `runtime`, and `packageManager` for
 your repo before running the orchestrator.

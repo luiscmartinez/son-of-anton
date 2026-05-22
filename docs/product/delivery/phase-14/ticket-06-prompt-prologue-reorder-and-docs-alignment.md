@@ -22,7 +22,7 @@ Red: skip
 - `README.md` is updated wherever it describes subagent-review behavior or names artifact files.
 - The retrospective template at `docs/template/stubs/retrospective.template.md` (if present) is updated to reference the new ledger schema fields (`primaryAgent`, `runnerSelfReport`, `fallbackFrom`, `schemaVersion`).
 - The Phase 14 retrospective lands at `docs/product/retrospectives/phase-14-subagent-review-classification-and-outcome-fidelity-retrospective.md`. It compares the post-Phase-14 delivery experience against the codogotchi P2 audit findings and records whether the ledger now stands alone as a trustworthy artifact (per the product plan's Retrospective contract).
-- **Green test target:** `Red: skip`, but the spellcheck and link-check passes (`bun run spellcheck`, `bun run verify:quiet`) must succeed across all edited docs and skills.
+- **Green test target:** `Red: skip`, but `bun run verify:quiet` (prettier + lint) must succeed across all edited docs and skills. Human review at PR is the quality gate for prose content.
 - **Manual demo command:** read `docs/template/delivery/adversarial-review-template.md` start-to-finish. The first encountered guidance about scope after the opening "You are conducting an adversarial review" framing must include the broadening clauses (extra surfaces / human-review bucket) before the narrowing clause ("not a general code review"). Read three agent-facing skill files at random; verify references to subagent-review semantics match Phase 14 (no stale `codex-exec`, `--preferred-runner`, or old triplet names).
 
 ## Red
@@ -56,8 +56,7 @@ No `[red]` commit.
   - Did the PR-open reconciliation block cause genuine operator-hostility, or was the educational cost bounded as predicted?
   - Did the artifact triplet rename surface any consumer-repo-discoverable old-name references that the P14.04 sweep missed?
   - Does the post-Phase-14 ledger genuinely stand alone as a trustworthy audit artifact (the product plan's Exit Condition)?
-- Run `bun run spellcheck`; resolve any flagged words by adding to the project allowlist if they're correct domain terminology.
-- Run `bun run verify:quiet`; resolve any link or format issues.
+- Run `bun run verify:quiet`; resolve any prettier or lint issues.
 - Commit: `docs(P14.06): prompt prologue reorder, docs/skills/template alignment, phase 14 retrospective`
 
 ## Refactor

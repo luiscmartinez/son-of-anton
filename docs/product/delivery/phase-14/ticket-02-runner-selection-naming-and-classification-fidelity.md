@@ -35,10 +35,14 @@ Red: required
 - Rename `codex-exec` → `codex-cli` mechanically across:
   - `tools/delivery/subagent-runner.ts` (`SubagentRunnerKind`, `VALID_RUNNER_KINDS`, `commandForRunner`, etc.)
   - `tools/delivery/cli-runner.ts` (flag parsing, help text, error messages)
-  - `scripts/soa-sync.sh` (prose mention)
+  - `scripts/soa-sync.sh` (prose mention at line 255 and the HEREDOC scaffold template at lines 220-235)
   - Skill prose in `.agents/skills/**` that references runner names
   - Docs in `docs/template/**` that reference runner names
   - Any test fixtures using the old name
+- Update the **consumer-repo `orchestrator.config.json` scaffold template** inside the `scripts/soa-sync.sh` HEREDOC (lines 220-235) so newly-installed consumer repos receive the Phase 14 shape. Specifically:
+  - Add `"primaryAgent": "unknown"` to the scaffold so the field is visible to operators on first install and they can edit it to `claude`, `codex`, `cursor`, `composer`, etc.
+  - Do **not** scaffold a default `subagentRunner` value. The product plan locks "SoA ships no built-in silent default" — first `/soa execute` in a fresh consumer repo should error with the documented "specify `--subagent` or set `subagentRunner` in `orchestrator.config.json`" message, teaching the operator the contract before any review runs.
+- Update the **sample JSON config block** in `docs/template/delivery/delivery-orchestrator.md` to show the Phase 14 shape (with `subagentRunner: "codex-cli"` and `primaryAgent: "claude"` as illustrative example values, plus a short paragraph explaining the precedence and the no-silent-default contract).
 - Implement `resolveSubagentSelection(flag, configField)`:
   - flag set → return flag value
   - flag unset, configField set → return configField value
@@ -75,6 +79,8 @@ Red: required
 - **Free-form `--primary` validation.** Confirm the validator does not constrain values beyond "is a non-empty string or absent." Trying to enforce a known-list silently rejects `cursor`, `composer`, etc. — the persona this flag is designed to support.
 - **`fallbackFrom` semantics on `skipped`.** When both runners fail, what does the row record? The Outcome says `fallbackFrom: <originally-requested>` even on the skipped row, so the fallback attempt is visible. Verify the writer does this.
 - **Removal of `--preferred-runner`.** Did any test fixture still pass the old flag? Any skill/doc still document it? P14.04's rename ticket touches docs again, but P14.02 should clear the runtime surface.
+- **Consumer-repo scaffold pedagogy.** The `scripts/soa-sync.sh` HEREDOC ships with `primaryAgent: "unknown"` present but `subagentRunner` deliberately absent. Verify a fresh `/soa install` followed by `/soa execute` produces the documented "specify `--subagent` or set `subagentRunner`" hard error rather than silently picking a default. This is the load-bearing first-touch experience for the no-silent-default contract.
+- **Sample config block accuracy.** The JSON block in `docs/template/delivery/delivery-orchestrator.md` is what operators copy-paste when troubleshooting. Verify its illustrative values are syntactically valid JSON and that the surrounding prose explains the `--subagent` flag > config field > error precedence in one short paragraph.
 - **Public API shape:** `resolveSubagentSelection` and `resolvePrimaryAgent` signatures should accept dependency-injected config readers so tests can exercise the flag/config/default precedence without touching disk.
 
 ## Rationale

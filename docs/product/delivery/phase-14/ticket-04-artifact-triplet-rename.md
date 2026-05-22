@@ -13,7 +13,7 @@ Red: skip
   - `*-subagent-runner.json` → `*-subagent-review.ledger.json`
 - The orchestrator and CLI write only the new names. No dual-name fallback.
 - All consumer-repo-discoverable references to the old triplet names are updated: orchestrator writers, file-resolution probes, retrospective templates, agent-facing skill prose, README, `docs/template/**` references, `.gitignore` template snippets, example/fixture file paths in tests.
-- The `runnerKind` field name inside the ledger row is unchanged — only the artifact *filename* changes.
+- The `runnerKind` field name inside the ledger row is unchanged — only the artifact _filename_ changes.
 - Existing flow tests (which were previously asserting old-name file existence) are updated to reference new names; no behavior regression.
 - **Green test target:** `bun test` (full suite) passes after the rename sweep; specifically `tools/delivery/test/cli-runner.test.ts` and `tools/delivery/test/orchestrator.test.ts` continue to pass with new-name file expectations.
 - **Manual demo command:** run an end-to-end ticket through the orchestrator in a fixture worktree. Inspect the resulting `docs/product/delivery/<plan>/reviews/` directory. Verify `*-subagent-review.{prompt.md, report.md, ledger.json}` exist for the ticket; verify the old-name files (`*-subagent-adversarial-prompt.md`, `*-subagent-review-outcome.md`, `*-subagent-runner.json`) are **absent** from the writer output.

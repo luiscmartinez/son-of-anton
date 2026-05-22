@@ -54,9 +54,9 @@ A freshly delivered ticket in any consumer repo demonstrates the new fidelity pa
 
 ## CI Baseline
 
-> Baseline recorded: [date] — [pass / N pre-existing errors: brief summary]
+> Baseline recorded: 2026-05-22 — pass (482 tests, 0 failures, 888 `expect()` calls across 39 files; prettier + lint clean). Recorded after spellcheck was removed from CI (`bun run ci:quiet` no longer runs cspell; cspell.json deleted; cspell dev-dep uninstalled).
 
-Recorded before P14.01 starts. Run `bun run ci:quiet` on `main` and capture the result so per-ticket CI diffs are unambiguous.
+Recorded on `main` before P14.01 starts via `bun run ci:quiet`. Per-ticket CI diffs against this baseline are unambiguous.
 
 ## Review Rules
 
