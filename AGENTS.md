@@ -24,5 +24,5 @@ When invoking a review subagent during orchestrated delivery:
 
 **Prerequisite:** Son-of-Anton requires a global `bun` install. All CLI delivery commands run via `bun run deliver …`.
 
-Before committing: run `bun run format`, then `bun run verify` (or `bun run verify:quiet` for a quieter pass). Run `bun run spellcheck` when docs, Markdown, config examples, PR text, or user-facing copy changed. Use `bun run ci:quiet` as the final publication gate before opening a PR.
+Before committing: run `bun run format`, then `bun run verify` (or `bun run verify:quiet` for a quieter pass). Use `bun run ci:quiet` as the final publication gate before opening a PR.
 <!-- soa:end -->

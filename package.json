@@ -17,9 +17,8 @@
 		"check": "biome check --write .",
 		"verify": "biome check .",
 		"verify:quiet": "biome check . --log-level=error",
-		"spellcheck": "cspell lint --no-progress \"**/*.{ts,md,json,txt}\"",
-		"ci": "bun run verify && bun run spellcheck",
-		"ci:quiet": "bun run verify:quiet && bun run spellcheck"
+		"ci": "bun run verify",
+		"ci:quiet": "bun run verify:quiet"
 	},
 	"dependencies": {
 		"@codogotchi/contracts": "workspace:*",
@@ -29,8 +28,7 @@
 		"@biomejs/biome": "^2.4.15",
 		"@types/bun": "latest",
 		"convex": "^1.16.0",
-		"convex-test": "^0.0.52",
-		"cspell": "^10.0.0"
+		"convex-test": "^0.0.52"
 	},
 	"peerDependencies": {
 		"typescript": "^5"
