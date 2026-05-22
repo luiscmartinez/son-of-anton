@@ -183,3 +183,4 @@ notes/private/*
 .convex/
 .codogotchi-test-home/
 .env.local
+*-subagent-review.trace.log
