@@ -25,7 +25,19 @@ describe("installHooks", () => {
 		else process.env.CODOGOTCHI_HOME = prevHome;
 	});
 
-	it("writes Claude Code and Codex hook entries pointing at codogotchi-hook", async () => {
+	type HookEntry = { type: string; command: string };
+	type HookMatcher = { matcher: string; hooks: HookEntry[] };
+	type HooksMap = Record<string, HookMatcher[]>;
+
+	function hasCodogotchiMatcher(slot: HookMatcher[]): boolean {
+		return slot.some(
+			(m) =>
+				m.matcher === "" &&
+				m.hooks.some((h) => h.command === "codogotchi-hook"),
+		);
+	}
+
+	it("wires codogotchi-hook into PreToolUse and Stop on the Claude side, and writes the Codex TOML", async () => {
 		await installHooks({
 			home: "/home/user/.codogotchi",
 			convex_http_url: "https://example.convex.site",
@@ -36,17 +48,14 @@ describe("installHooks", () => {
 			"utf8",
 		);
 		const claude = JSON.parse(claudeRaw) as {
-			hooks: {
-				codogotchi: { command: string; env: Record<string, string> };
-			};
+			hooks: HooksMap & Record<string, unknown>;
 		};
-		expect(claude.hooks.codogotchi.command).toBe("codogotchi-hook");
-		expect(claude.hooks.codogotchi.env.CODOGOTCHI_HOME).toBe(
-			"/home/user/.codogotchi",
-		);
-		expect(claude.hooks.codogotchi.env.CODOGOTCHI_CONVEX_URL).toBe(
-			"https://example.convex.site",
-		);
+		expect(hasCodogotchiMatcher(claude.hooks.PreToolUse)).toBe(true);
+		expect(hasCodogotchiMatcher(claude.hooks.Stop)).toBe(true);
+		// Legacy top-level "codogotchi" key (P1.12 schema) must not appear —
+		// Claude Code never fired it because it was outside the event-slot
+		// surface.
+		expect(claude.hooks.codogotchi).toBeUndefined();
 
 		const codexRaw = readFileSync(
 			join(userRoot, ".codex", "hooks", "codogotchi.toml"),
@@ -66,7 +75,30 @@ describe("installHooks", () => {
 			JSON.stringify(
 				{
 					theme: "dark",
-					hooks: { other: { command: "other-cmd" } },
+					hooks: {
+						PreToolUse: [
+							{
+								matcher: "Read",
+								hooks: [
+									{
+										type: "command",
+										command: "~/.claude/read-once/hook.sh",
+									},
+								],
+							},
+						],
+						PostCompact: [
+							{
+								matcher: "",
+								hooks: [
+									{
+										type: "command",
+										command: "~/.claude/read-once/compact.sh",
+									},
+								],
+							},
+						],
+					},
 				},
 				null,
 				2,
@@ -81,13 +113,58 @@ describe("installHooks", () => {
 
 		const claude = JSON.parse(
 			readFileSync(join(userRoot, ".claude", "settings.json"), "utf8"),
-		) as {
-			theme: string;
-			hooks: Record<string, { command: string }>;
-		};
+		) as { theme: string; hooks: HooksMap };
+
 		expect(claude.theme).toBe("dark");
-		expect(claude.hooks.other?.command).toBe("other-cmd");
-		expect(claude.hooks.codogotchi?.command).toBe("codogotchi-hook");
+		// Existing read-once PreToolUse entry preserved alongside the new
+		// codogotchi-hook matcher.
+		const readOnceStill = claude.hooks.PreToolUse.find(
+			(m) =>
+				m.matcher === "Read" &&
+				m.hooks.some((h) => h.command === "~/.claude/read-once/hook.sh"),
+		);
+		expect(readOnceStill).toBeDefined();
+		expect(hasCodogotchiMatcher(claude.hooks.PreToolUse)).toBe(true);
+		// PostCompact (unrelated event slot) untouched.
+		expect(claude.hooks.PostCompact[0].hooks[0].command).toBe(
+			"~/.claude/read-once/compact.sh",
+		);
+		// Stop slot newly added.
+		expect(hasCodogotchiMatcher(claude.hooks.Stop)).toBe(true);
+	});
+
+	it("strips legacy hooks.codogotchi orphan from P1.12-era installs", async () => {
+		await mkdir(join(userRoot, ".claude"), { recursive: true });
+		writeFileSync(
+			join(userRoot, ".claude", "settings.json"),
+			JSON.stringify(
+				{
+					hooks: {
+						codogotchi: {
+							command: "codogotchi-hook",
+							env: { CODOGOTCHI_HOME: "/old/home" },
+						},
+					},
+				},
+				null,
+				2,
+			),
+			"utf8",
+		);
+
+		await installHooks({
+			home: "/home/user/.codogotchi",
+			convex_http_url: "https://example.convex.site",
+		});
+
+		const claude = JSON.parse(
+			readFileSync(join(userRoot, ".claude", "settings.json"), "utf8"),
+		) as { hooks: Record<string, unknown> };
+		expect(claude.hooks.codogotchi).toBeUndefined();
+		expect(hasCodogotchiMatcher(claude.hooks.PreToolUse as HookMatcher[])).toBe(
+			true,
+		);
+		expect(hasCodogotchiMatcher(claude.hooks.Stop as HookMatcher[])).toBe(true);
 	});
 
 	it("is idempotent — re-running yields identical files", async () => {

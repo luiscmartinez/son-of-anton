@@ -12,9 +12,23 @@ function getUserRoot(): string {
 	return homedir();
 }
 
+type ClaudeHookEntry = { type: "command"; command: string };
+type ClaudeHookMatcher = { matcher: string; hooks: ClaudeHookEntry[] };
+type ClaudeHookSlot = ClaudeHookMatcher[];
+type ClaudeHooks = Record<string, ClaudeHookSlot | unknown>;
 type ClaudeSettings = {
-	hooks?: Record<string, unknown>;
+	hooks?: ClaudeHooks;
 } & Record<string, unknown>;
+
+/// The command Claude Code spawns. Re-used to detect (and dedupe) prior
+/// codogotchi entries so re-running setup is idempotent.
+const CODOGOTCHI_COMMAND = "codogotchi-hook";
+
+/// Claude Code event slots the hook is registered against. `PreToolUse` fires
+/// on every tool invocation; `Stop` fires when Claude finishes a turn. Between
+/// them the hook sees enough lifecycle traffic to drive the menubar pet's
+/// `activity_state` without overlapping into Codex's hook surface.
+const CODOGOTCHI_EVENTS = ["PreToolUse", "Stop"] as const;
 
 async function readJsonOrEmpty<T extends object>(path: string): Promise<T> {
 	try {
@@ -33,24 +47,59 @@ async function writeText(path: string, content: string): Promise<void> {
 	await writeFile(path, content, "utf8");
 }
 
-// Phase 01 installHooks writes only the hook *config entries* invoking the
-// `codogotchi-hook` binary. The binary itself lands in P1.18. Re-running setup
-// is idempotent: identical config produces identical files.
+function isHookMatcher(value: unknown): value is ClaudeHookMatcher {
+	if (!value || typeof value !== "object") return false;
+	const v = value as Record<string, unknown>;
+	return typeof v.matcher === "string" && Array.isArray(v.hooks);
+}
+
+/// Replace any existing codogotchi-hook matcher in `slot` with a canonical
+/// matcher-`""` entry. Unrelated matchers (e.g. a user's `Read`-scoped
+/// read-once hook) are left untouched. The filter+append shape keeps the
+/// installer idempotent: re-running produces a byte-identical file.
+function withCodogotchiMatcher(slot: ClaudeHookSlot): ClaudeHookSlot {
+	const others = slot.filter(
+		(m) => !m.hooks.some((h) => h.command === CODOGOTCHI_COMMAND),
+	);
+	others.push({
+		matcher: "",
+		hooks: [{ type: "command", command: CODOGOTCHI_COMMAND }],
+	});
+	return others;
+}
+
+// installHooks writes the hook config entries that invoke the
+// `codogotchi-hook` binary into both Claude Code's `settings.json` and
+// Codex's `~/.codex/hooks/codogotchi.toml`. The binary itself ships under
+// `packages/cli/bin/`. Re-running setup is idempotent: identical config
+// produces identical files.
 export async function installHooks(ctx: InstallHooksContext): Promise<void> {
 	const root = getUserRoot();
 
 	const claudePath = join(root, CLAUDE_SETTINGS_REL);
 	const claudeSettings = await readJsonOrEmpty<ClaudeSettings>(claudePath);
-	claudeSettings.hooks = {
-		...(claudeSettings.hooks ?? {}),
-		codogotchi: {
-			command: "codogotchi-hook",
-			env: {
-				CODOGOTCHI_HOME: ctx.home,
-				CODOGOTCHI_CONVEX_URL: ctx.convex_http_url,
-			},
-		},
-	};
+
+	// Strip the legacy `hooks.codogotchi` orphan written by P1.12-era
+	// installs. Claude Code routes hooks by event name keys (`PreToolUse`,
+	// `Stop`, ...), not by a top-level `codogotchi` key, so the legacy
+	// entry was inert and never fired. Removing it on every install lets
+	// existing users converge onto the correct wiring without manual edits.
+	const existing = (claudeSettings.hooks ?? {}) as ClaudeHooks;
+	const { codogotchi: _legacy, ...preserved } = existing as Record<
+		string,
+		unknown
+	>;
+
+	const nextHooks: ClaudeHooks = { ...(preserved as ClaudeHooks) };
+	for (const event of CODOGOTCHI_EVENTS) {
+		const raw = nextHooks[event];
+		const slot: ClaudeHookSlot = Array.isArray(raw)
+			? raw.filter(isHookMatcher)
+			: [];
+		nextHooks[event] = withCodogotchiMatcher(slot);
+	}
+	claudeSettings.hooks = nextHooks;
+
 	await writeText(claudePath, `${JSON.stringify(claudeSettings, null, 2)}\n`);
 
 	const codexPath = join(root, CODEX_HOOKS_REL);
