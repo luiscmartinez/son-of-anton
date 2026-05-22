@@ -166,7 +166,11 @@ final class MaliPet {
 
 		var out: [NSImage] = []
 		out.reserveCapacity(spec.frameCount)
-		let pixelSize = NSSize(width: frameWidth, height: frameHeight)
+		// Scale frames to the standard macOS menubar height (22 pt) so the
+		// raw spritesheet pixel dimensions don't overflow the status bar.
+		let targetHeight: CGFloat = 22
+		let scale = targetHeight / CGFloat(frameHeight)
+		let displaySize = NSSize(width: CGFloat(frameWidth) * scale, height: targetHeight)
 
 		for col in 0..<spec.frameCount {
 			let rect = CGRect(
@@ -190,7 +194,15 @@ final class MaliPet {
 				)
 				continue
 			}
-			let image = NSImage(cgImage: slice, size: pixelSize)
+			// Use NSBitmapImageRep so cgImage(forProposedRect:) reliably
+			// returns the backing CGImage. NSImage(cgImage:size:) creates a
+			// private NSCGImageSnapshotRep whose cgImage(forProposedRect:nil)
+			// intermittently returns nil when logical size ≠ pixel dimensions,
+			// causing MenubarRenderer.desaturate() to drop frames and flicker.
+			let rep = NSBitmapImageRep(cgImage: slice)
+			rep.size = displaySize
+			let image = NSImage(size: displaySize)
+			image.addRepresentation(rep)
 			out.append(image)
 		}
 
