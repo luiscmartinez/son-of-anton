@@ -143,7 +143,15 @@ final class MenubarRenderer {
 			NSLog("MenubarRenderer: desaturate skipped — CIColorControls produced no output")
 			return nil
 		}
-		return NSImage(cgImage: outCG, size: image.size)
+		// Match MaliPet.frames: wrap in NSBitmapImageRep so AppKit's internal
+		// rendering of the status item image stays reliable when the rep's
+		// logical size (points) differs from its pixel dimensions. Using
+		// NSImage(cgImage:size:) here intermittently produces invisible frames.
+		let rep = NSBitmapImageRep(cgImage: outCG)
+		rep.size = image.size
+		let result = NSImage(size: image.size)
+		result.addRepresentation(rep)
+		return result
 	}
 
 	private func restartTimer() {
