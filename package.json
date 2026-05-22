@@ -7,8 +7,8 @@
     "deliver": "bun run ./scripts/deliver.ts",
     "closeout-stack": "bun run ./scripts/closeout-stack.ts",
     "sync": "bash scripts/soa-sync.sh",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "biome format --write && prettier --write .",
+    "format:check": "biome format && prettier --check .",
     "lint": "eslint .",
     "lint:quiet": "eslint . --quiet",
     "verify": "bun run format:check && bun run lint",
@@ -17,6 +17,7 @@
     "ci:quiet": "bun run verify:quiet && bun test"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.4.15",
     "@eslint/js": "^10.0.1",
     "@types/bun": "latest",
     "@types/node": "^25.9.1",
