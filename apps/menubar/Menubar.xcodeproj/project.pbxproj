@@ -9,11 +9,13 @@
 /* Begin PBXBuildFile section */
 		02E711B348F0A6134E12B9CB /* MenubarTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE3B6E6E790FC05428728089 /* MenubarTests.swift */; };
 		10C477E52698AA8D23BB295D /* MaliPet.swift in Sources */ = {isa = PBXBuildFile; fileRef = F8BEEEE1C82135A15D3A50F5 /* MaliPet.swift */; };
+		68F6834998A691C645CC84E7 /* state-json in Resources */ = {isa = PBXBuildFile; fileRef = 987A78AD0F583F16994A505C /* state-json */; };
 		752D2A65FA6D3BD28A4CCC2A /* MenuItemsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1EFA6A07F8992B60FA1858E6 /* MenuItemsTests.swift */; };
 		7C244C59EC0FAF582E7284AC /* MenubarRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0271F5AA5F21B8EDF5C82E84 /* MenubarRenderer.swift */; };
 		7E751B9BF8DA263107084E30 /* TransitionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD94064A39B7E8C7C327644C /* TransitionLog.swift */; };
 		845772E367D28B7F9CD18235 /* MaliPetTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 08A2E1C50EB793ED6FA92CAA /* MaliPetTests.swift */; };
 		8EF2C66FBB926E5B0DF59CA8 /* MenubarRendererTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F5763985E7CF09EB2581201 /* MenubarRendererTests.swift */; };
+		931EB8334C9A3AA3F5A20372 /* DebugLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = FEE7148D6EE1FD47FB1BACF7 /* DebugLog.swift */; };
 		A03A23FB09ED671533A20EFA /* LivePollingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 457FC0B4AD3EFF117739B3CE /* LivePollingTests.swift */; };
 		AC9121969925747491D2102D /* DemoModeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 912682799F951D41A1CC6E5F /* DemoModeTests.swift */; };
 		C54078F86228C337F4208AA5 /* DemoConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2CE280854484C0B88CA21C06 /* DemoConfig.swift */; };
@@ -50,6 +52,7 @@
 		7D4224DA093A1F8EDBF805F5 /* DemoCycleDriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoCycleDriver.swift; sourceTree = "<group>"; };
 		8CCEB747D45D3F725F8076F9 /* LivePollingDriver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LivePollingDriver.swift; sourceTree = "<group>"; };
 		912682799F951D41A1CC6E5F /* DemoModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoModeTests.swift; sourceTree = "<group>"; };
+		987A78AD0F583F16994A505C /* state-json */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "state-json"; path = "Fixtures/state-json"; sourceTree = SOURCE_ROOT; };
 		A59F4B215B1B9640B87D3F60 /* MenubarApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarApp.swift; sourceTree = "<group>"; };
 		AE3B6E6E790FC05428728089 /* MenubarTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarTests.swift; sourceTree = "<group>"; };
 		B2D243946307FE7911C7D589 /* StateJsonReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateJsonReaderTests.swift; sourceTree = "<group>"; };
@@ -58,16 +61,26 @@
 		F8BEEEE1C82135A15D3A50F5 /* MaliPet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliPet.swift; sourceTree = "<group>"; };
 		FD94064A39B7E8C7C327644C /* TransitionLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitionLog.swift; sourceTree = "<group>"; };
 		FDAD45AEF16502197B71A42A /* MenubarMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenubarMenu.swift; sourceTree = "<group>"; };
+		FEE7148D6EE1FD47FB1BACF7 /* DebugLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLog.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
 		0994AA723D09F6618041D36A = {
 			isa = PBXGroup;
 			children = (
+				13D887FE1052F6E9B6A99794 /* Fixtures */,
 				40A3E7D889D8B1374DEBA41A /* Sources */,
 				1D7A57C0060C69986AEA7D8B /* Tests */,
 				24E0F62FD8764901025863BE /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		13D887FE1052F6E9B6A99794 /* Fixtures */ = {
+			isa = PBXGroup;
+			children = (
+				987A78AD0F583F16994A505C /* state-json */,
+			);
+			path = Fixtures;
 			sourceTree = "<group>";
 		};
 		1D7A57C0060C69986AEA7D8B /* Tests */ = {
@@ -91,6 +104,7 @@
 			isa = PBXGroup;
 			children = (
 				2CC00304AC7943871172F0CF /* ActivityState.swift */,
+				FEE7148D6EE1FD47FB1BACF7 /* DebugLog.swift */,
 				2CE280854484C0B88CA21C06 /* DemoConfig.swift */,
 				7D4224DA093A1F8EDBF805F5 /* DemoCycleDriver.swift */,
 				8CCEB747D45D3F725F8076F9 /* LivePollingDriver.swift */,
@@ -127,6 +141,7 @@
 			buildConfigurationList = 881664D054EE8B100B8F3CFE /* Build configuration list for PBXNativeTarget "Menubar" */;
 			buildPhases = (
 				7705E5457CAAA63634EC3A01 /* Sources */,
+				4C0E0E43465CEB6C6955B9A2 /* Resources */,
 			);
 			buildRules = (
 			);
@@ -196,6 +211,17 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		4C0E0E43465CEB6C6955B9A2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				68F6834998A691C645CC84E7 /* state-json in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		5C419F729837AE7E5798CDC2 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
@@ -217,6 +243,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				FD70D93A6151530FFDF449AF /* ActivityState.swift in Sources */,
+				931EB8334C9A3AA3F5A20372 /* DebugLog.swift in Sources */,
 				C54078F86228C337F4208AA5 /* DemoConfig.swift in Sources */,
 				E6BCBF842471662C38B63C2A /* DemoCycleDriver.swift in Sources */,
 				DCA785FC4D7B0B5EEBD8C6E7 /* LivePollingDriver.swift in Sources */,

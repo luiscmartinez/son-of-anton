@@ -1,4 +1,5 @@
 import AppKit
+import QuartzCore
 
 /// Menu-bar agent entry point.
 ///
@@ -51,6 +52,12 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 	/// notification center does not retain a dangling block past shutdown.
 	var workspaceWakeObserver: NSObjectProtocol?
 
+	/// Held strongly to keep `ProcessInfo.beginActivity(...)` alive — without
+	/// it, macOS App Nap can throttle the renderer's 8 Hz animation timer
+	/// (manifesting as the pet animating for one cycle, vanishing for a
+	/// second or so, then animating again).
+	var activity: NSObjectProtocol?
+
 	static func main() {
 		let app = NSApplication.shared
 		let delegate = MenubarApp()
@@ -60,6 +67,15 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 	}
 
 	func applicationDidFinishLaunching(_ notification: Notification) {
+		// Disable App Nap so the renderer's animation timer fires at a steady
+		// 8 Hz. As an LSUIElement agent with no visible window we are a prime
+		// App Nap target; without this opt-out the pet animates for ~1 second
+		// then freezes/disappears for ~1 second in a repeating cycle.
+		self.activity = ProcessInfo.processInfo.beginActivity(
+			options: [.userInitiated, .latencyCritical],
+			reason: "codogotchi menubar pet animation"
+		)
+
 		let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
 		if let button = item.button {
 			button.image = NSImage(
@@ -79,7 +95,17 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 		do {
 			let pet = try MaliPet()
 			let renderer = MenubarRenderer(pet: pet) { [weak item] image in
+				let t = CACurrentMediaTime()
+				let hasButton = item?.button != nil
+				dbgLog(
+					"DBG t=\(t) sink: hasItem=\(item != nil) hasButton=\(hasButton) in=\(image.size.width)x\(image.size.height)"
+				)
 				item?.button?.image = image
+				let actual = item?.button?.image?.size
+				let win = item?.button?.window
+				dbgLog(
+					"DBG t=\(t) sink: after-set actual=\(actual?.width ?? -1)x\(actual?.height ?? -1) windowVisible=\(win?.isVisible ?? false) buttonHidden=\(item?.button?.isHidden ?? true)"
+				)
 			}
 			renderer.update(state: .idle, visualMode: .normal)
 			self.renderer = renderer
@@ -108,21 +134,34 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 			log.start()
 			self.transitionLog = log
 		}
+		dbgLog(
+			"DBG MenubarApp: branching — isDemoMode=\(config.isDemoMode) rendererLoaded=\(self.renderer != nil)"
+		)
 		if config.isDemoMode, let renderer = self.renderer {
-			if let fixturesDirectory = Self.bundledDemoFixturesDirectory() {
+			let fixtures = Self.bundledDemoFixturesDirectory()
+			dbgLog(
+				"DBG MenubarApp.demo: bundleResourceURL=\(Bundle.main.resourceURL?.path ?? "<nil>") fixturesDir=\(fixtures?.path ?? "<nil>")"
+			)
+			if let fixturesDirectory = fixtures {
+				let contents =
+					(try? FileManager.default.contentsOfDirectory(atPath: fixturesDirectory.path))
+					?? []
+				dbgLog("DBG MenubarApp.demo: fixtures contents=\(contents)")
 				let driver = DemoCycleDriver(
 					sandboxedPath: config.pollingTarget,
 					fixturesDirectory: fixturesDirectory,
 					apply: { [weak renderer] state in
+						dbgLog("DBG demoDriver.apply: state=\(state.rawValue)")
 						renderer?.update(state: state, visualMode: .normal)
 					},
 					transitionLog: self.transitionLog
 				)
 				driver.start()
 				self.demoDriver = driver
+				dbgLog("DBG MenubarApp.demo: DemoCycleDriver started")
 			} else {
-				NSLog(
-					"MenubarApp: demo mode requested but bundled state-json fixtures not found; keeping idle"
+				dbgLog(
+					"DBG MenubarApp.demo: fixtures NOT FOUND — driver not started, renderer stays in initial idle"
 				)
 			}
 		} else if let renderer = self.renderer {
@@ -161,6 +200,10 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 		if let observer = workspaceWakeObserver {
 			NSWorkspace.shared.notificationCenter.removeObserver(observer)
 			workspaceWakeObserver = nil
+		}
+		if let activity = activity {
+			ProcessInfo.processInfo.endActivity(activity)
+			self.activity = nil
 		}
 		demoDriver?.stop()
 		livePollingDriver?.stop()

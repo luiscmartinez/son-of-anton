@@ -18,11 +18,9 @@ targets:
     platform: macOS
     sources:
       - path: Sources
-    resources:
-      - path: Resources
-        optional: true
       - path: Fixtures/state-json
         type: folder
+        buildPhase: resources
     info:
       path: Info.plist
       properties:

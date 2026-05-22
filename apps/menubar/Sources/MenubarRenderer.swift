@@ -2,6 +2,7 @@ import AppKit
 import CoreImage
 import CoreImage.CIFilterBuiltins
 import Foundation
+import QuartzCore
 
 /// Whether the renderer paints the active state's frames at full saturation
 /// (`.normal`) or with saturation collapsed to grayscale (`.desaturated`).
@@ -39,7 +40,7 @@ final class MenubarRenderer {
 
 	private var currentState: ActivityState = .idle
 	private var currentMode: VisualMode = .normal
-	private var currentFrames: [NSImage] = []
+	private var currentFrames: [MaliPet.Frame] = []
 	private var frameIndex: Int = 0
 	private var timer: Timer?
 
@@ -93,7 +94,7 @@ final class MenubarRenderer {
 
 	/// The frame array the renderer is currently animating — exposed for unit
 	/// tests so they can confirm the renderer swapped to the right row.
-	var currentFramesForTesting: [NSImage] { currentFrames }
+	var currentFramesForTesting: [NSImage] { currentFrames.map(\.image) }
 
 	/// Advance one frame without waiting for the real `Timer`. Used by tests
 	/// to drive frame-index transitions deterministically.
@@ -103,17 +104,12 @@ final class MenubarRenderer {
 
 	// MARK: - Internals
 
-	private func paintCurrent() {
-		guard let frame = renderedCurrentFrame() else { return }
-		sink(frame)
-	}
-
 	private func renderedCurrentFrame() -> NSImage? {
 		guard !currentFrames.isEmpty else { return nil }
-		let raw = currentFrames[frameIndex % currentFrames.count]
+		let frame = currentFrames[frameIndex % currentFrames.count]
 		switch currentMode {
 		case .normal:
-			return raw
+			return frame.image
 		case .desaturated:
 			// Skip the sink emission rather than silently emitting a colored
 			// frame when Core Image fails. The previous painted frame (which
@@ -122,18 +118,17 @@ final class MenubarRenderer {
 			// Emitting a colored frame here would silently violate the
 			// desaturated-mode contract and defeat the early-failure-visual
 			// intent of this mode.
-			return desaturate(raw)
+			return desaturate(frame)
 		}
 	}
 
-	private func desaturate(_ image: NSImage) -> NSImage? {
-		guard
-			let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil)
-		else {
-			NSLog("MenubarRenderer: desaturate skipped — NSImage has no backing CGImage")
-			return nil
-		}
-		let ci = CIImage(cgImage: cg)
+	private func desaturate(_ frame: MaliPet.Frame) -> NSImage? {
+		// Use the CGImage from the Frame directly instead of asking
+		// AppKit to vend one via NSImage.cgImage(forProposedRect:), which
+		// intermittently returns nil when the NSImage's logical size differs
+		// from its backing pixel dimensions — that was the root cause of the
+		// menubar flicker before P2.11 plumbed the CGImage through.
+		let ci = CIImage(cgImage: frame.cgImage)
 		let filter = CIFilter.colorControls()
 		filter.inputImage = ci
 		filter.saturation = 0
@@ -143,35 +138,44 @@ final class MenubarRenderer {
 			NSLog("MenubarRenderer: desaturate skipped — CIColorControls produced no output")
 			return nil
 		}
-		// Match MaliPet.frames: wrap in NSBitmapImageRep so AppKit's internal
-		// rendering of the status item image stays reliable when the rep's
-		// logical size (points) differs from its pixel dimensions. Using
-		// NSImage(cgImage:size:) here intermittently produces invisible frames.
-		let rep = NSBitmapImageRep(cgImage: outCG)
-		rep.size = image.size
-		let result = NSImage(size: image.size)
-		result.addRepresentation(rep)
-		return result
+		return NSImage(cgImage: outCG, size: frame.image.size)
 	}
 
 	private func restartTimer() {
 		timer?.invalidate()
 		let frameCount = max(currentFrames.count, 1)
 		let interval = 1.0 / Double(frameCount)
-		// `[weak self]` avoids a retain cycle through the timer's closure —
-		// `Timer.scheduledTimer(withTimeInterval:repeats:block:)` keeps a
-		// strong reference to its block, and the block would otherwise hold
-		// the renderer alive past its intended lifetime (a known AppKit
-		// pitfall called out in the ticket review focus).
-		timer = Timer.scheduledTimer(withTimeInterval: interval, repeats: true) {
+		dbgLog("DBG restartTimer: frameCount=\(frameCount) interval=\(interval)")
+		let newTimer = Timer(timeInterval: interval, repeats: true) {
 			[weak self] _ in
+			let t = CACurrentMediaTime()
+			dbgLog("DBG t=\(t) timer.block fired")
 			Task { @MainActor in self?.tick() }
 		}
+		RunLoop.main.add(newTimer, forMode: .common)
+		timer = newTimer
 	}
 
 	private func tick() {
-		guard !currentFrames.isEmpty else { return }
+		guard !currentFrames.isEmpty else {
+			dbgLog("DBG tick: currentFrames empty, skipping")
+			return
+		}
 		frameIndex = (frameIndex + 1) % currentFrames.count
+		let t = CACurrentMediaTime()
+		dbgLog("DBG t=\(t) tick: frameIndex=\(frameIndex) of \(currentFrames.count)")
 		paintCurrent()
+	}
+
+	private func paintCurrent() {
+		guard let frame = renderedCurrentFrame() else {
+			dbgLog("DBG paintCurrent: renderedCurrentFrame returned nil (mode=\(currentMode))")
+			return
+		}
+		let t = CACurrentMediaTime()
+		dbgLog(
+			"DBG t=\(t) paintCurrent: emitting frame idx=\(frameIndex) size=\(frame.size.width)x\(frame.size.height)"
+		)
+		sink(frame)
 	}
 }

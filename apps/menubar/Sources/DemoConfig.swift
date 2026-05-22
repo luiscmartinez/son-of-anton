@@ -45,9 +45,12 @@ struct DemoConfig: Equatable {
 
 	/// Production seam: reads `ProcessInfo` at launch time.
 	static func forLaunch() -> DemoConfig {
-		return from(
-			environment: ProcessInfo.processInfo.environment,
-			arguments: ProcessInfo.processInfo.arguments
+		let env = ProcessInfo.processInfo.environment
+		let args = ProcessInfo.processInfo.arguments
+		let result = from(environment: env, arguments: args)
+		dbgLog(
+			"DBG DemoConfig.forLaunch: CODOGOTCHI_DEMO=\(env["CODOGOTCHI_DEMO"] ?? "<unset>") --demo-in-args=\(args.contains("--demo")) isDemoMode=\(result.isDemoMode) pollingTarget=\(result.pollingTarget.path)"
 		)
+		return result
 	}
 }

@@ -161,10 +161,10 @@ final class MaliPet {
 	/// The grid PNG's row indexing matches this orientation. (Cocoa's
 	/// flipped-coordinate-system gotcha applies to `NSGraphicsContext`
 	/// drawing, not to `CGImage.cropping(to:)` — see the Swift notes file.)
-	func frames(for state: ActivityState) -> [NSImage] {
+	func frames(for state: ActivityState) -> [Frame] {
 		guard let spec = MaliPet.rowMap[state] else { return [] }
 
-		var out: [NSImage] = []
+		var out: [Frame] = []
 		out.reserveCapacity(spec.frameCount)
 		// Scale frames to the standard macOS menubar height (22 pt) so the
 		// raw spritesheet pixel dimensions don't overflow the status bar.
@@ -194,19 +194,48 @@ final class MaliPet {
 				)
 				continue
 			}
-			// Use NSBitmapImageRep so cgImage(forProposedRect:) reliably
-			// returns the backing CGImage. NSImage(cgImage:size:) creates a
-			// private NSCGImageSnapshotRep whose cgImage(forProposedRect:nil)
-			// intermittently returns nil when logical size ≠ pixel dimensions,
-			// causing MenubarRenderer.desaturate() to drop frames and flicker.
-			let rep = NSBitmapImageRep(cgImage: slice)
-			rep.size = displaySize
-			let image = NSImage(size: displaySize)
-			image.addRepresentation(rep)
-			out.append(image)
+			// Materialize the cropped slice into a self-contained CGImage so
+			// the resulting NSImage owns its pixel data outright. Cropping
+			// returns a view that shares cgSheet's buffer; AppKit's status
+			// item rendering then collapses successive frames to whichever
+			// one it cached first (a known symptom: pet freezes on one
+			// frame instead of animating). Drawing at the display size in
+			// @2x pixels also yields a sharp Retina presentation.
+			let pixelScale: CGFloat = 2
+			let pxW = Int((displaySize.width * pixelScale).rounded())
+			let pxH = Int((displaySize.height * pixelScale).rounded())
+			let owned: CGImage
+			if let ctx = CGContext(
+				data: nil,
+				width: pxW,
+				height: pxH,
+				bitsPerComponent: 8,
+				bytesPerRow: 0,
+				space: CGColorSpaceCreateDeviceRGB(),
+				bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+			) {
+				ctx.interpolationQuality = .high
+				ctx.draw(slice, in: CGRect(x: 0, y: 0, width: pxW, height: pxH))
+				owned = ctx.makeImage() ?? slice
+			} else {
+				owned = slice
+			}
+			let image = NSImage(cgImage: owned, size: displaySize)
+			out.append(Frame(image: image, cgImage: owned))
 		}
 
 		return out
+	}
+
+	/// One animation frame: the renderable `NSImage` plus its backing
+	/// `CGImage`. The renderer keeps the CGImage handy so desaturation can
+	/// feed Core Image directly instead of asking AppKit to vend one via
+	/// `NSImage.cgImage(forProposedRect:)`, which intermittently returns nil
+	/// when the NSImage's logical size (points) differs from its backing
+	/// pixel dimensions and was the root cause of the menubar flicker.
+	struct Frame {
+		let image: NSImage
+		let cgImage: CGImage
 	}
 
 	// MARK: - Helpers
