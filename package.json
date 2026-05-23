@@ -1,34 +1,38 @@
 {
-  "name": "son-of-anton",
-  "version": "0.1.0",
-  "private": true,
+  "name": "codogotchi",
+  "module": "index.ts",
   "type": "module",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "scripts": {
-    "deliver": "bun run ./scripts/deliver.ts",
-    "closeout-stack": "bun run ./scripts/closeout-stack.ts",
-    "sync": "bash scripts/soa-sync.sh",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
-    "lint": "eslint .",
-    "lint:quiet": "eslint . --quiet",
-    "spellcheck": "cspell --no-progress \"**/*\"",
-    "spellcheck:quiet": "cspell --no-progress --no-summary \"**/*\"",
-    "verify": "bun run format:check && bun run lint && bun run spellcheck",
-    "verify:quiet": "prettier --check . --log-level warn && bun run lint:quiet && bun run spellcheck:quiet",
-    "ci": "bun run verify && bun test",
-    "ci:quiet": "bun run verify:quiet && bun test"
+    "sync": "bash .son-of-anton/scripts/soa-sync.sh",
+    "deliver": "bun run .son-of-anton/scripts/deliver.ts",
+    "closeout-stack": "bun run .son-of-anton/scripts/closeout-stack.ts",
+    "format": "biome format --write .",
+    "format:quiet": "biome format --write . --log-level=error",
+    "lint": "biome lint --write .",
+    "lint:quiet": "biome lint --write . --log-level=error",
+    "check": "biome check --write .",
+    "verify": "biome check .",
+    "verify:quiet": "biome check . --log-level=error",
+    "ci": "bun run verify && bun run mac:test",
+    "ci:quiet": "bun run verify:quiet && bun run mac:test",
+    "mac:build": "xcodebuild -project apps/menubar/Menubar.xcodeproj -scheme Menubar build",
+    "mac:test": "xcodebuild -project apps/menubar/Menubar.xcodeproj -scheme Menubar test"
+  },
+  "dependencies": {
+    "@codogotchi/contracts": "workspace:*",
+    "@codogotchi/engine": "workspace:*"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
+    "@biomejs/biome": "^2.4.15",
     "@types/bun": "latest",
-    "cspell": "^8.19.4",
-    "eslint": "^10.3.0",
-    "globals": "^17.6.0",
-    "prettier": "^3.8.3",
-    "typescript": "^5.0.0",
-    "typescript-eslint": "^8.59.2"
+    "convex": "^1.16.0",
+    "convex-test": "^0.0.52"
   },
-  "engines": {
-    "bun": ">=1.0.0"
+  "peerDependencies": {
+    "typescript": "^5"
   }
 }
