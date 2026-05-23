@@ -81,21 +81,25 @@ strings character-for-character (substituting the placeholders).
 
 ## Activity States (closed enum)
 
-| State                 | Meaning                                                                                  | Source signal class                                                | Reliability |
-| --------------------- | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------ | ----------- |
-| `idle`                | No active session or no recent tool activity.                                            | Absence of recent lifecycle events. Baseline.                      | reliable    |
-| `implementing`        | Pet is writing code — Edit/Write tool usage in a coding session.                         | Claude Code / Codex tool-use events on `Edit`, `Write`, or `MultiEdit` tools.   | heuristic   |
-| `running-tests`       | Pet is running test commands.                                                            | Tool-use events on `Bash` whose command matches a test runner.     | heuristic   |
-| `reviewing`           | Pet is reading code — sequential Read tool usage without edits.                          | Run of 3+ Read tool-use events with no intervening Edit/Write.     | heuristic   |
-| `pushing`             | Pet is publishing — `git push` observed.                                                 | Tool-use Bash event whose command begins with `git push`.          | heuristic   |
-| `hyped`               | Pet is energized — explicit SoA "ticket started" gate signal.                            | SoA `ticket_started` event from `.soa/events.ndjson`.              | reliable    |
-| `focused`             | Pet is deep in flow — explicit SoA "long uninterrupted session" gate signal.             | SoA `flow_state_entered` event.                                    | reliable    |
-| `nervous`             | Pet senses risk — explicit SoA "risky diff" gate signal.                                 | SoA `risky_diff_detected` event.                                   | reliable    |
-| `waiting`             | Pet is waiting on external review — explicit SoA "PR review pending" gate signal.       | SoA `pr_review_window_opened` event.                               | reliable    |
-| `celebrating`         | Pet is celebrating — explicit SoA "PR clean / ticket done" gate signal.                  | SoA `ticket_completed` or `review_clean_recorded` event.           | reliable    |
-| `ascended`            | Pet stage-advanced — explicit SoA "level up" gate signal.                                | SoA `stage_advanced` event.                                        | reliable    |
-| `calling_for_backup`  | Pet asked for help — explicit SoA "subagent invoked" gate signal.                        | SoA `subagent_invoked` event.                                      | reliable    |
-| `panicking`           | Pet is in trouble — explicit SoA "CI red / verification failed" gate signal.            | SoA `verification_failed` event.                                   | reliable    |
+States marked **v2** are planned additions that require a `schema_version` bump to `2` before the hook binary emits them. All v1 states remain unchanged.
+
+| State                 | Ver | Meaning                                                                                  | Source signal class                                                              | Reliability |
+| --------------------- | --- | ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ----------- |
+| `idle`                | v1  | No active session or no recent tool activity.                                            | Absence of recent lifecycle events. Baseline.                                    | reliable    |
+| `implementing`        | v1  | Pet is writing code — Edit/Write tool usage in a coding session.                         | Claude Code / Codex tool-use events on `Edit`, `Write`, or `MultiEdit` tools.    | heuristic   |
+| `running-tests`       | v1  | Pet is running test commands.                                                            | Tool-use events on `Bash` whose command matches a test runner.                   | heuristic   |
+| `reviewing`           | v1  | Pet is reading code — sequential Read tool usage without edits.                          | Run of 3+ Read tool-use events with no intervening Edit/Write.                   | heuristic   |
+| `pushing`             | v1  | Pet is publishing — `git push` observed.                                                 | Tool-use Bash event whose command begins with `git push`.                        | heuristic   |
+| `hyped`               | v1  | Pet is energized — explicit SoA "ticket started" gate signal.                            | SoA `ticket_started` event from `.soa/events.ndjson`.                            | reliable    |
+| `focused`             | v1  | Pet is deep in flow — explicit SoA "long uninterrupted session" gate signal.             | SoA `flow_state_entered` event.                                                  | reliable    |
+| `nervous`             | v1  | Pet senses risk — explicit SoA "risky diff" gate signal.                                 | SoA `risky_diff_detected` event.                                                 | reliable    |
+| `waiting`             | v1  | Pet is waiting on external review — explicit SoA "PR review pending" gate signal.        | SoA `pr_review_window_opened` event.                                             | reliable    |
+| `celebrating`         | v1  | Pet is celebrating — explicit SoA "PR clean / ticket done" gate signal.                  | SoA `ticket_completed` or `review_clean_recorded` event.                         | reliable    |
+| `ascended`            | v1  | Pet stage-advanced — explicit SoA "level up" gate signal.                                | SoA `stage_advanced` event.                                                      | reliable    |
+| `calling_for_backup`  | v1  | Pet asked for help — explicit SoA "subagent invoked" gate signal.                        | SoA `subagent_invoked` event.                                                    | reliable    |
+| `panicking`           | v1  | Pet is in trouble — explicit SoA "CI red / verification failed" gate signal.             | SoA `verification_failed` event.                                                 | reliable    |
+| `requesting_input`    | v2  | Pet is waiting for the developer — agent paused awaiting user response.                  | Claude Code / Codex `Stop` event where the agent is requesting user input.       | reliable    |
+| `errored`             | v2  | Pet is distressed — agent response cycle did not complete.                               | Agent response failure: rate limit, network error, or incomplete round-trip.     | reliable    |
 
 `reliable` states come from explicit SoA gate events written as NDJSON to
 `.soa/events.ndjson` (see `docs/contracts/soa-event-feed.md` — landing in P1.19).
@@ -196,6 +200,8 @@ could apply, the earlier row wins.
 | Bash tool-use whose command matches a known test runner                        | `running-tests`        |
 | Edit / Write / MultiEdit tool-use                                              | `implementing`         |
 | 3+ consecutive Read tool-uses with no intervening Edit/Write                   | `reviewing`            |
+| Agent `Stop` event where the agent is requesting user input (v2)               | `requesting_input`     |
+| Agent response failure — rate limit, network error, incomplete round-trip (v2) | `errored`              |
 | Session start with no other recent activity                                    | `idle`                 |
 | Session end or no events in the last 5 minutes                                 | `idle`                 |
 
@@ -221,3 +227,69 @@ Anything outside this list stays at the prior activity state.
   `implementing` does not move `hp` until the next `codogotchi sync` runs.
 - The hook writes one state per event with no temporal smoothing. Renderers
   that want smoothing or anti-flicker should debounce on their side.
+
+## Spritesheet Asset Layout
+
+Two spritesheets drive the renderer. The renderer loads both at startup; states
+are served from the sheet that owns them. If the codogotchi sheet is absent,
+states it owns degrade to `idle` (same behavior as today for unrecognized states).
+
+### Codex sheet — `~/.codex/pets/<pet>/spritesheet.webp`
+
+LVL 1 onboarding sheet. Owned and generated by the Codex pet system. Codogotchi
+reads but never writes it. Grid: **8 columns × 9 rows**, 8 frames per row.
+
+| Row | Codex animation name | Codogotchi state       | Notes                                      |
+| --- | -------------------- | ---------------------- | ------------------------------------------ |
+| 0   | `idle`               | `idle`                 |                                            |
+| 1   | `running-right`      | *(reserved)*           | Future float-on-top sprite, mouse drag     |
+| 2   | `running-left`       | *(reserved)*           | Future float-on-top sprite, mouse drag     |
+| 3   | `waving`             | `requesting_input`     | v2 — agent awaiting user response          |
+| 4   | `jumping`            | *(reserved)*           | Future float-on-top sprite, mouse hover    |
+| 5   | `failed`             | `errored`              | v2 — agent response cycle did not complete |
+| 6   | `waiting`            | `waiting`              |                                            |
+| 7   | `running`            | `implementing`         |                                            |
+| 8   | `review`             | `running-tests`        |                                            |
+
+`celebrating` is intentionally absent from the Codex sheet — the `jumping` row (4)
+does not semantically match. `celebrating` is served exclusively from the
+codogotchi sheet below.
+
+### Codogotchi sheet — `~/.codogotchi/pets/<pet>/spritesheet.webp`
+
+Supplemental sheet. Owned and generated by codogotchi. Grid: **24 columns × 9 rows**,
+24 frames per row, ~167 ms per frame, ~2-second loop at 6 fps. Richer and longer
+than the Codex sheet (8 frames, ~1-second loop at 8 fps).
+
+> **Note:** 24 columns at ~6 fps yields a 2-second loop — optimized for expressiveness
+> at menubar scale. The float-on-top desktop sprite (future phase) will use a
+> higher-resolution version of this same sheet.
+
+| Row | Codogotchi state      | Trigger                                          |
+| --- | --------------------- | ------------------------------------------------ |
+| 0   | `celebrating`         | SoA `ticket_completed` / `review_clean_recorded` |
+| 1   | `hyped`               | SoA `ticket_started`                             |
+| 2   | `focused`             | SoA `flow_state_entered`                         |
+| 3   | `nervous`             | SoA `risky_diff_detected`                        |
+| 4   | `ascended`            | SoA `stage_advanced`                             |
+| 5   | `calling_for_backup`  | SoA `subagent_invoked`                           |
+| 6   | `panicking`           | SoA `verification_failed`                        |
+| 7   | `reviewing`           | 3+ consecutive Reads with no intervening Edit    |
+| 8   | `pushing`             | `git push` Bash command                          |
+
+### Manifest format — `~/.codogotchi/pets/<pet>/pet.json`
+
+Mirrors the shape of `~/.codex/pets/<pet>/pet.json` for consistency:
+
+```json
+{
+  "id": "mali",
+  "displayName": "Mali",
+  "description": "...",
+  "spritesheetPath": "spritesheet.webp"
+}
+```
+
+The renderer resolves `spritesheetPath` relative to the pet directory. Grid
+dimensions (`24 × 9`) are load-time invariants checked at startup; an
+incompatible grid is a hard load failure (same policy as the Codex sheet loader).
