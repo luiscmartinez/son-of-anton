@@ -149,7 +149,11 @@ import {
   writeSubagentAdversarialPrompt,
 } from './subagent-prompt';
 import { readFileSync, writeFileSync } from 'node:fs';
-import { appendSoaEvent, buildSoaEventLine } from './soa-event-feed';
+import {
+  appendSoaEvent,
+  buildSoaEventLine,
+  maybeEmitReviewCleanRecorded,
+} from './soa-event-feed';
 
 export const WORKTREE_EXEMPT = new Set(['status', 'sync', 'start']);
 
@@ -1183,10 +1187,15 @@ export async function runDeliveryOrchestrator(
               pollTicketId,
             ),
           );
-          await emitNotificationWarnings(
-            notifier,
+          const docOnlyEvents = eventsForPollReviewCommand(
+            docOnlyState,
+            pollTicketId,
+          );
+          await emitNotificationWarnings(notifier, cwd, docOnlyEvents);
+          await maybeEmitReviewCleanRecorded(
+            docOnlyEvents,
+            context.config,
             cwd,
-            eventsForPollReviewCommand(docOnlyState, pollTicketId),
           );
           return 0;
         }
@@ -1196,11 +1205,9 @@ export async function runDeliveryOrchestrator(
         console.log(
           formatCurrentTicketStatus(nextState, context.config, pollTicketId),
         );
-        await emitNotificationWarnings(
-          notifier,
-          cwd,
-          eventsForPollReviewCommand(nextState, pollTicketId),
-        );
+        const pollEvents = eventsForPollReviewCommand(nextState, pollTicketId);
+        await emitNotificationWarnings(notifier, cwd, pollEvents);
+        await maybeEmitReviewCleanRecorded(pollEvents, context.config, cwd);
         return 0;
       }
       case TICKET_TRIAGE_COMMAND: {
@@ -1220,11 +1227,12 @@ export async function runDeliveryOrchestrator(
         );
         await saveState(cwd, nextState);
         console.log(formatStatus(nextState, context.config));
-        await emitNotificationWarnings(
-          notifier,
-          cwd,
-          eventsForReconcileLateReviewCommand(nextState, ticketId),
+        const triageEvents = eventsForReconcileLateReviewCommand(
+          nextState,
+          ticketId,
         );
+        await emitNotificationWarnings(notifier, cwd, triageEvents);
+        await maybeEmitReviewCleanRecorded(triageEvents, context.config, cwd);
         return 0;
       }
       case 'record-review': {
@@ -1251,11 +1259,9 @@ export async function runDeliveryOrchestrator(
         );
         await saveState(cwd, nextState);
         console.log(formatStatus(nextState, context.config));
-        await emitNotificationWarnings(
-          notifier,
-          cwd,
-          eventsForRecordReviewCommand(nextState, ticketId),
-        );
+        const recordEvents = eventsForRecordReviewCommand(nextState, ticketId);
+        await emitNotificationWarnings(notifier, cwd, recordEvents);
+        await maybeEmitReviewCleanRecorded(recordEvents, context.config, cwd);
         return 0;
       }
       case 'advance': {
