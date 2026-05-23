@@ -245,7 +245,7 @@ final class MaliPet {
 		return home
 			.appendingPathComponent(".codex")
 			.appendingPathComponent("pets")
-			.appendingPathComponent("mali")
+			.appendingPathComponent("maew")
 			.path
 	}
 }
