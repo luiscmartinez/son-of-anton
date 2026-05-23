@@ -1137,6 +1137,12 @@ export async function runDeliveryOrchestrator(
           cwd,
           eventsForOpenPrCommand(nextState, parsed.positionals[0]),
         );
+        await emitSoaEventForOpenPr(
+          nextState,
+          context.config,
+          cwd,
+          parsed.positionals[0],
+        );
         return 0;
       }
       case 'poll-review': {
@@ -2216,6 +2222,26 @@ async function restackTicket(
 
 export function derivePlanKey(planPath: string): string {
   return derivePlanKeyImpl(planPath);
+}
+
+export async function emitSoaEventForOpenPr(
+  state: DeliveryState,
+  config: ResolvedOrchestratorConfig,
+  projectRoot: string,
+  ticketId?: string,
+): Promise<void> {
+  const events = eventsForOpenPrCommand(state, ticketId);
+  const windowEvent = events.find((e) => e.kind === 'review_window_ready');
+  if (windowEvent) {
+    await appendSoaEvent(
+      config,
+      projectRoot,
+      buildSoaEventLine('pr_review_window_opened', {
+        plan_key: windowEvent.planKey,
+        ticket_id: windowEvent.ticketId,
+      }),
+    );
+  }
 }
 
 export async function emitSoaEventsForTransitions(
