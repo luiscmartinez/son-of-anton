@@ -37,7 +37,7 @@ describe("installHooks", () => {
 		);
 	}
 
-	it("wires codogotchi-hook into PreToolUse and Stop on the Claude side, and writes the Codex TOML", async () => {
+	it("wires codogotchi-hook into Claude and Codex hook configs", async () => {
 		await installHooks({
 			home: "/home/user/.codogotchi",
 			convex_http_url: "https://example.convex.site",
@@ -66,6 +66,27 @@ describe("installHooks", () => {
 		expect(codexRaw).toContain(
 			'CODOGOTCHI_CONVEX_URL = "https://example.convex.site"',
 		);
+
+		const codexJson = JSON.parse(
+			readFileSync(join(userRoot, ".codex", "hooks.json"), "utf8"),
+		) as { hooks: HooksMap };
+		expect(hasCodogotchiMatcher(codexJson.hooks.PreToolUse)).toBe(false);
+		for (const event of ["PreToolUse", "PostToolUse", "SessionStart", "Stop"]) {
+			const slot = codexJson.hooks[event];
+			expect(slot).toHaveLength(1);
+			expect(slot[0]?.matcher).toBe("*");
+			expect(slot[0]?.hooks[0]).toEqual({
+				type: "command",
+				command:
+					"CODOGOTCHI_HOME='/home/user/.codogotchi' CODOGOTCHI_CONVEX_URL='https://example.convex.site' codogotchi-hook",
+			});
+		}
+
+		const codexConfig = readFileSync(
+			join(userRoot, ".codex", "config.toml"),
+			"utf8",
+		);
+		expect(codexConfig).toContain("[features]\nhooks = true\n");
 	});
 
 	it("preserves unrelated entries in an existing Claude settings file", async () => {
@@ -167,6 +188,103 @@ describe("installHooks", () => {
 		expect(hasCodogotchiMatcher(claude.hooks.Stop as HookMatcher[])).toBe(true);
 	});
 
+	it("removes CodeVibe Codex hooks and preserves unrelated Codex hooks", async () => {
+		await mkdir(join(userRoot, ".codex"), { recursive: true });
+		writeFileSync(
+			join(userRoot, ".codex", "config.toml"),
+			[
+				'model = "gpt-5.5"',
+				"",
+				"[features]",
+				"codex_hooks = true",
+				"memories = false",
+				"",
+				`[hooks.state."${join(userRoot, ".codex", "hooks.json")}:pre_tool_use:0:0"]`,
+				'trusted_hash = "sha256:old-codevibe"',
+				"",
+				`[hooks.state."${join(userRoot, ".codex", "hooks.json")}:user_prompt_submit:0:0"]`,
+				'trusted_hash = "sha256:old-codevibe"',
+				"",
+				"[desktop]",
+				'appearance = "dark"',
+				"",
+			].join("\n"),
+			"utf8",
+		);
+		writeFileSync(
+			join(userRoot, ".codex", "hooks.json"),
+			JSON.stringify(
+				{
+					hooks: {
+						PreToolUse: [
+							{
+								matcher: "*",
+								hooks: [
+									{
+										type: "command",
+										command:
+											"bash /old/node_modules/@quantiya/codevibe/hooks/pre-tool-use.sh",
+									},
+									{
+										type: "command",
+										command: "custom-pre-hook",
+									},
+								],
+							},
+						],
+						UserPromptSubmit: [
+							{
+								matcher: "*",
+								hooks: [
+									{
+										type: "command",
+										command:
+											"bash /old/node_modules/@quantiya/codevibe/hooks/user-prompt.sh",
+									},
+								],
+							},
+						],
+					},
+				},
+				null,
+				2,
+			),
+			"utf8",
+		);
+
+		await installHooks({
+			home: "/home/user/.codogotchi",
+			convex_http_url: "https://example.convex.site",
+		});
+
+		const codexJson = JSON.parse(
+			readFileSync(join(userRoot, ".codex", "hooks.json"), "utf8"),
+		) as { hooks: HooksMap };
+		const preCommands = codexJson.hooks.PreToolUse.flatMap((m) =>
+			m.hooks.map((h) => h.command),
+		);
+		expect(preCommands).toContain("custom-pre-hook");
+		expect(preCommands).toContain(
+			"CODOGOTCHI_HOME='/home/user/.codogotchi' CODOGOTCHI_CONVEX_URL='https://example.convex.site' codogotchi-hook",
+		);
+		expect(preCommands.some((command) => command.includes("codevibe"))).toBe(
+			false,
+		);
+		expect(codexJson.hooks.UserPromptSubmit).toBeUndefined();
+
+		const codexConfig = readFileSync(
+			join(userRoot, ".codex", "config.toml"),
+			"utf8",
+		);
+		expect(codexConfig).toContain("[features]");
+		expect(codexConfig).toContain("hooks = true");
+		expect(codexConfig).toContain("memories = false");
+		expect(codexConfig).not.toContain("codex_hooks");
+		expect(codexConfig).not.toContain("[hooks.state.");
+		expect(codexConfig).not.toContain("old-codevibe");
+		expect(codexConfig).toContain('[desktop]\nappearance = "dark"');
+	});
+
 	it("is idempotent — re-running yields identical files", async () => {
 		const ctx = {
 			home: "/home/user/.codogotchi",
@@ -181,6 +299,10 @@ describe("installHooks", () => {
 			join(userRoot, ".codex", "hooks", "codogotchi.toml"),
 			"utf8",
 		);
+		const codexJsonFirst = readFileSync(
+			join(userRoot, ".codex", "hooks.json"),
+			"utf8",
+		);
 
 		await installHooks(ctx);
 		const claudeSecond = readFileSync(
@@ -191,8 +313,13 @@ describe("installHooks", () => {
 			join(userRoot, ".codex", "hooks", "codogotchi.toml"),
 			"utf8",
 		);
+		const codexJsonSecond = readFileSync(
+			join(userRoot, ".codex", "hooks.json"),
+			"utf8",
+		);
 
 		expect(claudeSecond).toBe(claudeFirst);
 		expect(codexSecond).toBe(codexFirst);
+		expect(codexJsonSecond).toBe(codexJsonFirst);
 	});
 });

@@ -4,7 +4,9 @@ import { dirname, join } from "node:path";
 import type { InstallHooksContext } from "./setup";
 
 const CLAUDE_SETTINGS_REL = join(".claude", "settings.json");
+const CODEX_CONFIG_REL = join(".codex", "config.toml");
 const CODEX_HOOKS_REL = join(".codex", "hooks", "codogotchi.toml");
+const CODEX_HOOKS_JSON_REL = join(".codex", "hooks.json");
 
 function getUserRoot(): string {
 	const override = process.env.CODOGOTCHI_USER_ROOT;
@@ -19,6 +21,16 @@ type ClaudeHooks = Record<string, ClaudeHookSlot | unknown>;
 type ClaudeSettings = {
 	hooks?: ClaudeHooks;
 } & Record<string, unknown>;
+type CodexHookEntry = {
+	type: "command";
+	command: string;
+};
+type CodexHookMatcher = { matcher: string; hooks: CodexHookEntry[] };
+type CodexHookSlot = CodexHookMatcher[];
+type CodexHooks = Record<string, CodexHookSlot | unknown>;
+type CodexHooksJson = {
+	hooks?: CodexHooks;
+} & Record<string, unknown>;
 
 /// The command Claude Code spawns. Re-used to detect (and dedupe) prior
 /// codogotchi entries so re-running setup is idempotent.
@@ -29,6 +41,12 @@ const CODOGOTCHI_COMMAND = "codogotchi-hook";
 /// them the hook sees enough lifecycle traffic to drive the menubar pet's
 /// `activity_state` without overlapping into Codex's hook surface.
 const CODOGOTCHI_EVENTS = ["PreToolUse", "Stop"] as const;
+const CODEX_CODOGOTCHI_EVENTS = [
+	"PreToolUse",
+	"PostToolUse",
+	"SessionStart",
+	"Stop",
+] as const;
 
 async function readJsonOrEmpty<T extends object>(path: string): Promise<T> {
 	try {
@@ -47,10 +65,45 @@ async function writeText(path: string, content: string): Promise<void> {
 	await writeFile(path, content, "utf8");
 }
 
+async function readTextOrEmpty(path: string): Promise<string> {
+	try {
+		return await readFile(path, "utf8");
+	} catch (err) {
+		if ((err as NodeJS.ErrnoException).code === "ENOENT") return "";
+		throw err;
+	}
+}
+
 function isHookMatcher(value: unknown): value is ClaudeHookMatcher {
 	if (!value || typeof value !== "object") return false;
 	const v = value as Record<string, unknown>;
 	return typeof v.matcher === "string" && Array.isArray(v.hooks);
+}
+
+function isCodexHookMatcher(value: unknown): value is CodexHookMatcher {
+	if (!value || typeof value !== "object") return false;
+	const v = value as Record<string, unknown>;
+	return typeof v.matcher === "string" && Array.isArray(v.hooks);
+}
+
+function isCodeVibeCommand(command: string): boolean {
+	return command.includes("@quantiya/codevibe");
+}
+
+function isCodogotchiCommand(command: string): boolean {
+	return command.includes(CODOGOTCHI_COMMAND);
+}
+
+function shellQuote(value: string): string {
+	return `'${value.replaceAll("'", "'\\''")}'`;
+}
+
+function codexHookCommand(ctx: InstallHooksContext): string {
+	return [
+		`CODOGOTCHI_HOME=${shellQuote(ctx.home)}`,
+		`CODOGOTCHI_CONVEX_URL=${shellQuote(ctx.convex_http_url)}`,
+		CODOGOTCHI_COMMAND,
+	].join(" ");
 }
 
 /// Replace any existing codogotchi-hook matcher in `slot` with a canonical
@@ -68,11 +121,98 @@ function withCodogotchiMatcher(slot: ClaudeHookSlot): ClaudeHookSlot {
 	return others;
 }
 
+function withCodexCodogotchiMatcher(
+	slot: CodexHookSlot,
+	ctx: InstallHooksContext,
+): CodexHookSlot {
+	const others = slot
+		.map((matcher) => ({
+			...matcher,
+			hooks: matcher.hooks.filter(
+				(h) => !isCodogotchiCommand(h.command) && !isCodeVibeCommand(h.command),
+			),
+		}))
+		.filter((matcher) => matcher.hooks.length > 0);
+	others.push({
+		matcher: "*",
+		hooks: [
+			{
+				type: "command",
+				command: codexHookCommand(ctx),
+			},
+		],
+	});
+	return others;
+}
+
+function withCodexHooksFeatureEnabled(raw: string): string {
+	const lines = raw.length > 0 ? raw.replace(/\n?$/, "\n").split("\n") : [];
+	const out: string[] = [];
+	let inFeatures = false;
+	let sawFeatures = false;
+	let sawHooks = false;
+
+	for (const line of lines) {
+		const isHeader = /^\s*\[.*\]\s*$/.test(line);
+		if (isHeader && inFeatures) {
+			if (!sawHooks) out.push("hooks = true");
+			inFeatures = false;
+		}
+		if (/^\s*\[features\]\s*$/.test(line)) {
+			inFeatures = true;
+			sawFeatures = true;
+			sawHooks = false;
+			out.push(line);
+			continue;
+		}
+		if (inFeatures && /^\s*codex_hooks\s*=/.test(line)) continue;
+		if (inFeatures && /^\s*hooks\s*=/.test(line)) {
+			if (!sawHooks) {
+				out.push("hooks = true");
+				sawHooks = true;
+			}
+			continue;
+		}
+		if (inFeatures && line.trim() === "" && !sawHooks) {
+			out.push("hooks = true");
+			sawHooks = true;
+		}
+		out.push(line);
+	}
+
+	if (inFeatures && !sawHooks) out.push("hooks = true");
+	if (!sawFeatures) {
+		if (out.length > 0 && out[out.length - 1] !== "") out.push("");
+		out.push("[features]", "hooks = true");
+	}
+
+	return `${out.join("\n").replace(/\n*$/, "")}\n`;
+}
+
+function withoutCodexHookState(raw: string, hooksJsonPath: string): string {
+	const lines = raw.length > 0 ? raw.replace(/\n?$/, "\n").split("\n") : [];
+	const out: string[] = [];
+	let skippingHookState = false;
+	const hookStatePrefix = `[hooks.state."${hooksJsonPath}:`;
+
+	for (const line of lines) {
+		const isHeader = /^\s*\[.*\]\s*$/.test(line);
+		if (isHeader) {
+			skippingHookState = line.includes(hookStatePrefix);
+			if (skippingHookState) continue;
+		}
+		if (skippingHookState) continue;
+		out.push(line);
+	}
+
+	return `${out.join("\n").replace(/\n*$/, "")}\n`;
+}
+
 // installHooks writes the hook config entries that invoke the
-// `codogotchi-hook` binary into both Claude Code's `settings.json` and
-// Codex's `~/.codex/hooks/codogotchi.toml`. The binary itself ships under
-// `packages/cli/bin/`. Re-running setup is idempotent: identical config
-// produces identical files.
+// `codogotchi-hook` binary into Claude Code's `settings.json` and Codex's
+// active `~/.codex/hooks.json` hook surface. The legacy Codex TOML file is
+// still written for older installs, but current Codex Desktop reads hooks.json.
+// Re-running setup is idempotent: identical config produces identical files.
 export async function installHooks(ctx: InstallHooksContext): Promise<void> {
 	const root = getUserRoot();
 
@@ -102,6 +242,17 @@ export async function installHooks(ctx: InstallHooksContext): Promise<void> {
 
 	await writeText(claudePath, `${JSON.stringify(claudeSettings, null, 2)}\n`);
 
+	const codexJsonPath = join(root, CODEX_HOOKS_JSON_REL);
+	const codexConfigPath = join(root, CODEX_CONFIG_REL);
+	const codexConfig = await readTextOrEmpty(codexConfigPath);
+	await writeText(
+		codexConfigPath,
+		withoutCodexHookState(
+			withCodexHooksFeatureEnabled(codexConfig),
+			codexJsonPath,
+		),
+	);
+
 	const codexPath = join(root, CODEX_HOOKS_REL);
 	// JSON.stringify produces a valid double-quoted string literal — escaping
 	// any " or \ — that is also a valid TOML basic string. This keeps the file
@@ -118,4 +269,31 @@ export async function installHooks(ctx: InstallHooksContext): Promise<void> {
 		"",
 	].join("\n");
 	await writeText(codexPath, codexToml);
+
+	const codexHooksJson = await readJsonOrEmpty<CodexHooksJson>(codexJsonPath);
+	const codexHooks = { ...((codexHooksJson.hooks ?? {}) as CodexHooks) };
+	for (const [event, raw] of Object.entries(codexHooks)) {
+		if (!Array.isArray(raw)) continue;
+		const cleaned = raw
+			.filter(isCodexHookMatcher)
+			.map((matcher) => ({
+				...matcher,
+				hooks: matcher.hooks.filter((h) => !isCodeVibeCommand(h.command)),
+			}))
+			.filter((matcher) => matcher.hooks.length > 0);
+		if (cleaned.length > 0) codexHooks[event] = cleaned;
+		else delete codexHooks[event];
+	}
+	for (const event of CODEX_CODOGOTCHI_EVENTS) {
+		const raw = codexHooks[event];
+		const slot: CodexHookSlot = Array.isArray(raw)
+			? raw.filter(isCodexHookMatcher)
+			: [];
+		codexHooks[event] = withCodexCodogotchiMatcher(slot, ctx);
+	}
+	codexHooksJson.hooks = codexHooks;
+	await writeText(
+		codexJsonPath,
+		`${JSON.stringify(codexHooksJson, null, 2)}\n`,
+	);
 }

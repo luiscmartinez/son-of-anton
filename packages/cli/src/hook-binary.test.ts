@@ -210,6 +210,26 @@ describe("classifyEvent", () => {
 		expect(out.sourceEvent.kind).toBe("tool_use");
 		expect(out.sourceEvent.name).toBe("Edit");
 	});
+
+	it("classifies Codex raw stdin as codex-origin tool-use", () => {
+		const out = classifyEvent(
+			{ tool_name: "Edit", hook_event_name: "pre_tool_use" } as HookInput,
+			{ readRun: 0 },
+		);
+		expect(out.state).toBe("implementing");
+		expect(out.sourceEvent.origin).toBe("codex");
+		expect(out.sourceEvent.kind).toBe("tool_use");
+		expect(out.sourceEvent.name).toBe("Edit");
+	});
+
+	it("classifies Codex session_end raw stdin as session_end", () => {
+		const out = classifyEvent({ hook_event_name: "session_end" } as HookInput, {
+			readRun: 0,
+		});
+		expect(out.state).toBe("idle");
+		expect(out.sourceEvent.origin).toBe("codex");
+		expect(out.sourceEvent.kind).toBe("session_end");
+	});
 });
 
 describe("runHook", () => {

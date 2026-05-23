@@ -78,12 +78,27 @@ type NormalizedEvent = {
 	command: string | undefined;
 };
 
+function rawHookOrigin(input: HookInput): SourceEventOrigin {
+	if (input.origin !== undefined) return input.origin;
+	const eventName = input.hook_event_name;
+	if (eventName && eventName === eventName.toLowerCase()) return "codex";
+	return "claude_code";
+}
+
+function rawHookKind(input: HookInput): SourceEventKind {
+	if (input.kind !== undefined) return input.kind;
+	if (input.tool_name) return "tool_use";
+	const eventName = input.hook_event_name?.toLowerCase();
+	if (eventName === "session_start") return "session_start";
+	if (eventName === "session_end" || eventName === "stop") return "session_end";
+	return "session_start";
+}
+
 function normalize(input: HookInput): NormalizedEvent | null {
 	// Prefer explicit shape; fall back to Claude Code raw stdin shape.
-	const rawOrigin = input.origin ?? "claude_code";
+	const rawOrigin = rawHookOrigin(input);
 	const rawName = input.name ?? input.tool_name ?? "unknown";
-	const rawKind =
-		input.kind ?? (input.tool_name ? "tool_use" : "session_start");
+	const rawKind = rawHookKind(input);
 	const candidate: SourceEvent = {
 		origin: rawOrigin as SourceEventOrigin,
 		kind: rawKind as SourceEventKind,
