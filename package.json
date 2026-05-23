@@ -1,38 +1,38 @@
 {
-	"name": "codogotchi",
-	"module": "index.ts",
-	"type": "module",
-	"private": true,
-	"workspaces": [
-		"packages/*"
-	],
-	"scripts": {
-		"sync": "bash .son-of-anton/scripts/soa-sync.sh",
-		"deliver": "bun run .son-of-anton/scripts/deliver.ts",
-		"closeout-stack": "bun run .son-of-anton/scripts/closeout-stack.ts",
-		"format": "biome format --write .",
-		"format:quiet": "biome format --write . --log-level=error",
-		"lint": "biome lint --write .",
-		"lint:quiet": "biome lint --write . --log-level=error",
-		"check": "biome check --write .",
-		"verify": "biome check .",
-		"verify:quiet": "biome check . --log-level=error",
-		"ci": "bun run verify && bun run mac:test",
-		"ci:quiet": "bun run verify:quiet && bun run mac:test",
-		"mac:build": "xcodebuild -project apps/menubar/Menubar.xcodeproj -scheme Menubar build",
-		"mac:test": "xcodebuild -project apps/menubar/Menubar.xcodeproj -scheme Menubar test"
-	},
-	"dependencies": {
-		"@codogotchi/contracts": "workspace:*",
-		"@codogotchi/engine": "workspace:*"
-	},
-	"devDependencies": {
-		"@biomejs/biome": "^2.4.15",
-		"@types/bun": "latest",
-		"convex": "^1.16.0",
-		"convex-test": "^0.0.52"
-	},
-	"peerDependencies": {
-		"typescript": "^5"
-	}
+  "name": "codogotchi",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "sync": "bash .son-of-anton/scripts/soa-sync.sh",
+    "deliver": "bun run .son-of-anton/scripts/deliver.ts",
+    "closeout-stack": "bun run .son-of-anton/scripts/closeout-stack.ts",
+    "format": "biome format --write .",
+    "format:quiet": "biome format --write . --log-level=error",
+    "lint": "biome lint --write .",
+    "lint:quiet": "biome lint --write . --log-level=error",
+    "check": "biome check --write .",
+    "verify": "biome check .",
+    "verify:quiet": "biome check . --log-level=error",
+    "ci": "bun run verify && bun run mac:test",
+    "ci:quiet": "bun run verify:quiet && bun run mac:test",
+    "mac:build": "xcodebuild -project apps/menubar/Menubar.xcodeproj -scheme Menubar build",
+    "mac:test": "xcodebuild -project apps/menubar/Menubar.xcodeproj -scheme Menubar test"
+  },
+  "dependencies": {
+    "@codogotchi/contracts": "workspace:*",
+    "@codogotchi/engine": "workspace:*"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.4.15",
+    "@types/bun": "latest",
+    "convex": "^1.16.0",
+    "convex-test": "^0.0.52"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
 }

@@ -6,10 +6,10 @@
 // This file lives outside `convex/` so it is not picked up as a deployable
 // function module by `convex codegen`.
 export const convexTestModules = {
-	"../../../convex/_generated/server.js": () =>
-		import("../convex/_generated/server.js"),
-	"../../../convex/schema.ts": () => import("../convex/schema.ts"),
-	"../../../convex/http.ts": () => import("../convex/http.ts"),
-	"../../../convex/mutations/syncProfile.ts": () =>
-		import("../convex/mutations/syncProfile.ts"),
+  "../../../convex/_generated/server.js": () =>
+    import("../convex/_generated/server.js"),
+  "../../../convex/schema.ts": () => import("../convex/schema.ts"),
+  "../../../convex/http.ts": () => import("../convex/http.ts"),
+  "../../../convex/mutations/syncProfile.ts": () =>
+    import("../convex/mutations/syncProfile.ts"),
 };

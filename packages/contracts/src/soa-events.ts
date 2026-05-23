@@ -7,15 +7,15 @@ import type { ActivityState } from "./animation-state";
  * `docs/contracts/soa-event-feed.md`.
  */
 export const SOA_EVENT_NAMES = [
-	"ticket_started",
-	"flow_state_entered",
-	"risky_diff_detected",
-	"pr_review_window_opened",
-	"ticket_completed",
-	"review_clean_recorded",
-	"stage_advanced",
-	"subagent_invoked",
-	"verification_failed",
+  "ticket_started",
+  "flow_state_entered",
+  "risky_diff_detected",
+  "pr_review_window_opened",
+  "ticket_completed",
+  "review_clean_recorded",
+  "stage_advanced",
+  "subagent_invoked",
+  "verification_failed",
 ] as const;
 
 export const soaEventNameSchema = z.enum(SOA_EVENT_NAMES);
@@ -27,14 +27,14 @@ export type SoaEventName = z.infer<typeof soaEventNameSchema>;
  * decides whether to ignore them.
  */
 export const soaEventLineSchema = z
-	.object({
-		name: z.string().min(1),
-		ts: z.string().min(1),
-		plan_key: z.string().optional(),
-		ticket_id: z.string().optional(),
-		payload: z.record(z.string(), z.unknown()).optional(),
-	})
-	.passthrough();
+  .object({
+    name: z.string().min(1),
+    ts: z.string().min(1),
+    plan_key: z.string().optional(),
+    ticket_id: z.string().optional(),
+    payload: z.record(z.string(), z.unknown()).optional(),
+  })
+  .passthrough();
 export type SoaEventLine = z.infer<typeof soaEventLineSchema>;
 
 /**
@@ -43,22 +43,22 @@ export type SoaEventLine = z.infer<typeof soaEventLineSchema>;
  * `docs/contracts/animation-state-vocabulary.md`.
  */
 export const SOA_EVENT_TO_ACTIVITY_STATE: Record<SoaEventName, ActivityState> =
-	{
-		ticket_started: "hyped",
-		flow_state_entered: "focused",
-		risky_diff_detected: "nervous",
-		pr_review_window_opened: "waiting",
-		ticket_completed: "celebrating",
-		review_clean_recorded: "celebrating",
-		stage_advanced: "ascended",
-		subagent_invoked: "calling_for_backup",
-		verification_failed: "panicking",
-	};
+  {
+    ticket_started: "hyped",
+    flow_state_entered: "focused",
+    risky_diff_detected: "nervous",
+    pr_review_window_opened: "waiting",
+    ticket_completed: "celebrating",
+    review_clean_recorded: "celebrating",
+    stage_advanced: "ascended",
+    subagent_invoked: "calling_for_backup",
+    verification_failed: "panicking",
+  };
 
 export function mapSoaEventToActivityState(
-	name: string,
+  name: string,
 ): ActivityState | undefined {
-	const parsed = soaEventNameSchema.safeParse(name);
-	if (!parsed.success) return undefined;
-	return SOA_EVENT_TO_ACTIVITY_STATE[parsed.data];
+  const parsed = soaEventNameSchema.safeParse(name);
+  if (!parsed.success) return undefined;
+  return SOA_EVENT_TO_ACTIVITY_STATE[parsed.data];
 }
