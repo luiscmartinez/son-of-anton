@@ -19,7 +19,7 @@ Red: required
 - Add a Red test in `tools/delivery/test/p15-04.test.ts` that:
   - Sets up a fake delivery state with a ticket ready for review.
   - Invokes `record-review` with outcome `clean` and asserts a `review_clean_recorded` line is appended.
-  - Resets the events file (or starts a new tmp dir) and invokes `record-review` with outcome `needs_patch`. Asserts no `review_clean_recorded` line.
+  - Resets the events file (or starts a new tmp dir) and invokes `record-review` with outcome `patched`. Asserts no `review_clean_recorded` line.
   - Invokes the `poll-review` path with a state where `eventsForPollReviewCommand` resolves to a `clean` outcome. Asserts the line is appended.
   - Invokes the `triage-ticket` (`reconcile-late-review`) path where the reconciled outcome is `clean`. Asserts the line is appended.
   - With `codogotchi.enabled: false`, repeats the clean cases and asserts no events file is created.

@@ -7,7 +7,7 @@ Red: required
 
 ## Outcome
 
-- New file `tools/delivery/soa-event-feed.ts` exports `appendSoaEvent(projectRoot, event)` and `buildSoaEventLine(name, opts?)`.
+- New file `tools/delivery/soa-event-feed.ts` exports `appendSoaEvent(config, projectRoot, event)` and `buildSoaEventLine(name, opts?)`.
 - `appendSoaEvent` writes one NDJSON line (`JSON.stringify(event) + '\n'`) to `${projectRoot}/.soa/events.ndjson`, creating the directory if absent.
 - `buildSoaEventLine` returns an object with `name`, `ts: new Date().toISOString()`, and optional `plan_key`, `ticket_id`, `payload` fields.
 - `orchestrator.config.json` schema in `config.ts` accepts an optional `codogotchi: { enabled: boolean }` field; absent defaults to `enabled: true`.
@@ -18,10 +18,10 @@ Red: required
 ## Red
 
 - Add a Red test in `tools/delivery/test/p15-01.test.ts` that:
-  - Creates a tmp dir, calls `appendSoaEvent(tmpDir, buildSoaEventLine('ticket_started', { plan_key: 'phase-15', ticket_id: 'P15.01' }))` with the gate enabled, then reads `${tmpDir}/.soa/events.ndjson` and parses the trailing line as JSON. Asserts shape: `name === 'ticket_started'`, `ts` is an ISO-8601 string, `plan_key === 'phase-15'`, `ticket_id === 'P15.01'`.
-  - Runs `appendSoaEvent` twice and asserts two distinct lines, each parsing independently.
-  - With the gate explicitly disabled (`codogotchi: { enabled: false }`), calls `appendSoaEvent` and asserts no `.soa/` directory was created.
-  - Calls `appendSoaEvent` with a non-writable `projectRoot` (e.g., a path under a read-only parent) and asserts the call returns normally with no thrown error.
+  - Creates a tmp dir, calls `appendSoaEvent(config, tmpDir, buildSoaEventLine('ticket_started', { plan_key: 'phase-15', ticket_id: 'P15.01' }))` with the gate enabled, then reads `${tmpDir}/.soa/events.ndjson` and parses the trailing line as JSON. Asserts shape: `name === 'ticket_started'`, `ts` is an ISO-8601 string, `plan_key === 'phase-15'`, `ticket_id === 'P15.01'`.
+  - Calls `appendSoaEvent(config, tmpDir, ...)` twice and asserts two distinct lines, each parsing independently.
+  - With the gate explicitly disabled (`codogotchi: { enabled: false }`), calls `appendSoaEvent(config, tmpDir, ...)` and asserts no `.soa/` directory was created.
+  - Calls `appendSoaEvent(config, nonWritableRoot, ...)` with a non-writable `projectRoot` (e.g., a path under a read-only parent) and asserts the call returns normally with no thrown error.
 - Add a focused unit test for `buildSoaEventLine` asserting the returned object has the expected keys and that `ts` parses via `Date.parse` to a finite value.
 - Commit message: `test(P15.01): soa event feed writer + codogotchi gate [red]`.
 

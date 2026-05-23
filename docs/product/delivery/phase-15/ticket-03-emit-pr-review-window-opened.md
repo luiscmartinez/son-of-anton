@@ -43,8 +43,7 @@ Red: required
 
 > Append here (do not edit above) when behavior or trade-offs change during implementation.
 
-Red first: [what test failed first]
-Why this path: [why this implementation was the smallest acceptable]
-Alternative considered: [one rejected alternative and why]
-Deferred: [what was intentionally left out of this ticket]
-Contract note: record any deviation from the ticket metadata contract here, including missing/incorrect `Type:` or non-compliant `Scope:` fields, and why it happened.
+Red first: Import of `emitSoaEventForOpenPr` from `cli-runner.ts` failed — function did not exist yet.
+Why this path: Extracted `emitSoaEventForOpenPr(state, config, projectRoot, ticketId?)` as a named exported helper that scans `eventsForOpenPrCommand(state, ticketId)` for a `review_window_ready` event. Using the existing `review_window_ready` event kind reuses the already-correct predicate (requires `prUrl` + `prOpenedAt`); the extracted helper is unit-testable without invoking the full CLI handler.
+Alternative considered: Calling `buildReviewWindowReadyEvent` directly at the emit site rather than scanning the notification-event list. Both approaches resolve to the same condition; scanning the notification list was chosen because it is symmetric with the P15.04 pattern and keeps the emit adjacent to the handler's event array construction.
+Deferred: Integration test dispatching the full `open-pr` CLI handler and asserting `.soa/events.ndjson` content (tests cover the exported helper only).

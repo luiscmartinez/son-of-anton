@@ -47,8 +47,7 @@ Red: required
 
 > Append here (do not edit above) when behavior or trade-offs change during implementation.
 
-Red first: [what test failed first]
-Why this path: [why this implementation was the smallest acceptable]
-Alternative considered: [one rejected alternative and why]
-Deferred: [what was intentionally left out of this ticket]
-Contract note: record any deviation from the ticket metadata contract here, including missing/incorrect `Type:` or non-compliant `Scope:` fields, and why it happened.
+Red first: Import of `emitSubagentInvoked` from `soa-event-feed.ts` failed — function did not exist yet.
+Why this path: Extracted `emitSubagentInvoked(config, worktreePath, planKey, ticketId, runnerKind)` to `soa-event-feed.ts` to co-locate the event-name string with the rest of the event-feed API and keep the call site at one line. The closure placement inside `runSubagentWithFallback` fires once per attempted runner (including fallback), which is the correct semantic — `subagent_invoked` signals intent before spawn, not completion after.
+Alternative considered: Inlining `appendSoaEvent(config, worktreePath, buildSoaEventLine('subagent_invoked', { ... }))` at the spawn site without extracting a helper. Same end result, but duplicates the event-line construction inline and leaves the `'subagent_invoked'` string orphaned from the event-feed module. Extraction keeps naming canonical.
+Deferred: Integration test exercising the actual CLI closure placement and asserting one event per `runSubagentWithFallback` attempt (tests cover the exported helper in isolation, not the full wiring).
