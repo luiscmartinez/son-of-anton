@@ -52,12 +52,6 @@ When this phase is complete:
 - `ticket-07-validation-runbook.md`
 - `ticket-08-retrospective-and-doc-sweep.md`
 
-## Stage Gates (markers, not orchestrator stops)
-
-- **Gate 1 (after P3.02).** Hook v2 emits the two new states. Renderer is still v1, so the menubar app surfaces the forward-compat tooltip `state.json schema_version is v2; this app supports v1. Update the menu bar app.` — this is **correct behavior** and serves as the in-the-wild proof that the forward-compat policy works as specified. Owner tolerates the tooltip for the duration of Gate 1 → Gate 2.
-- **Gate 2 (after P3.04).** Renderer v2 lands. All 15 states paint from their respective sheets. The tooltip clears. **This is the soul-first milestone** — pointing the app at a live SoA delivery should now produce visibly different state transitions.
-- **Gate 3 (after P3.07).** Validation runbook in place; rare states (`nervous`, `ascended`, `calling_for_backup`, `panicking`) verified via synthetic events. Product-contract exit conditions 1–4 are now empirically verifiable.
-
 ## Exit Condition
 
 All six exit conditions from the product plan are demonstrably true:
@@ -69,11 +63,23 @@ All six exit conditions from the product plan are demonstrably true:
 5. Pet swapping via `~/.codogotchi/config.json` works end-to-end: editing the file, restarting the app, seeing a different pet load. "Reveal pet folder" opens the correct directory.
 6. The forward-compat failure visuals continue to function — manually mismatched `schema_version` still surfaces the v2→v3 tooltip; missing pet still surfaces the no-pet-detected visual.
 
+## Stage Gates (markers, not orchestrator stops)
+
+- **Gate 1 (after P3.02).** Hook v2 emits the two new states. Renderer is still v1, so the menubar app surfaces the forward-compat tooltip `state.json schema_version is v2; this app supports v1. Update the menu bar app.` — this is **correct behavior** and serves as the in-the-wild proof that the forward-compat policy works as specified. Owner tolerates the tooltip for the duration of Gate 1 → Gate 2.
+- **Gate 2 (after P3.04).** Renderer v2 lands. All 15 states paint from their respective sheets. The tooltip clears. **This is the soul-first milestone** — pointing the app at a live SoA delivery should now produce visibly different state transitions.
+- **Gate 3 (after P3.07).** Validation runbook in place; rare states (`nervous`, `ascended`, `calling_for_backup`, `panicking`) verified via synthetic events. Product-contract exit conditions 1–4 are now empirically verifiable.
+
 ## CI Baseline
 
-> Baseline recorded: [date] — [pass / N pre-existing errors: brief summary]
+> Baseline recorded: 2026-05-24 — pass (after two pre-flight fixes on main).
 
 Run `bun run ci:quiet` and `cd apps/menubar && xcodebuild test` on `main` before P3.01 starts; record outcome here.
+
+Pre-flight fixes folded into the baseline commit:
+
+- `biome.json` — Biome 2.x dropped the `files.ignore` key; folded entries into `files.includes` as negated patterns so `biome check` no longer aborts on unknown-key.
+- `apps/menubar/Tests/MenubarTests/MaliPetTests.swift` — `testFramesForImplementingReturnsExpectedShape` asserted that `Frame.cgImage` width/height equaled `sheet.width/8 × sheet/9`, but a prior commit (`6762842 fix(menubar): scale pet frames for macOS menubar`) rescales frames to 22 pt at @2x. Rewrote the test to assert the documented display-size invariant (22 pt × @2x) and that the frame aspect matches the source cell aspect.
+- `docs/product/delivery/phase-03/implementation-plan.md` — moved `## Stage Gates` below `## Exit Condition` so the delivery orchestrator's plan parser (`/## Ticket Files\s+([\s\S]*?)\n## Exit Condition/`) does not slurp backtick-quoted prose from Stage Gates into its ticket-file count.
 
 ## Review Rules
 

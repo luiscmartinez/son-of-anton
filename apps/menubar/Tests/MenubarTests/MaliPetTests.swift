@@ -53,14 +53,20 @@ final class MaliPetTests: XCTestCase {
 		let frames = pet.frames(for: .implementing)
 		XCTAssertFalse(frames.isEmpty, "implementing row must yield frames")
 
-		let sheet = try XCTUnwrap(pet.spritesheet.cgImage(forProposedRect: nil, context: nil, hints: nil))
-		let expectedFrameWidth = sheet.width / 8
-		let expectedFrameHeight = sheet.height / 9
-
+		// Frames are scaled to menubar display height (22 pt) at @2x pixel
+		// density and preserve the source cell aspect ratio. The exact pixel
+		// width depends on the source sheet's per-cell aspect, so assert the
+		// invariants instead of a hardcoded pixel count.
 		let first = try XCTUnwrap(frames.first)
-		let firstCG = try XCTUnwrap(first.cgImage(forProposedRect: nil, context: nil, hints: nil))
-		XCTAssertEqual(firstCG.width, expectedFrameWidth)
-		XCTAssertEqual(firstCG.height, expectedFrameHeight)
+		XCTAssertEqual(first.image.size.height, 22, accuracy: 0.001)
+		XCTAssertEqual(first.cgImage.height, 44)
+
+		let sheetCG = try XCTUnwrap(pet.spritesheet.cgImage(forProposedRect: nil, context: nil, hints: nil))
+		let sourceCellWidth = sheetCG.width / 8
+		let sourceCellHeight = sheetCG.height / 9
+		let expectedAspect = Double(sourceCellWidth) / Double(sourceCellHeight)
+		let frameAspect = Double(first.cgImage.width) / Double(first.cgImage.height)
+		XCTAssertEqual(frameAspect, expectedAspect, accuracy: 0.05, "frame aspect must match source cell aspect")
 	}
 
 	func testEveryFloorStateHasNonEmptyFrames() throws {
