@@ -11,7 +11,7 @@
  * promised by the Phase 14 product contract.
  */
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 
 const SUBAGENT_REVIEW_SUBJECT_PATTERN = /\[subagent-review\]/i;
 
@@ -78,23 +78,117 @@ export function detectLabeledCommits(input: {
  * and slight heading-format drift.
  */
 export function parseActionableFindings(markdown: string): boolean {
-  // Match a section heading like `**Actionable findings**` (optionally with
-  // surrounding whitespace) up to the next bold section heading.
-  const sectionMatch =
-    /\*\*\s*Actionable\s+findings\s*\*\*\s*([\s\S]*?)(?=\n\s*\*\*[A-Za-z]|$)/i.exec(
-      markdown,
-    );
-  if (!sectionMatch) return false;
-  const body = sectionMatch[1] ?? '';
-  const normalized = body
+  const body = extractReportSection(markdown, 'Actionable findings');
+  if (body === undefined) return false;
+  const normalized = normalizeSectionBody(body);
+  if (normalized === '') return false;
+  if (/^none\.?$/i.test(normalized)) return false;
+  return true;
+}
+
+export function parseAdvisoryObservations(markdown: string): string[] {
+  const body = extractReportSection(markdown, 'Advisory Observations');
+  if (body === undefined) return [];
+  const normalized = normalizeSectionBody(body);
+  if (normalized === '') return [];
+  if (/^none\.?$/i.test(normalized)) return [];
+
+  const nonEmptyLines = normalized.split('\n');
+  const bulletLines = nonEmptyLines.filter((line) => /^[-*]\s+/.test(line));
+  if (bulletLines.length > 0 && bulletLines.length === nonEmptyLines.length) {
+    return bulletLines.map((line) => line.replace(/^[-*]\s+/, '').trim());
+  }
+
+  return body
+    .trim()
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.replace(/\n/g, ' ').trim())
+    .filter((paragraph) => paragraph.length > 0);
+}
+
+export type SuspiciousSubagentReviewEvidence = {
+  kind: 'missing_report' | 'empty_report';
+  rawOutput?: string;
+};
+
+export function inspectSubagentReviewEvidence(input: {
+  repoRoot: string;
+  rows: Array<{
+    outcome: string;
+    terminatedReason?: string;
+    rawOutput?: string;
+  }>;
+}): SuspiciousSubagentReviewEvidence[] {
+  const warnings: SuspiciousSubagentReviewEvidence[] = [];
+  for (const row of input.rows) {
+    if (row.outcome !== 'clean' || row.terminatedReason !== 'completed') {
+      continue;
+    }
+    const rawOutput = row.rawOutput;
+    if (!rawOutput || rawOutput.trim() === '') {
+      warnings.push({ kind: 'missing_report', rawOutput });
+      continue;
+    }
+    const reportPath = isAbsolute(rawOutput)
+      ? rawOutput
+      : join(input.repoRoot, rawOutput);
+    if (!existsSync(reportPath)) {
+      warnings.push({ kind: 'missing_report', rawOutput });
+      continue;
+    }
+    const report = readFileSync(reportPath, 'utf-8');
+    if (report.trim() === '') {
+      warnings.push({ kind: 'empty_report', rawOutput });
+    }
+  }
+  return warnings;
+}
+
+function extractReportSection(
+  markdown: string,
+  heading: string,
+): string | undefined {
+  const lines = markdown.split('\n');
+  const startIndex = lines.findIndex((line) => isHeadingFor(line, heading));
+  if (startIndex === -1) return undefined;
+  const bodyLines: string[] = [];
+  for (const line of lines.slice(startIndex + 1)) {
+    if (isSectionHeadingLine(line)) break;
+    bodyLines.push(line);
+  }
+  return bodyLines.join('\n');
+}
+
+function normalizeSectionBody(body: string): string {
+  return body
     .split('\n')
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
     .join('\n')
     .trim();
-  if (normalized === '') return false;
-  if (/^none\.?$/i.test(normalized)) return false;
-  return true;
+}
+
+function isHeadingFor(line: string, heading: string): boolean {
+  const escapedHeading = heading
+    .trim()
+    .split(/\s+/)
+    .map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    .join('\\s+');
+  return (
+    new RegExp(`^\\s*\\*\\*\\s*${escapedHeading}\\s*\\*\\*\\s*$`, 'i').test(
+      line,
+    ) ||
+    new RegExp(`^\\s{0,3}#{1,6}\\s+${escapedHeading}\\s*#*\\s*$`, 'i').test(
+      line,
+    )
+  );
+}
+
+function isSectionHeadingLine(line: string): boolean {
+  return (
+    /^\s*\*\*\s*[^*]+\s*\*\*\s*$/.test(line) ||
+    /^\s{0,3}#{1,6}\s+\S.*#*\s*$/.test(line)
+  );
 }
 
 type ArtifactRow = { outcome: string; reviewedHeadSha?: string };
