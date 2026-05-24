@@ -59,8 +59,6 @@ Phase 15 is done when running the SoA delivery commands in a consumer repo with 
 
 ## CI Baseline
 
-> Baseline recorded at P15.01 start. Pre-existing failure on main: `tools/delivery/test/p6-02.test.ts` — "notes/public/ contains no .md files" fails because `notes/public/codogotchi-alignment-draft.md` was committed in the P15 docs commit (134521a). This failure does not block any P15 ticket.
-
 ## Review Rules
 
 - Tickets must be merged in order (strict linear stack).
