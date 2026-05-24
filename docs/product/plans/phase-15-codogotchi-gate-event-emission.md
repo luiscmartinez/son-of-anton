@@ -1,6 +1,6 @@
 # Phase 15: Codogotchi Gate Event Emission
 
-**Delivery status:** Delivered. PRs [#56](https://github.com/cesarnml/son-of-anton/pull/56), [#58](https://github.com/cesarnml/son-of-anton/pull/58), [#59](https://github.com/cesarnml/son-of-anton/pull/59), [#60](https://github.com/cesarnml/son-of-anton/pull/60), [#61](https://github.com/cesarnml/son-of-anton/pull/61), [#62](https://github.com/cesarnml/son-of-anton/pull/62) — stacked, pending closeout-stack merge. Codogotchi alignment cross-repo draft: [`docs/product/plans/codogotchi-alignment-draft.md`](codogotchi-alignment-draft.md). Retrospective: [`docs/product/retrospectives/phase-15-codogotchi-gate-event-emission-retrospective.md`](../../retrospectives/phase-15-codogotchi-gate-event-emission-retrospective.md).
+**Delivery status:** Delivered. PRs [#56](https://github.com/cesarnml/son-of-anton/pull/56), [#58](https://github.com/cesarnml/son-of-anton/pull/58), [#59](https://github.com/cesarnml/son-of-anton/pull/59), [#60](https://github.com/cesarnml/son-of-anton/pull/60), [#61](https://github.com/cesarnml/son-of-anton/pull/61), [#62](https://github.com/cesarnml/son-of-anton/pull/62) — stacked, pending closeout-stack merge. Codogotchi alignment cross-repo draft: [`notes/public/codogotchi-alignment-draft.md`](../../../../notes/public/codogotchi-alignment-draft.md). Retrospective: [`docs/product/retrospectives/phase-15-codogotchi-gate-event-emission-retrospective.md`](../../retrospectives/phase-15-codogotchi-gate-event-emission-retrospective.md).
 
 ## TL;DR
 
@@ -13,7 +13,7 @@
 - `review_clean_recorded` covered on all three paths: `record-review`, `poll-review`, and `triage-ticket` (when outcome is `clean`)
 - `orchestrator.config.json` gains a `codogotchi` config field (`enabled` by default) to gate all event emission
 - `AGENTS.soa.md` documents `.soa/` as a local-only sidecar and references the gitignore recommendation
-- `docs/product/plans/codogotchi-alignment-draft.md` — a cross-repo draft plan scoping what codogotchi needs to do to verify alignment with the new emit path
+- `notes/public/codogotchi-alignment-draft.md` — a cross-repo draft plan scoping what codogotchi needs to do to verify alignment with the new emit path
 
 **Defers:** `verification_failed`, `risky_diff_detected`, `flow_state_entered`, `stage_advanced` — all four deferred events from the original contract, plus file rotation and cross-repo fan-out.
 
@@ -66,7 +66,7 @@ One-paragraph note explaining `.soa/` is a local-only sidecar directory for codo
 
 ### 5. Cross-repo alignment draft plan
 
-Write `docs/product/plans/codogotchi-alignment-draft.md` — a full-audit draft plan scoping the codogotchi-side work needed to verify alignment with the new SoA emit path. See [Codogotchi Alignment Draft](#codogotchi-alignment-draft) below for scope.
+Write `notes/public/codogotchi-alignment-draft.md` — a full-audit draft plan scoping the codogotchi-side work needed to verify alignment with the new SoA emit path. See [Codogotchi Alignment Draft](#codogotchi-alignment-draft) below for scope.
 
 ## Explicit Deferrals
 
@@ -86,7 +86,7 @@ Phase 15 is done when:
 2. Each emitted line parses as valid JSON, contains `name`, `ts`, and (where applicable) `plan_key` / `ticket_id` fields matching the codogotchi schema.
 3. Running the same commands with `codogotchi.enabled = false` produces no `.soa/` directory and no events file.
 4. No delivery command exits non-zero due to an event-feed write failure in any environment (including envs where `.soa/` is not writable — the try/catch absorbs it).
-5. `docs/product/plans/codogotchi-alignment-draft.md` is written and committed.
+5. `notes/public/codogotchi-alignment-draft.md` is written and committed.
 
 ## Retrospective
 

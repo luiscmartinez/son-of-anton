@@ -4,7 +4,7 @@
 
 Phase 15 shipped five code tickets and one docs ticket: event feed writer + config gate ([PR #56](https://github.com/cesarnml/son-of-anton/pull/56)), `ticket_started` / `ticket_completed` emissions ([PR #58](https://github.com/cesarnml/son-of-anton/pull/58)), `pr_review_window_opened` ([PR #59](https://github.com/cesarnml/son-of-anton/pull/59)), `review_clean_recorded` across all three paths ([PR #60](https://github.com/cesarnml/son-of-anton/pull/60)), `subagent_invoked` at pre-spawn ([PR #61](https://github.com/cesarnml/son-of-anton/pull/61)), and this docs + retrospective ticket ([PR #62](https://github.com/cesarnml/son-of-anton/pull/62) — pending closeout).
 
-Delivered surfaces: `tools/delivery/soa-event-feed.ts` (writer module), five emit calls wired in `cli-runner.ts`, `codogotchi.enabled` gate in `orchestrator.config.json` resolution, `AGENTS.soa.md` sidecar documentation, and `docs/product/plans/codogotchi-alignment-draft.md` (cross-repo alignment plan). All four deferred events (`verification_failed`, `risky_diff_detected`, `flow_state_entered`, `stage_advanced`) were explicitly scoped out.
+Delivered surfaces: `tools/delivery/soa-event-feed.ts` (writer module), five emit calls wired in `cli-runner.ts`, `codogotchi.enabled` gate in `orchestrator.config.json` resolution, `AGENTS.soa.md` sidecar documentation, and `notes/public/codogotchi-alignment-draft.md` (cross-repo alignment plan). All four deferred events (`verification_failed`, `risky_diff_detected`, `flow_state_entered`, `stage_advanced`) were explicitly scoped out.
 
 ## What went well
 
@@ -44,7 +44,7 @@ Phase 15's stated goal was to connect the unconnected wire at the SoA end of the
 
 ## Follow-up
 
-- **Codogotchi-side alignment work.** `docs/product/plans/codogotchi-alignment-draft.md` scopes six audit items for the codogotchi repo: hook path resolution, tail semantics integration test, activity state mapping test, precedence rule verification, config gate documentation, and stale-reference audit. This is the natural next phase in the codogotchi repo, feeding off Phase 15 directly.
+- **Codogotchi-side alignment work.** `notes/public/codogotchi-alignment-draft.md` scopes six audit items for the codogotchi repo: hook path resolution, tail semantics integration test, activity state mapping test, precedence rule verification, config gate documentation, and stale-reference audit. This is the natural next phase in the codogotchi repo, feeding off Phase 15 directly.
 - **Four deferred events.** `verification_failed`, `risky_diff_detected`, `flow_state_entered`, `stage_advanced` each need a formalized gate point before an emit call can be added. `verification_failed` is the most tractable — it requires capturing the `bun run verify` exit code as a structured result rather than a subprocess pass/fail. Plan that work in the codogotchi alignment phase or a dedicated SoA phase.
 - **CLI-level integration test for dispatch → file.** Before adding the next batch of emit points, add at least one coarse test that invokes a full CLI handler and asserts `.soa/events.ndjson` content. Deferred from P15.04.
 - **Enforce Rationale completion at `post-verify`.** Add a lint step or template-stub grep to the orchestrator's `post-verify` gate. Assign to EE or a tooling cleanup standalone PR.

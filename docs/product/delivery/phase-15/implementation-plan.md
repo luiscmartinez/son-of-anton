@@ -4,7 +4,7 @@
 
 ## Epic
 
-Standalone phase. Source product plan: [`docs/product/plans/phase-15-codogotchi-gate-event-emission.md`](../../plans/phase-15-codogotchi-gate-event-emission.md). Codogotchi alignment cross-repo draft: [`docs/product/plans/codogotchi-alignment-draft.md`](../../plans/codogotchi-alignment-draft.md). Retrospective: [`docs/product/retrospectives/phase-15-codogotchi-gate-event-emission-retrospective.md`](../../retrospectives/phase-15-codogotchi-gate-event-emission-retrospective.md).
+Standalone phase. Source product plan: [`docs/product/plans/phase-15-codogotchi-gate-event-emission.md`](../../plans/phase-15-codogotchi-gate-event-emission.md). Codogotchi alignment cross-repo draft: [`notes/public/codogotchi-alignment-draft.md`](../../../../notes/public/codogotchi-alignment-draft.md). Retrospective: [`docs/product/retrospectives/phase-15-codogotchi-gate-event-emission-retrospective.md`](../../retrospectives/phase-15-codogotchi-gate-event-emission-retrospective.md).
 
 ## Product contract
 
@@ -55,7 +55,7 @@ All emits are best-effort: a write failure never aborts a delivery command. Sett
 
 ## Exit Condition
 
-Phase 15 is done when running the SoA delivery commands in a consumer repo with `codogotchi.enabled` produces the correct NDJSON lines in `.soa/events.ndjson`, each line parses as valid JSON matching the codogotchi schema, all delivery commands exit zero even when the write would fail, setting `codogotchi.enabled: false` produces no `.soa/` directory, and the codogotchi alignment cross-repo draft is committed under `docs/product/plans/`.
+Phase 15 is done when running the SoA delivery commands in a consumer repo with `codogotchi.enabled` produces the correct NDJSON lines in `.soa/events.ndjson`, each line parses as valid JSON matching the codogotchi schema, all delivery commands exit zero even when the write would fail, setting `codogotchi.enabled: false` produces no `.soa/` directory, and the codogotchi alignment cross-repo draft is committed under `notes/public/`.
 
 ## CI Baseline
 
