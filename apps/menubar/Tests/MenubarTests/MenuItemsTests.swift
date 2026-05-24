@@ -79,6 +79,10 @@ final class MenuItemsTests: XCTestCase {
 		XCTAssertEqual(workspace.openedURLs, [expectedURL])
 	}
 
+	func testDefaultPetFolderURLPointsToCodexPets() {
+		XCTAssertTrue(MenubarMenu.defaultPetFolderURL().path.hasSuffix("/.codex/pets"))
+	}
+
 	func testQuitMenubarActionInvokesTerminationSpy() {
 		var terminationCount = 0
 		let builder = MenubarMenu(

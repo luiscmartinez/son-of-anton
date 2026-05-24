@@ -213,6 +213,11 @@ final class DemoModeTests: XCTestCase {
 			DemoConfig.demoFrameMs(from: ["CODOGOTCHI_DEMO_FRAME_MS": "-10"]), 500)
 	}
 
+	func testDemoFrameMsZeroValueFallsBackTo500() {
+		XCTAssertEqual(
+			DemoConfig.demoFrameMs(from: ["CODOGOTCHI_DEMO_FRAME_MS": "0"]), 500)
+	}
+
 	// MARK: - P3.06: New fixture files
 
 	func testNewFixtureFilesExistAndParseAsV2() {

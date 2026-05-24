@@ -47,7 +47,7 @@ Red: required
 
 - All 15 cases are present in the enum and raw values match the contract exactly (snake_case, hyphenated for `running-tests`).
 - No `default:` catch-alls in switches over `ActivityState`. Every case is named, even if its branch body is `// rendered as idle in Phase 03 — wired in P3.04`.
-- The Codex `rowMap` has exactly seven entries after this ticket: `.idle`, `.implementing`, `.runningTests`, `.waiting`, `.requestingInput`, `.errored`, plus any Codex-served state I missed (review against the contract's Codex Sheet table).
+- The Codex `rowMap` has exactly six entries after this ticket: `.idle`, `.implementing`, `.runningTests`, `.waiting`, `.requestingInput`, `.errored` (review against the contract's Codex Sheet table).
 - The `.celebrating` removal is intentional — confirm the test asserting `rowMap[.celebrating] == nil`.
 - The renderer between P3.03 and P3.04 paints 6 of 15 states from sprite rows; the other 9 fall back to `.idle`. This is correct.
 
