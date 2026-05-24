@@ -40,8 +40,6 @@ Phase 16 is done when SOA has a documented post-phase advisory-observation triag
 
 ## CI Baseline
 
-> Baseline recorded: 2026-05-24 — `bun run ci:quiet` fails with 1 pre-existing test failure: `tools/delivery/test/p6-02.test.ts` expects `notes/public/` to contain no Markdown files, but `notes/public/codogotchi-alignment-draft.md` exists from Phase 15. All other reported tests passed before the failure.
-
 ## Review Rules
 
 - Tickets must be merged in order.

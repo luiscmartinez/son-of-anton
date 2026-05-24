@@ -4,7 +4,7 @@
 
 _Drafted: 2026-05-23_
 _Status: Draft — not yet through `/soa plan` in the codogotchi repo_
-_Cross-reference: [son-of-anton Phase 15 plan](../../docs/product/plans/phase-15-codogotchi-gate-event-emission.md)_
+_Cross-reference: [son-of-anton Phase 15 plan](phase-15-codogotchi-gate-event-emission.md)_
 
 ---
 
@@ -105,6 +105,6 @@ This plan targets a single focused phase in the codogotchi repo:
 
 - SoA emit contract: `docs/contracts/soa-event-feed.md` in codogotchi repo
 - SoA Phase 15 implementation plan: `docs/product/delivery/phase-15/implementation-plan.md` in son-of-anton repo (once decomposed)
-- This draft: `notes/public/codogotchi-alignment-draft.md` in son-of-anton repo
+- This draft: `docs/product/plans/codogotchi-alignment-draft.md` in son-of-anton repo
 
 When Phase 15 ships, the final ticket doc (`P15.05` or whichever covers docs) should link to this file. The codogotchi phase retrospective should reference the SoA Phase 15 retrospective.

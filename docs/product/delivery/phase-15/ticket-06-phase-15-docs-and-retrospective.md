@@ -8,7 +8,7 @@ Red: skip
 
 - `AGENTS.soa.md` documents `.soa/` as a codogotchi local-only sidecar directory, references the `codogotchi.enabled` config field, and points to the codogotchi contract doc (`docs/contracts/soa-event-feed.md` in the codogotchi repo) for the file schema.
 - The gitignore example in `AGENTS.soa.md` includes a `.soa/` entry with a one-line comment explaining its purpose.
-- The product plan, implementation plan, and final ticket cross-link the codogotchi alignment draft at `notes/public/codogotchi-alignment-draft.md` (already committed in the plan PR).
+- The product plan, implementation plan, and final ticket cross-link the codogotchi alignment draft at `docs/product/plans/codogotchi-alignment-draft.md` (already committed in the plan PR).
 - A retrospective document is written at `docs/product/retrospectives/phase-15-codogotchi-gate-event-emission-retrospective.md` covering: what the emit pattern proved out, the config gate's reception, the four deferred events and what each will need, and any drift from the original product plan.
 - `README.md` and `docs/template/overview/start-here.md` are checked for user-visible references that need updating (per the repo's Ticket Completion Checklist).
 
@@ -19,8 +19,8 @@ Red: skip
 
 ## Green
 
-- Edit `AGENTS.soa.md`: add a `.soa/` sidecar paragraph, gitignore example update, and a one-line reference to `notes/public/codogotchi-alignment-draft.md`.
-- Verify `notes/public/codogotchi-alignment-draft.md` is committed (it was written during the plan PR; this ticket only verifies presence and updates any stale cross-links).
+- Edit `AGENTS.soa.md`: add a `.soa/` sidecar paragraph, gitignore example update, and a one-line reference to `docs/product/plans/codogotchi-alignment-draft.md`.
+- Verify `docs/product/plans/codogotchi-alignment-draft.md` is committed (it was written during the plan PR; this ticket only verifies presence and updates any stale cross-links).
 - Write `docs/product/retrospectives/phase-15-codogotchi-gate-event-emission-retrospective.md` using the `soa-write-retrospective` skill.
 - Append a "PR link" line to the product plan TL;DR pointing at the final phase PR set once the closeout-stack is identified.
 - Audit `README.md` and `docs/template/overview/start-here.md` for any user-visible behavior change references that need updating — likely just a mention of the new `.soa/` sidecar in user-facing setup docs if it appears there.
