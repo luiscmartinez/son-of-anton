@@ -14,6 +14,8 @@ export const ACTIVITY_STATES = [
   "ascended",
   "calling_for_backup",
   "panicking",
+  "requesting_input",
+  "errored",
 ] as const;
 
 export const activityStateSchema = z.enum(ACTIVITY_STATES);
@@ -39,6 +41,8 @@ export const RELIABLE_ACTIVITY_STATES = [
   "ascended",
   "calling_for_backup",
   "panicking",
+  "requesting_input",
+  "errored",
 ] as const satisfies readonly ActivityState[];
 
 export const HEURISTIC_ACTIVITY_STATES = [
