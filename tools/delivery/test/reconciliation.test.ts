@@ -18,6 +18,18 @@ const RM = rec as unknown as {
     listCommitFiles: (sha: string) => string[];
   }) => string[];
   parseActionableFindings?: (markdown: string) => boolean;
+  parseAdvisoryObservations?: (markdown: string) => string[];
+  inspectSubagentReviewEvidence?: (input: {
+    repoRoot: string;
+    rows: Array<{
+      outcome: string;
+      terminatedReason?: string;
+      rawOutput?: string;
+    }>;
+  }) => Array<{
+    kind: 'missing_report' | 'empty_report';
+    rawOutput?: string;
+  }>;
   reconcileReview?: (input: {
     artifactRows: Array<{ outcome: string; reviewedHeadSha?: string }>;
     reportMarkdown: string;
@@ -167,6 +179,104 @@ describe('P14.03 — parseActionableFindings', () => {
     expect(RM.parseActionableFindings!('Some prose without the section')).toBe(
       false,
     );
+  });
+
+  it('accepts ATX heading drift for actionable findings', () => {
+    expect(RM.parseActionableFindings).toBeDefined();
+    const md = `## Actionable findings\n\n- src/foo.ts: bug here\n\n## Advisory Observations\nNone.`;
+    expect(RM.parseActionableFindings!(md)).toBe(true);
+  });
+
+  it('does not treat inline bold prose as an actionable findings section', () => {
+    expect(RM.parseActionableFindings).toBeDefined();
+    const md =
+      'The phrase **Actionable findings** appears inline, but this is not a report section.';
+    expect(RM.parseActionableFindings!(md)).toBe(false);
+  });
+});
+
+describe('P16.01 — parseAdvisoryObservations', () => {
+  it('returns bullet items from the Advisory Observations section', () => {
+    expect(RM.parseAdvisoryObservations).toBeDefined();
+    const md = `**Actionable findings**\nNone.\n\n**Advisory Observations**\n\n- docs: consider clarifying closeout timing.\n- tools: future command should share parser logic.\n\n**Runner status**\ncompleted`;
+    expect(RM.parseAdvisoryObservations!(md)).toEqual([
+      'docs: consider clarifying closeout timing.',
+      'tools: future command should share parser logic.',
+    ]);
+  });
+
+  it('returns prose paragraphs from the Advisory Observations section', () => {
+    expect(RM.parseAdvisoryObservations).toBeDefined();
+    const md = `**Advisory Observations**\n\nThe parser should keep this as a triageable note.\n\nA second paragraph remains a separate observation.\n\n**Runner status**\ncompleted`;
+    expect(RM.parseAdvisoryObservations!(md)).toEqual([
+      'The parser should keep this as a triageable note.',
+      'A second paragraph remains a separate observation.',
+    ]);
+  });
+
+  it('returns empty when Advisory Observations says None.', () => {
+    expect(RM.parseAdvisoryObservations).toBeDefined();
+    const md = `**Advisory Observations**\n\nNone.\n\n**Runner status**\ncompleted`;
+    expect(RM.parseAdvisoryObservations!(md)).toEqual([]);
+  });
+
+  it('returns empty when Advisory Observations is missing', () => {
+    expect(RM.parseAdvisoryObservations).toBeDefined();
+    const md = `**Actionable findings**\nNone.\n\n**Runner status**\ncompleted`;
+    expect(RM.parseAdvisoryObservations!(md)).toEqual([]);
+  });
+
+  it('does not treat advisory observations as actionable findings', () => {
+    expect(RM.parseActionableFindings).toBeDefined();
+    expect(RM.parseAdvisoryObservations).toBeDefined();
+    const md = `**Actionable findings**\nNone.\n\n**Advisory Observations**\n\n- This is triageable later, but not blocking.\n`;
+    expect(RM.parseActionableFindings!(md)).toBe(false);
+    expect(RM.parseAdvisoryObservations!(md)).toEqual([
+      'This is triageable later, but not blocking.',
+    ]);
+  });
+
+  it('accepts ATX heading drift for advisory observations', () => {
+    expect(RM.parseAdvisoryObservations).toBeDefined();
+    const md = `## Actionable findings\nNone.\n\n## Advisory Observations\n\n- Keep this note triageable.\n\n## Runner status\ncompleted`;
+    expect(RM.parseAdvisoryObservations!(md)).toEqual([
+      'Keep this note triageable.',
+    ]);
+  });
+});
+
+describe('P16.01 — inspectSubagentReviewEvidence', () => {
+  it('flags clean/completed rows with missing or empty rawOutput reports as suspicious evidence', () => {
+    expect(RM.inspectSubagentReviewEvidence).toBeDefined();
+    const dir = mkdtempSync(join(tmpdir(), 'p16-01-evidence-'));
+    const emptyReport = join(dir, 'empty.report.md');
+    writeFileSync(emptyReport, '   \n', 'utf-8');
+
+    expect(
+      RM.inspectSubagentReviewEvidence!({
+        repoRoot: dir,
+        rows: [
+          {
+            outcome: 'clean',
+            terminatedReason: 'completed',
+            rawOutput: 'missing.report.md',
+          },
+          {
+            outcome: 'clean',
+            terminatedReason: 'completed',
+            rawOutput: 'empty.report.md',
+          },
+          {
+            outcome: 'skipped',
+            terminatedReason: 'runner_unavailable',
+            rawOutput: 'also-missing.report.md',
+          },
+        ],
+      }),
+    ).toEqual([
+      { kind: 'missing_report', rawOutput: 'missing.report.md' },
+      { kind: 'empty_report', rawOutput: 'empty.report.md' },
+    ]);
   });
 });
 
