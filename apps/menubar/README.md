@@ -54,7 +54,15 @@ This is a **dev build** — unsigned, not notarized, no launch-at-login automati
 open apps/menubar/Codogotchi.xcodeproj
 ```
 
-Then ⌘R. The pawprint icon (or Mali sprite, once `~/.codex/pets/mali/` is populated) appears in the menu bar.
+Then ⌘R. The shared **Codogotchi** scheme sets `CODOGOTCHI_FLOATING_PERF_DEBUG=1` on Run (Fix 14 translate stutter investigation). Filter Console.app for `FloatingPetPerf`.
+
+### Launch with floating-pet perf debug (terminal)
+
+```bash
+bun run mac:run
+```
+
+Builds Debug, then launches `Codogotchi.app` with `CODOGOTCHI_FLOATING_PERF_DEBUG=1`. Logs go to stdout and Console (`FloatingPetPerf`). Set `CODOGOTCHI_FLOATING_PERF_DEBUG=0` in the scheme to disable when running from Xcode.
 
 ### Launch the built `.app` directly
 

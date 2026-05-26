@@ -96,6 +96,21 @@ final class FloatingInteractionTests: XCTestCase {
 		}
 	}
 
+	func testFloatingInteractionFramesReuseCachedBackingImages() throws {
+		let pet = try MaliPet(petDirectory: maliFixtureDirectory())
+		for interaction in FloatingInteraction.allCases {
+			let first = pet.floatingFrames(forInteraction: interaction)
+			let second = pet.floatingFrames(forInteraction: interaction)
+			XCTAssertEqual(first.count, second.count)
+			for (a, b) in zip(first, second) {
+				XCTAssertTrue(
+					a.cgImage === b.cgImage,
+					"\(interaction) floating frames must come from the load-time cache"
+				)
+			}
+		}
+	}
+
 	func testInteractionFramesNotExposedViaActivityState() throws {
 		let pet = try MaliPet(petDirectory: maliFixtureDirectory())
 		for activity in ActivityState.allCases {

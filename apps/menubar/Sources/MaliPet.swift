@@ -112,6 +112,9 @@ final class MaliPet {
 	private let cgSheet: CGImage
 	private let frameWidth: Int
 	private let frameHeight: Int
+	/// Materialized interaction rows for the floating pet (Fix 14). Slicing a row
+	/// from the sheet is ~100–200 ms; cache once per interaction at load time.
+	private var floatingInteractionFrameCache: [FloatingInteraction: [Frame]] = [:]
 
 	convenience init() throws {
 		try self.init(petDirectory: MaliPet.defaultPetDirectoryPath())
@@ -181,6 +184,7 @@ final class MaliPet {
 		self.cgSheet = cg
 		self.frameWidth = cg.width / MaliPet.gridColumns
 		self.frameHeight = cg.height / MaliPet.gridRows
+		prewarmFloatingInteractionFrameCache()
 	}
 
 	/// Return the per-state animation frames sliced from the spritesheet.
@@ -214,21 +218,39 @@ final class MaliPet {
 	/// must treat empty as "missing reserved row" and fall back to the current
 	/// activity-state animation.
 	func frames(forInteraction interaction: FloatingInteraction) -> [Frame] {
-		guard let spec = MaliPet.interactionRowMap[interaction] else { return [] }
-		guard spec.rowIndex < MaliPet.gridRows, spec.frameCount <= MaliPet.gridColumns else {
-			return []
-		}
-		return frames(forRow: spec, output: .menubar)
+		sliceInteractionFrames(for: interaction, output: .menubar)
 	}
 
 	/// Slice reserved interaction frames at native source-cell resolution for
-	/// the floating surface.
+	/// the floating surface. Results are cached at pet load — safe to call on
+	/// every `setInteraction` during translate drags (Fix 14).
 	func floatingFrames(forInteraction interaction: FloatingInteraction) -> [Frame] {
+		if let cached = floatingInteractionFrameCache[interaction] {
+			return cached
+		}
+		let built = sliceInteractionFrames(for: interaction, output: .sourceCell)
+		floatingInteractionFrameCache[interaction] = built
+		return built
+	}
+
+	private func prewarmFloatingInteractionFrameCache() {
+		for interaction in FloatingInteraction.allCases {
+			floatingInteractionFrameCache[interaction] = sliceInteractionFrames(
+				for: interaction,
+				output: .sourceCell
+			)
+		}
+	}
+
+	private func sliceInteractionFrames(
+		for interaction: FloatingInteraction,
+		output: FrameOutput
+	) -> [Frame] {
 		guard let spec = MaliPet.interactionRowMap[interaction] else { return [] }
 		guard spec.rowIndex < MaliPet.gridRows, spec.frameCount <= MaliPet.gridColumns else {
 			return []
 		}
-		return frames(forRow: spec, output: .sourceCell)
+		return frames(forRow: spec, output: output)
 	}
 
 	private func frames(forRow spec: RowSpec, output: FrameOutput) -> [Frame] {

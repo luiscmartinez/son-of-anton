@@ -177,6 +177,17 @@ enum FloatingPetHidePrompt {
 	}
 }
 
+/// Logs `inLiveResize` during translate drags when perf debug is enabled.
+/// Candidate fix (not enabled yet): return `false` so SpriteKit keeps drawing
+/// while the panel origin moves — see fix-14 investigation notes.
+private final class FloatingPetSKView: SKView {
+	override var inLiveResize: Bool {
+		let value = super.inLiveResize
+		FloatingPetPerfDebug.noteInLiveResize(value)
+		return value
+	}
+}
+
 enum FloatingInteractionHitTarget: Equatable {
 	case dragRegion
 	case resizeAffordance
@@ -336,7 +347,7 @@ private final class FloatingPetInteractionView: NSView {
 	private static let trackingKindBounds = "bounds"
 	private static let trackingKindAffordance = "affordance"
 
-	private let skView = SKView(frame: .zero)
+	private let skView = FloatingPetSKView(frame: .zero)
 	private let overlayView = FloatingPetOverlayView(frame: .zero)
 	private let visibleFrameProvider: () -> CGRect
 	private let interactionHandler: (FloatingInteraction?) -> Void
@@ -506,6 +517,7 @@ private final class FloatingPetInteractionView: NSView {
 				y: clickInScreen.y - window.frame.origin.y
 			)
 			activeInteraction = .drag(grabOffsetInScreen: grabOffset)
+			FloatingPetPerfDebug.beginTranslateDrag()
 			overlayView.showsResizeAffordance = false
 		case .resizeAffordance:
 			activeInteraction = .resize(startFrame: window.frame, startScreenPoint: startScreenPoint)
@@ -532,13 +544,26 @@ private final class FloatingPetInteractionView: NSView {
 				windowSize: before.size,
 				visibleFrame: visibleFrameProvider()
 			)
-			applyPanelFrame(nextFrame, isTranslate: true)
+			let priorInteraction = lastEmittedInteraction
+			let applyMs = FloatingPetPerfDebug.measure {
+				applyPanelFrame(nextFrame, isTranslate: true)
+			}
 			let interaction = FloatingInteractionPolicy.interaction(
 				forStepDelta: stepDelta,
 				hitTarget: hitTarget,
-				previous: lastEmittedInteraction
+				previous: priorInteraction
 			)
-			emitInteraction(interaction, reason: "mouseDragged-\(hitTarget)")
+			let emitMs = FloatingPetPerfDebug.measure {
+				emitInteraction(interaction, reason: "mouseDragged-\(hitTarget)")
+			}
+			FloatingPetPerfDebug.translateTick(
+				applyFrameMs: applyMs,
+				emitMs: emitMs,
+				interaction: interaction,
+				interactionChanged: interaction != priorInteraction,
+				frameOrigin: nextFrame.origin,
+				inLiveResize: skView.inLiveResize
+			)
 			return
 		case let .resize(startFrame, startScreenPoint):
 			let dragDelta: CGSize
@@ -568,8 +593,12 @@ private final class FloatingPetInteractionView: NSView {
 
 	override func mouseUp(with event: NSEvent) {
 		let wasResizing = isResizing
+		let wasTranslating = isTranslating
 		window?.displayIfNeeded()
 		activeInteraction = nil
+		if wasTranslating {
+			FloatingPetPerfDebug.endTranslateDrag()
+		}
 		emitInteraction(nil, reason: "mouseUp-clear")
 		if let frame = window?.frame {
 			frameChangeHandler?(frame)

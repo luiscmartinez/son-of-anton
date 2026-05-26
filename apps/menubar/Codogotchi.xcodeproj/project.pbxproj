@@ -40,6 +40,7 @@
 		E88FAD21E3543D52D6F693BB /* TransitionLogTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BC62595488CFA83A5ED66AF /* TransitionLogTests.swift */; };
 		EA37D54D592388A3D881C2B2 /* DemoCycleDriver.swift in Sources */ = {isa = PBXBuildFile; fileRef = B49E0C3473A936DCB90AFE2A /* DemoCycleDriver.swift */; };
 		F0D2A72E1931F49257F1C2A4 /* FloatingPetScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 50592CBB8ED4543FDCF95E79 /* FloatingPetScene.swift */; };
+		F1E2D3C4B5A6978809ABCDEF0 /* FloatingPetPerfDebug.swift in Sources */ = {isa = PBXBuildFile; fileRef = F1E2D3C4B5A6978809ABCDEF1 /* FloatingPetPerfDebug.swift */; };
 		FBE36F71D1F69299A13DDADA /* PetStateFanoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 079E19BBF7A258650F759E72 /* PetStateFanoutTests.swift */; };
 /* End PBXBuildFile section */
 
@@ -65,6 +66,7 @@
 		489C5364D39974B530891975 /* DemoModeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DemoModeTests.swift; sourceTree = "<group>"; };
 		49C42121B54C0F2313BB1114 /* PetStateFanout.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetStateFanout.swift; sourceTree = "<group>"; };
 		50592CBB8ED4543FDCF95E79 /* FloatingPetScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPetScene.swift; sourceTree = "<group>"; };
+		F1E2D3C4B5A6978809ABCDEF1 /* FloatingPetPerfDebug.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPetPerfDebug.swift; sourceTree = "<group>"; };
 		55B2D129F3A84D917CEE5A36 /* MaliPetTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MaliPetTests.swift; sourceTree = "<group>"; };
 		57120C267C3617C32AC0430F /* FloatingPetSceneTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPetSceneTests.swift; sourceTree = "<group>"; };
 		5BC62595488CFA83A5ED66AF /* TransitionLogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitionLogTests.swift; sourceTree = "<group>"; };
@@ -135,6 +137,7 @@
 				E97D90D6AFBAC5EB23BBC4A8 /* FloatingInteraction.swift */,
 				EA899400094213B8A814D114 /* FloatingPetController.swift */,
 				C473FDED57B163FBBB6F3CF1 /* FloatingPetPanel.swift */,
+				F1E2D3C4B5A6978809ABCDEF1 /* FloatingPetPerfDebug.swift */,
 				50592CBB8ED4543FDCF95E79 /* FloatingPetScene.swift */,
 				D03267BF299C29EE9DC11590 /* LivePollingDriver.swift */,
 				F255E40C87142E33AE9D9935 /* MaliPet.swift */,
@@ -277,6 +280,7 @@
 				04E4BF3ECD02EFD4B252E27C /* FloatingInteraction.swift in Sources */,
 				38FAEA0F65A0C396AC8AD302 /* FloatingPetController.swift in Sources */,
 				A867342EFD852FB363D4DD7C /* FloatingPetPanel.swift in Sources */,
+				F1E2D3C4B5A6978809ABCDEF0 /* FloatingPetPerfDebug.swift in Sources */,
 				F0D2A72E1931F49257F1C2A4 /* FloatingPetScene.swift in Sources */,
 				D0D4F8896EC0F30182472D1C /* LivePollingDriver.swift in Sources */,
 				103FB9078AB019A709601BFA /* MaliPet.swift in Sources */,

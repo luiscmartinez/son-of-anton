@@ -21,6 +21,7 @@
     "ci": "bun run verify && bun run test && bun run mac:test",
     "ci:quiet": "bun run verify:quiet && bun run test && bun run mac:test",
     "mac:build": "xcodebuild -project apps/menubar/Codogotchi.xcodeproj -scheme Codogotchi build",
+    "mac:run": "bash apps/menubar/scripts/run.sh",
     "mac:test": "xcodebuild -project apps/menubar/Codogotchi.xcodeproj -scheme Codogotchi test"
   },
   "dependencies": {
