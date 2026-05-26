@@ -112,6 +112,14 @@ final class AppStateTests: XCTestCase {
 		}
 	}
 
+	func testFittedSpriteSizeScalesToPanelBounds() {
+		let image = CGSize(width: 192, height: 208)
+		let panel = CGSize(width: 256, height: 256)
+		let fitted = FloatingFramePolicy.fittedSpriteSize(imageSize: image, panelSize: panel)
+		XCTAssertEqual(fitted.height, 256, accuracy: 0.01)
+		XCTAssertEqual(fitted.width, 192 * (256.0 / 208.0), accuracy: 0.01)
+	}
+
 	func testAppStatePathUsesCodogotchiHomeWithoutTouchingConfig() throws {
 		try withTempHome { dir in
 			let state = FloatingAppState(

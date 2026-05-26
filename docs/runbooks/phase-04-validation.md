@@ -62,7 +62,7 @@ Work top to bottom. Mark each row **pass / fail / skip (reason)**.
 | 4 | Hide floating pet | Menu → **Hide Floating Pet**. | Floating surface disappears; menu bar pet remains. Toggle show again before continuing. |
 | 5 | Drag | Click-hold the pet body (not the corner affordance) and drag to a new location. Release. | Panel moves smoothly; position updates while dragging. |
 | 6 | Resize min | Click-hold the **bottom-right resize affordance** and shrink until movement stops. | Size stops at **96×96 pt** minimum (`FloatingFramePolicy.minimumSize`). |
-| 7 | Resize max | From minimum, drag the affordance outward until movement stops. | Size stops at **512×512 pt** maximum (`FloatingFramePolicy.maximumSize`). |
+| 7 | Resize max | From minimum, drag the affordance outward until movement stops. | Size stops at **256×256 pt** maximum (`FloatingFramePolicy.maximumSize`). |
 | 8 | Resize cursor | Hover the affordance without dragging. | Cursor switches to a horizontal resize cursor when macOS allows it. |
 | 9 | Quit/relaunch persistence | Move and resize to a non-default frame. Quit (**Quit Codogotchi**). Relaunch. | Floating pet reappears at the saved position and size. Confirm file updated: `cat ~/.codogotchi/app-state.json` shows `floating_pet.visible` and frame coordinates matching what you set. |
 | 10 | Display fallback | With the pet visible, disconnect an external monitor or change resolution so the saved frame would land off-screen (or edit `app-state.json` to absurd coordinates, then relaunch). | App reclamps to a **visible safe frame** on the current display instead of opening off-screen. |
@@ -78,7 +78,7 @@ Work top to bottom. Mark each row **pass / fail / skip (reason)**.
 | Activity state | `~/.codogotchi/state.json` (or demo sandbox under `$TMPDIR/codogotchi-demo/`) |
 | Floating placement | `~/.codogotchi/app-state.json` (`schema_version: 1`) |
 | Pet selection | `~/.codogotchi/config.json` |
-| Size bounds | 96×96 … 512×512 pt |
+| Size bounds | 96×96 … 256×256 pt |
 | Default floating size | 160×160 pt, bottom-right with 24 pt margin |
 | Transition log | `tail -f ~/.codogotchi/state-transitions.log` |
 | Build/test | `bun run mac:build`, `bun run mac:test` |

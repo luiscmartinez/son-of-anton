@@ -14,7 +14,7 @@ An `LSUIElement` menu bar agent named **Codogotchi** with two render surfaces:
    SpriteKit scene (`FloatingPetScene`), toggled from **Show/Hide Floating Pet**.
 
 Direct manipulation: click-hold the frame to drag; click-hold the bottom-right
-resize affordance to scale between 96×96 and 512×512 pt. Placement persists in
+resize affordance to scale between 96×96 and 256×256 pt. Placement persists in
 `~/.codogotchi/app-state.json` and reclamps after display changes.
 
 Validate locally with [`docs/runbooks/phase-04-validation.md`](../../runbooks/phase-04-validation.md).

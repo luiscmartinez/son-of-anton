@@ -10,7 +10,7 @@ struct FloatingAppState: Codable, Equatable {
 
 enum FloatingFramePolicy {
 	static let minimumSize = CGSize(width: 96, height: 96)
-	static let maximumSize = CGSize(width: 512, height: 512)
+	static let maximumSize = CGSize(width: 256, height: 256)
 	static let defaultSize = CGSize(width: 160, height: 160)
 	static let safeMargin: CGFloat = 24
 
@@ -36,6 +36,17 @@ enum FloatingFramePolicy {
 		let width = min(max(size.width, minimumSize.width), min(maximumSize.width, visibleSize.width))
 		let height = min(max(size.height, minimumSize.height), min(maximumSize.height, visibleSize.height))
 		return CGSize(width: width, height: height)
+	}
+
+	/// Scale a source-cell image to fit inside a floating panel without SpriteKit
+	/// scene/view scaling. Used for debug logging and codex calibration checks.
+	static func fittedSpriteSize(imageSize: CGSize, panelSize: CGSize) -> CGSize {
+		guard imageSize.width > 0, imageSize.height > 0, panelSize.width > 0, panelSize.height > 0
+		else {
+			return imageSize
+		}
+		let scale = min(panelSize.width / imageSize.width, panelSize.height / imageSize.height)
+		return CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
 	}
 }
 

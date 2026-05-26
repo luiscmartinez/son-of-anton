@@ -76,6 +76,16 @@ final class FloatingPetPanelController: FloatingPetPanelManaging {
 		(panel?.contentView as? FloatingPetInteractionView)?.frameChangeHandler = handler
 	}
 
+	private func syncSceneSizeToPanel(_ panelSize: CGSize) {
+		guard let scene else { return }
+		let previous = scene.size
+		guard previous != panelSize else { return }
+		scene.size = panelSize
+		dbgLog(
+			"DBG FloatingPetPanelController sceneSize: \(previous.width)x\(previous.height) → \(panelSize.width)x\(panelSize.height)"
+		)
+	}
+
 	private func makePanel(frame: CGRect) -> NSPanel {
 		let panel = NSPanel(
 			contentRect: frame,
@@ -106,6 +116,9 @@ final class FloatingPetPanelController: FloatingPetPanelManaging {
 			},
 			interactionHandler: { [weak self] interaction in
 				self?.scene?.setInteraction(interaction)
+			},
+			sceneSizeHandler: { [weak self] size in
+				self?.syncSceneSizeToPanel(size)
 			}
 		)
 		view.frameChangeHandler = frameChangeHandler
@@ -153,15 +166,18 @@ enum FloatingInteractionPolicy {
 		)
 	}
 
-	/// Maps raw pointer delta from a resize affordance drag into width/height
-	/// growth. Horizontal-dominant drags scale uniformly from width so
-	/// left-right motion resizes the pet; otherwise both axes apply (diagonal
-	/// top-left→bottom-right resize from the bottom-right affordance).
+	/// Horizontal screen delta that drives resize. Pure vertical drags return 0
+	/// (Codex-style: only left/right motion changes scale).
+	static func resizeHorizontalDelta(from rawDelta: CGSize) -> CGFloat {
+		rawDelta.width
+	}
+
+	/// Uniform width/height growth applied to interaction feedback from the
+	/// horizontal resize delta (zero when the drag has no horizontal component).
 	static func resizeDragDelta(from rawDelta: CGSize) -> CGSize {
-		if abs(rawDelta.width) >= abs(rawDelta.height) {
-			return CGSize(width: rawDelta.width, height: rawDelta.width)
-		}
-		return rawDelta
+		let horizontal = resizeHorizontalDelta(from: rawDelta)
+		guard horizontal != 0 else { return .zero }
+		return CGSize(width: horizontal, height: horizontal)
 	}
 
 	static func resizedFrame(
@@ -169,13 +185,20 @@ enum FloatingInteractionPolicy {
 		dragDelta: CGSize,
 		visibleFrame: CGRect
 	) -> CGRect {
-		let scaledDelta = resizeDragDelta(from: dragDelta)
+		let horizontalDelta = resizeHorizontalDelta(from: dragDelta)
+		guard horizontalDelta != 0, frame.width > 0, frame.height > 0 else {
+			return FloatingFramePolicy.clamp(frame, to: visibleFrame)
+		}
+
+		let aspect = frame.width / frame.height
+		let newWidth = frame.width + horizontalDelta
+		let newHeight = newWidth / aspect
 		return FloatingFramePolicy.clamp(
 			CGRect(
 				x: frame.origin.x,
 				y: frame.origin.y,
-				width: frame.width + scaledDelta.width,
-				height: frame.height + scaledDelta.height
+				width: newWidth,
+				height: newHeight
 			),
 			to: visibleFrame
 		)
@@ -236,6 +259,7 @@ private final class FloatingPetInteractionView: NSView {
 	private let overlayView = FloatingPetOverlayView(frame: .zero)
 	private let visibleFrameProvider: () -> CGRect
 	private let interactionHandler: (FloatingInteraction?) -> Void
+	private let sceneSizeHandler: (CGSize) -> Void
 	private var activeInteraction: ActiveInteraction?
 	private var lastEmittedInteraction: FloatingInteraction?
 	private var boundsTrackingArea: NSTrackingArea?
@@ -251,10 +275,12 @@ private final class FloatingPetInteractionView: NSView {
 	init(
 		frame: CGRect,
 		visibleFrameProvider: @escaping () -> CGRect,
-		interactionHandler: @escaping (FloatingInteraction?) -> Void
+		interactionHandler: @escaping (FloatingInteraction?) -> Void,
+		sceneSizeHandler: @escaping (CGSize) -> Void
 	) {
 		self.visibleFrameProvider = visibleFrameProvider
 		self.interactionHandler = interactionHandler
+		self.sceneSizeHandler = sceneSizeHandler
 		super.init(frame: frame)
 
 		autoresizingMask = [.width, .height]
@@ -320,6 +346,7 @@ private final class FloatingPetInteractionView: NSView {
 		super.layout()
 		skView.frame = bounds
 		overlayView.frame = bounds
+		sceneSizeHandler(bounds.size)
 		reconfigureTrackingAreasIfNeeded(force: false)
 		elevateOverlayAboveSpriteKit()
 		syncPointerState(reason: "layout")
@@ -398,17 +425,20 @@ private final class FloatingPetInteractionView: NSView {
 			)
 			dragDelta = FloatingInteractionPolicy.resizeDragDelta(from: rawDelta)
 			hitTarget = .resizeAffordance
+			let startAspect = startFrame.height > 0 ? startFrame.width / startFrame.height : 1
 			nextFrame = FloatingInteractionPolicy.resizedFrame(
 				from: startFrame,
 				dragDelta: rawDelta,
 				visibleFrame: visibleFrameProvider()
 			)
+			let endAspect = nextFrame.height > 0 ? nextFrame.width / nextFrame.height : 1
 			dbgLog(
-				"DBG FloatingPetInteractionView resizeDrag: raw=\(rawDelta.width)x\(rawDelta.height) scaled=\(dragDelta.width)x\(dragDelta.height) frame=\(nextFrame.width)x\(nextFrame.height)"
+				"DBG FloatingPetInteractionView resizeDrag: raw=\(rawDelta.width)x\(rawDelta.height) horizontalDelta=\(FloatingInteractionPolicy.resizeHorizontalDelta(from: rawDelta)) startAspect=\(startAspect) endAspect=\(endAspect) panelFrame=\(nextFrame.width)x\(nextFrame.height)"
 			)
 		}
 
 		window.setFrame(nextFrame, display: true)
+		sceneSizeHandler(nextFrame.size)
 
 		let interaction = FloatingInteractionPolicy.interaction(
 			forDragDelta: dragDelta,

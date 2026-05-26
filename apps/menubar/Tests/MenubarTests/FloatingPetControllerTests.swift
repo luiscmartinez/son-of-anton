@@ -217,12 +217,44 @@ final class FloatingPetControllerTests: XCTestCase {
 		XCTAssertEqual(delta.height, 40)
 	}
 
-	func testDiagonalResizeDragUsesBothAxes() {
+	func testVerticalResizeDragDoesNotChangeFrame() {
+		let visibleFrame = CGRect(x: 0, y: 0, width: 1000, height: 800)
+		let startingFrame = CGRect(x: 100, y: 120, width: 160, height: 160)
+
+		let unchanged = FloatingInteractionPolicy.resizedFrame(
+			from: startingFrame,
+			dragDelta: CGSize(width: 0, height: 200),
+			visibleFrame: visibleFrame
+		)
+
+		XCTAssertEqual(unchanged.size.width, startingFrame.width, accuracy: 0.01)
+		XCTAssertEqual(unchanged.size.height, startingFrame.height, accuracy: 0.01)
+		XCTAssertEqual(
+			FloatingInteractionPolicy.resizeDragDelta(from: CGSize(width: 0, height: 200)),
+			.zero
+		)
+	}
+
+	func testHorizontalResizePreservesAspectRatio() {
+		let visibleFrame = CGRect(x: 0, y: 0, width: 1000, height: 800)
+		let startingFrame = CGRect(x: 0, y: 0, width: 200, height: 100)
+
+		let grown = FloatingInteractionPolicy.resizedFrame(
+			from: startingFrame,
+			dragDelta: CGSize(width: 40, height: 300),
+			visibleFrame: visibleFrame
+		)
+
+		XCTAssertEqual(grown.width, 240, accuracy: 0.01)
+		XCTAssertEqual(grown.height, 120, accuracy: 0.01)
+	}
+
+	func testDiagonalResizeUsesHorizontalComponentOnly() {
 		let delta = FloatingInteractionPolicy.resizeDragDelta(
 			from: CGSize(width: 30, height: 50)
 		)
 		XCTAssertEqual(delta.width, 30)
-		XCTAssertEqual(delta.height, 50)
+		XCTAssertEqual(delta.height, 30)
 	}
 
 	func testFloatingInteractionResizeDeltasClampToMinAndMaxSizes() {
@@ -231,12 +263,12 @@ final class FloatingPetControllerTests: XCTestCase {
 
 		let minimumFrame = FloatingInteractionPolicy.resizedFrame(
 			from: startingFrame,
-			dragDelta: CGSize(width: -500, height: -500),
+			dragDelta: CGSize(width: -500, height: 0),
 			visibleFrame: visibleFrame
 		)
 		let maximumFrame = FloatingInteractionPolicy.resizedFrame(
 			from: startingFrame,
-			dragDelta: CGSize(width: 1000, height: 1000),
+			dragDelta: CGSize(width: 1000, height: 0),
 			visibleFrame: visibleFrame
 		)
 
@@ -250,15 +282,16 @@ final class FloatingPetControllerTests: XCTestCase {
 				isFloatingPetVisible: true,
 				frame: CGRect(x: 120, y: 160, width: 220, height: 180)
 			)
-			let updatedFrame = CGRect(x: 240, y: 260, width: 260, height: 220)
+			let updatedFrame = CGRect(x: 240, y: 260, width: 240, height: 200)
+			let clampedFrame = FloatingFramePolicy.clamp(updatedFrame, to: visibleFrame)
 			try AppStateStore.save(initial)
 			let panel = FloatingPetPanelSpy()
 			let controller = FloatingPetController(panel: panel, visibleFrameProvider: { self.visibleFrame })
 
 			controller.persistFrameChange(updatedFrame)
 
-			XCTAssertEqual(AppStateStore.load(visibleFrame: visibleFrame).frame, updatedFrame)
-			XCTAssertEqual(panel.shownFrames.last, updatedFrame)
+			XCTAssertEqual(AppStateStore.load(visibleFrame: visibleFrame).frame, clampedFrame)
+			XCTAssertEqual(panel.shownFrames.last, clampedFrame)
 		}
 	}
 

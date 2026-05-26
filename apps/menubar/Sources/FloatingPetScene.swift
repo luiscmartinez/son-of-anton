@@ -279,16 +279,23 @@ final class FloatingPetScene: SKScene {
 		let spriteSize = fittedSpriteSize(for: frame.image.size)
 		spriteNode.size = spriteSize
 		dbgLog(
-			"DBG FloatingPetScene paint: state=\(currentState.rawValue) source=\(currentSource.logLabel) frameIndex=\(frameIndex) texturePixels=\(textureImage.width)x\(textureImage.height) frameImageSize=\(frame.image.size.width)x\(frame.image.size.height) sceneSize=\(size.width)x\(size.height) spriteSize=\(spriteSize.width)x\(spriteSize.height) filtering=nearest"
+			"DBG FloatingPetScene paint: state=\(currentState.rawValue) source=\(currentSource.logLabel) frameIndex=\(frameIndex) texturePixels=\(textureImage.width)x\(textureImage.height) frameImageSize=\(frame.image.size.width)x\(frame.image.size.height) sceneSize=\(size.width)x\(size.height) spriteSize=\(spriteSize.width)x\(spriteSize.height) skViewStretchScale=\(skViewStretchScaleDescription()) filtering=nearest"
 		)
 	}
 
 	private func fittedSpriteSize(for imageSize: CGSize) -> CGSize {
-		guard imageSize.width > 0, imageSize.height > 0, size.width > 0, size.height > 0 else {
-			return imageSize
+		FloatingFramePolicy.fittedSpriteSize(imageSize: imageSize, panelSize: size)
+	}
+
+	/// When `scene.size` lags the `SKView` bounds, `scaleMode = .resizeFill` magnifies
+	/// the pet non-uniformly — log the implied stretch for diagnosis.
+	private func skViewStretchScaleDescription() -> String {
+		guard let view = spriteNode.scene?.view, size.width > 0, size.height > 0 else {
+			return "n/a"
 		}
-		let scale = min(size.width / imageSize.width, size.height / imageSize.height)
-		return CGSize(width: imageSize.width * scale, height: imageSize.height * scale)
+		let sx = view.bounds.width / size.width
+		let sy = view.bounds.height / size.height
+		return String(format: "%.3fx%.3f", sx, sy)
 	}
 
 	private func layoutLayers() {
