@@ -232,6 +232,36 @@ final class FloatingInteractionTests: XCTestCase {
 		)
 	}
 
+	func testDiagonalDragWithHorizontalComponentSelectsRunning() {
+		let interaction = FloatingInteractionPolicy.interaction(
+			forDragDelta: CGSize(width: 12, height: 30),
+			hitTarget: .dragRegion
+		)
+		XCTAssertEqual(
+			interaction, .runningRight,
+			"any non-zero horizontal drag delta selects a running row"
+		)
+	}
+
+	func testHoverInBoundsSelectsJumping() {
+		XCTAssertEqual(
+			FloatingInteractionPolicy.hoverInteraction(pointerInBounds: true, isDragging: false),
+			.jumping
+		)
+	}
+
+	func testHoverOutsideBoundsHasNoInteraction() {
+		XCTAssertNil(
+			FloatingInteractionPolicy.hoverInteraction(pointerInBounds: false, isDragging: false)
+		)
+	}
+
+	func testHoverSuppressedWhileDragging() {
+		XCTAssertNil(
+			FloatingInteractionPolicy.hoverInteraction(pointerInBounds: true, isDragging: true)
+		)
+	}
+
 	func testResizeAffordanceSelectsJumping() {
 		let interaction = FloatingInteractionPolicy.interaction(
 			forDragDelta: CGSize(width: 12, height: 12),

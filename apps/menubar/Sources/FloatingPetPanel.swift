@@ -224,13 +224,18 @@ enum FloatingInteractionPolicy {
 		bounds.contains(point)
 	}
 
+	/// Reserved-row interaction while the pointer is over the frame but not
+	/// dragging (P4.07 hover feedback).
+	static func hoverInteraction(pointerInBounds: Bool, isDragging: Bool) -> FloatingInteraction? {
+		guard pointerInBounds, !isDragging else { return nil }
+		return .jumping
+	}
+
 	/// Pure-function mapping from an in-flight pointer drag delta and the
 	/// hit-tested target to the reserved-row interaction the floating scene
 	/// should display. The resize affordance always picks `.jumping`; drags on
-	/// the drag region pick `.runningRight` or `.runningLeft` when horizontal
-	/// motion dominates vertical motion, and return `nil` otherwise so the
-	/// ordinary activity-state animation remains visible during near-vertical
-	/// drags.
+	/// the drag region pick `.runningRight` or `.runningLeft` from horizontal
+	/// screen delta only (vertical-only drags return `nil`).
 	static func interaction(
 		forDragDelta delta: CGSize,
 		hitTarget: FloatingInteractionHitTarget
@@ -239,8 +244,7 @@ enum FloatingInteractionPolicy {
 		case .resizeAffordance:
 			return .jumping
 		case .dragRegion:
-			let horizontalDominant = abs(delta.width) > abs(delta.height)
-			guard horizontalDominant, delta.width != 0 else { return nil }
+			guard delta.width != 0 else { return nil }
 			return delta.width > 0 ? .runningRight : .runningLeft
 		}
 	}
@@ -444,19 +448,13 @@ private final class FloatingPetInteractionView: NSView {
 			forDragDelta: dragDelta,
 			hitTarget: hitTarget
 		)
-		if interaction != lastEmittedInteraction {
-			lastEmittedInteraction = interaction
-			interactionHandler(interaction)
-		}
+		emitInteraction(interaction, reason: "mouseDragged-\(hitTarget)")
 	}
 
 	override func mouseUp(with event: NSEvent) {
 		let wasResizing = isResizing
 		activeInteraction = nil
-		if lastEmittedInteraction != nil {
-			lastEmittedInteraction = nil
-			interactionHandler(nil)
-		}
+		emitInteraction(nil, reason: "mouseUp-clear")
 		if let frame = window?.frame {
 			frameChangeHandler?(frame)
 		}
@@ -635,6 +633,28 @@ private final class FloatingPetInteractionView: NSView {
 		} else {
 			NSCursor.arrow.set()
 		}
+
+		syncHoverInteraction(reason: reason)
+	}
+
+	private func emitInteraction(_ interaction: FloatingInteraction?, reason: String) {
+		guard interaction != lastEmittedInteraction else { return }
+		lastEmittedInteraction = interaction
+		interactionHandler(interaction)
+		dbgLog(
+			"DBG FloatingPetInteractionView emitInteraction: reason=\(reason) interaction=\(interaction.map { "\($0)" } ?? "nil")"
+		)
+	}
+
+	/// Hover feedback when no drag is active; skipped while `mouseDragged` owns
+	/// interaction selection.
+	private func syncHoverInteraction(reason: String) {
+		guard activeInteraction == nil else { return }
+		let hover = FloatingInteractionPolicy.hoverInteraction(
+			pointerInBounds: pointerInsideFrame,
+			isDragging: false
+		)
+		emitInteraction(hover, reason: "hover-\(reason)")
 	}
 }
 
