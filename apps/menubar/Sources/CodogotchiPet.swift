@@ -48,7 +48,7 @@ final class CodogotchiPet {
 	static let gridRows = 9
 
 	/// Per-frame display interval for codogotchi-sheet animations (~167 ms/frame).
-	/// Codex-sheet frames use `MaliPet.frameInterval` (~125 ms/frame for 8-frame rows).
+	/// Codex-sheet frames use `MaliPet.frameInterval` (~188 ms/frame for 8-frame rows).
 	static let frameInterval: TimeInterval = 167.0 / 1000.0
 
 	private let cgSheet: CGImage?

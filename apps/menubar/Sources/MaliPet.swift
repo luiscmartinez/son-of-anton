@@ -101,9 +101,13 @@ final class MaliPet {
 	static let gridColumns = 8
 	static let gridRows = 9
 
-	/// Per-frame display interval for Codex-sheet animations (~125 ms/frame for
-	/// 8-frame rows → 1 s cycle). Codogotchi-sheet frames use their own interval.
-	static let frameInterval: TimeInterval = 1.0 / Double(gridColumns)
+	/// Per-frame display interval for Codex-sheet animations.
+	///
+	/// Codex-sheet runs on an 8-column grid; full-row cycles target ~1.5 s
+	/// (`animationCycleDuration / frameCount` in the renderers).
+	/// Codogotchi-sheet frames use their own interval.
+	static let animationCycleDuration: TimeInterval = 1.5
+	static let frameInterval: TimeInterval = animationCycleDuration / Double(gridColumns)
 
 	private let cgSheet: CGImage
 	private let frameWidth: Int

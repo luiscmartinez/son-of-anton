@@ -20,7 +20,7 @@ enum VisualMode: Equatable {
 /// The renderer uses this to select the correct per-frame interval without
 /// having to inspect the frame count or call into either loader.
 enum SpriteSource {
-	/// Frame came from `MaliPet` (Codex sheet, ~125 ms/frame).
+	/// Frame came from `MaliPet` (Codex sheet, ~188 ms/frame for 8-frame rows).
 	case codex
 	/// Frame came from `CodogotchiPet` (codogotchi sheet, ~167 ms/frame).
 	case codogotchi
@@ -206,10 +206,10 @@ final class MenubarRenderer {
 			case .codogotchi:
 				interval = CodogotchiPet.frameInterval
 			case .codex, .idleFallback:
-				// Codex sheet cycles all rows in ~1 s by dividing by the actual
-				// frame count. Variable frame counts per row (8, 6, 4) each produce
-				// a ~1 s animation cycle.
-				interval = 1.0 / Double(max(currentFrames.count, 1))
+				// Codex sheet cycles all rows in ~1.5 s by dividing by the actual
+				// frame count. Variable frame counts per row (8, 6, 4) each
+				// produce a ~1.5 s animation cycle.
+				interval = MaliPet.animationCycleDuration / Double(max(currentFrames.count, 1))
 			}
 		}
 		dbgLog("DBG restartTimer: source=\(currentSource) interval=\(interval)")
