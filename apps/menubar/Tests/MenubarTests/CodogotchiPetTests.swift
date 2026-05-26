@@ -121,6 +121,23 @@ final class CodogotchiPetTests: XCTestCase {
 		)
 	}
 
+	func testFloatingFramesUseSourceCellResolution() throws {
+		let pet = try CodogotchiPet(petDirectory: maewFixtureDirectory())
+		let frames = pet.floatingFrames(for: .panicking)
+		let first = try XCTUnwrap(frames.first)
+
+		let sheet = try XCTUnwrap(pet.spritesheet, "fixture spritesheet must be loaded")
+		let sheetCG = try XCTUnwrap(sheet.cgImage(forProposedRect: nil, context: nil, hints: nil))
+		let sourceCellWidth = sheetCG.width / 24
+		let sourceCellHeight = sheetCG.height / 9
+
+		XCTAssertEqual(first.cgImage.width, sourceCellWidth)
+		XCTAssertEqual(first.cgImage.height, sourceCellHeight)
+		XCTAssertEqual(first.image.size.width, CGFloat(sourceCellWidth), accuracy: 0.001)
+		XCTAssertEqual(first.image.size.height, CGFloat(sourceCellHeight), accuracy: 0.001)
+		XCTAssertGreaterThan(first.cgImage.height, 44)
+	}
+
 	/// Pixel-equality check: render both images into equal-sized RGBA buffers and
 	/// compare. Returns `true` only when every sampled pixel matches exactly.
 	private func cgImagesPixelEqual(_ a: CGImage, _ b: CGImage) -> Bool {

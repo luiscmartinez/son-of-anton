@@ -69,6 +69,22 @@ final class MaliPetTests: XCTestCase {
 		XCTAssertEqual(frameAspect, expectedAspect, accuracy: 0.05, "frame aspect must match source cell aspect")
 	}
 
+	func testFloatingFramesUseSourceCellResolution() throws {
+		let pet = try MaliPet(petDirectory: fixtureDirectory())
+		let frames = pet.floatingFrames(for: .implementing)
+		let first = try XCTUnwrap(frames.first)
+
+		let sheetCG = try XCTUnwrap(pet.spritesheet.cgImage(forProposedRect: nil, context: nil, hints: nil))
+		let sourceCellWidth = sheetCG.width / 8
+		let sourceCellHeight = sheetCG.height / 9
+
+		XCTAssertEqual(first.cgImage.width, sourceCellWidth)
+		XCTAssertEqual(first.cgImage.height, sourceCellHeight)
+		XCTAssertEqual(first.image.size.width, CGFloat(sourceCellWidth), accuracy: 0.001)
+		XCTAssertEqual(first.image.size.height, CGFloat(sourceCellHeight), accuracy: 0.001)
+		XCTAssertGreaterThan(first.cgImage.height, 44)
+	}
+
 	func testEveryCodexSheetStateHasNonEmptyFrames() throws {
 		let pet = try MaliPet(petDirectory: fixtureDirectory())
 		// Phase 03 Codex-sheet states — celebrating is intentionally absent (wired in P3.04).

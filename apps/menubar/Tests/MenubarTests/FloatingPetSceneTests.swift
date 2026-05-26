@@ -65,6 +65,18 @@ final class FloatingPetSceneTests: XCTestCase {
 		XCTAssertNotNil(scene.overlayLayerForTesting.parent)
 	}
 
+	func testFloatingSceneUsesSourceResolutionCodexTextures() throws {
+		let scene = try makeScene(size: CGSize(width: 180, height: 140))
+
+		scene.update(state: .idle, visualMode: .normal)
+
+		let firstFrame = try XCTUnwrap(scene.currentFramesForTesting.first)
+		let texture = try XCTUnwrap(scene.currentTextureForTesting)
+		XCTAssertEqual(firstFrame.size.height, 208, accuracy: 0.001)
+		XCTAssertEqual(texture.size().height, 208, accuracy: 0.001)
+		XCTAssertEqual(texture.filteringMode, .nearest)
+	}
+
 	func testResolvesCodogotchiSheetStateFrames() throws {
 		let scene = try makeScene()
 
@@ -72,6 +84,18 @@ final class FloatingPetSceneTests: XCTestCase {
 
 		XCTAssertEqual(scene.currentStateForTesting, .panicking)
 		XCTAssertEqual(scene.currentFramesForTesting.count, 24)
+	}
+
+	func testFloatingSceneUsesSourceResolutionCodogotchiTextures() throws {
+		let scene = try makeScene(size: CGSize(width: 180, height: 140))
+
+		scene.update(state: .panicking, visualMode: .normal)
+
+		let firstFrame = try XCTUnwrap(scene.currentFramesForTesting.first)
+		let texture = try XCTUnwrap(scene.currentTextureForTesting)
+		XCTAssertEqual(firstFrame.size.height, 208, accuracy: 0.001)
+		XCTAssertEqual(texture.size().height, 208, accuracy: 0.001)
+		XCTAssertEqual(texture.filteringMode, .nearest)
 	}
 
 	func testStateTransitionResetsFrameIndex() throws {

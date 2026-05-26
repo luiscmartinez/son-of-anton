@@ -20,6 +20,7 @@ final class FloatingPetScene: SKScene {
 	private var currentMode: VisualMode = .normal
 	private var currentInteraction: FloatingInteraction?
 	private var currentFrames: [MaliPet.Frame] = []
+	private var currentSource: FloatingFrameSource = .codex
 	private var frameIndex: Int = 0
 
 	init(
@@ -37,7 +38,7 @@ final class FloatingPetScene: SKScene {
 			Self.desaturate(frame, ciContext: context)
 		}
 		self.interactionFrames = interactionFramesProvider ?? { interaction in
-			codexPet.frames(forInteraction: interaction)
+			codexPet.floatingFrames(forInteraction: interaction)
 		}
 		super.init(size: size)
 
@@ -50,7 +51,9 @@ final class FloatingPetScene: SKScene {
 		petLayer.addChild(spriteNode)
 		layoutLayers()
 
-		currentFrames = resolveFrames(for: .idle)
+		let initialFrames = resolveFrames(for: .idle)
+		currentFrames = initialFrames.frames
+		currentSource = initialFrames.source
 		paintCurrentFrame()
 	}
 
@@ -81,7 +84,9 @@ final class FloatingPetScene: SKScene {
 		}
 
 		if stateChanged {
-			currentFrames = resolveFrames(for: state)
+			let resolved = resolveFrames(for: state)
+			currentFrames = resolved.frames
+			currentSource = resolved.source
 			frameIndex = 0
 		}
 
@@ -99,7 +104,9 @@ final class FloatingPetScene: SKScene {
 		guard let interaction else {
 			guard currentInteraction != nil else { return }
 			currentInteraction = nil
-			currentFrames = resolveFrames(for: currentState)
+			let resolved = resolveFrames(for: currentState)
+			currentFrames = resolved.frames
+			currentSource = resolved.source
 			frameIndex = 0
 			paintCurrentFrame()
 			return
@@ -112,7 +119,9 @@ final class FloatingPetScene: SKScene {
 			// reserved row.
 			if currentInteraction != nil {
 				currentInteraction = nil
-				currentFrames = resolveFrames(for: currentState)
+				let resolved = resolveFrames(for: currentState)
+				currentFrames = resolved.frames
+				currentSource = resolved.source
 				frameIndex = 0
 				paintCurrentFrame()
 			}
@@ -121,6 +130,7 @@ final class FloatingPetScene: SKScene {
 
 		currentInteraction = interaction
 		currentFrames = frames
+		currentSource = .codexInteraction
 		frameIndex = 0
 		paintCurrentFrame()
 	}
@@ -131,6 +141,7 @@ final class FloatingPetScene: SKScene {
 	var currentInteractionForTesting: FloatingInteraction? { currentInteraction }
 	var currentFrameIndexForTesting: Int { frameIndex }
 	var currentFramesForTesting: [NSImage] { currentFrames.map(\.image) }
+	var currentFrameSourceForTesting: String { currentSource.logLabel }
 	var petLayerForTesting: SKNode { petLayer }
 	var overlayLayerForTesting: SKNode { overlayLayer }
 	var currentTextureForTesting: SKTexture? { spriteNode.texture }
@@ -143,14 +154,14 @@ final class FloatingPetScene: SKScene {
 
 	// MARK: - Internals
 
-	private func resolveFrames(for state: ActivityState) -> [MaliPet.Frame] {
-		let codexFrames = codexPet.frames(for: state)
-		if !codexFrames.isEmpty { return codexFrames }
+	private func resolveFrames(for state: ActivityState) -> (frames: [MaliPet.Frame], source: FloatingFrameSource) {
+		let codexFrames = codexPet.floatingFrames(for: state)
+		if !codexFrames.isEmpty { return (codexFrames, .codex) }
 
-		let codogotchiFrames = codogotchiPet?.frames(for: state) ?? []
-		if !codogotchiFrames.isEmpty { return codogotchiFrames }
+		let codogotchiFrames = codogotchiPet?.floatingFrames(for: state) ?? []
+		if !codogotchiFrames.isEmpty { return (codogotchiFrames, .codogotchi) }
 
-		return codexPet.frames(for: .idle)
+		return (codexPet.floatingFrames(for: .idle), .idleFallback)
 	}
 
 	private func advanceFrame() {
@@ -183,10 +194,16 @@ final class FloatingPetScene: SKScene {
 			}
 		}
 
-		spriteNode.texture = SKTexture(cgImage: textureImage)
+		let texture = SKTexture(cgImage: textureImage)
+		texture.filteringMode = .nearest
+		spriteNode.texture = texture
 		spriteNode.color = .gray
 		spriteNode.colorBlendFactor = colorBlendFactor
-		spriteNode.size = fittedSpriteSize(for: frame.image.size)
+		let spriteSize = fittedSpriteSize(for: frame.image.size)
+		spriteNode.size = spriteSize
+		dbgLog(
+			"DBG FloatingPetScene paint: state=\(currentState.rawValue) source=\(currentSource.logLabel) frameIndex=\(frameIndex) texturePixels=\(textureImage.width)x\(textureImage.height) frameImageSize=\(frame.image.size.width)x\(frame.image.size.height) sceneSize=\(size.width)x\(size.height) spriteSize=\(spriteSize.width)x\(spriteSize.height) filtering=nearest"
+		)
 	}
 
 	private func fittedSpriteSize(for imageSize: CGSize) -> CGSize {
@@ -211,5 +228,25 @@ final class FloatingPetScene: SKScene {
 		filter.saturation = 0
 		guard let output = filter.outputImage else { return nil }
 		return ciContext.createCGImage(output, from: output.extent)
+	}
+
+	private enum FloatingFrameSource {
+		case codex
+		case codogotchi
+		case idleFallback
+		case codexInteraction
+
+		var logLabel: String {
+			switch self {
+			case .codex:
+				return "codex"
+			case .codogotchi:
+				return "codogotchi"
+			case .idleFallback:
+				return "idle-fallback"
+			case .codexInteraction:
+				return "codex-interaction"
+			}
+		}
 	}
 }

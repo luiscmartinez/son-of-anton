@@ -177,6 +177,9 @@ final class MaliPet {
 		self.cgSheet = cg
 		self.frameWidth = cg.width / MaliPet.gridColumns
 		self.frameHeight = cg.height / MaliPet.gridRows
+		dbgLog(
+			"DBG MaliPet load: sheet=\(sheetURL.path) pixels=\(cg.width)x\(cg.height) grid=\(MaliPet.gridColumns)x\(MaliPet.gridRows) cell=\(frameWidth)x\(frameHeight)"
+		)
 	}
 
 	/// Return the per-state animation frames sliced from the spritesheet.
@@ -193,7 +196,15 @@ final class MaliPet {
 	/// drawing, not to `CGImage.cropping(to:)` — see the Swift notes file.)
 	func frames(for state: ActivityState) -> [Frame] {
 		guard let spec = MaliPet.rowMap[state] else { return [] }
-		return frames(forRow: spec)
+		return frames(forRow: spec, output: .menubar)
+	}
+
+	/// Return frames at native source-cell resolution for the SpriteKit
+	/// floating pet. Unlike `frames(for:)`, this does not pre-scale to the
+	/// menu-bar icon size before SpriteKit receives the texture.
+	func floatingFrames(for state: ActivityState) -> [Frame] {
+		guard let spec = MaliPet.rowMap[state] else { return [] }
+		return frames(forRow: spec, output: .sourceCell)
 	}
 
 	/// Slice frames for a reserved interaction row (running-right, running-left,
@@ -206,17 +217,46 @@ final class MaliPet {
 		guard spec.rowIndex < MaliPet.gridRows, spec.frameCount <= MaliPet.gridColumns else {
 			return []
 		}
-		return frames(forRow: spec)
+		return frames(forRow: spec, output: .menubar)
 	}
 
-	private func frames(forRow spec: RowSpec) -> [Frame] {
+	/// Slice reserved interaction frames at native source-cell resolution for
+	/// the floating surface.
+	func floatingFrames(forInteraction interaction: FloatingInteraction) -> [Frame] {
+		guard let spec = MaliPet.interactionRowMap[interaction] else { return [] }
+		guard spec.rowIndex < MaliPet.gridRows, spec.frameCount <= MaliPet.gridColumns else {
+			return []
+		}
+		return frames(forRow: spec, output: .sourceCell)
+	}
+
+	private func frames(forRow spec: RowSpec, output: FrameOutput) -> [Frame] {
 		var out: [Frame] = []
 		out.reserveCapacity(spec.frameCount)
-		// Scale frames to the standard macOS menubar height (22 pt) so the
-		// raw spritesheet pixel dimensions don't overflow the status bar.
-		let targetHeight: CGFloat = 22
-		let scale = targetHeight / CGFloat(frameHeight)
-		let displaySize = NSSize(width: CGFloat(frameWidth) * scale, height: targetHeight)
+		let displaySize: NSSize
+		let pxW: Int
+		let pxH: Int
+		let interpolation: CGInterpolationQuality
+		switch output {
+		case .menubar:
+			// Scale frames to the standard macOS menubar height (22 pt) so the
+			// raw spritesheet pixel dimensions don't overflow the status bar.
+			let targetHeight: CGFloat = 22
+			let scale = targetHeight / CGFloat(frameHeight)
+			displaySize = NSSize(width: CGFloat(frameWidth) * scale, height: targetHeight)
+			let pixelScale: CGFloat = 2
+			pxW = Int((displaySize.width * pixelScale).rounded())
+			pxH = Int((displaySize.height * pixelScale).rounded())
+			interpolation = .high
+		case .sourceCell:
+			displaySize = NSSize(width: CGFloat(frameWidth), height: CGFloat(frameHeight))
+			pxW = frameWidth
+			pxH = frameHeight
+			interpolation = .none
+		}
+		dbgLog(
+			"DBG MaliPet frames: output=\(output.logLabel) row=\(spec.rowIndex) count=\(spec.frameCount) sourceCell=\(frameWidth)x\(frameHeight) imageSize=\(displaySize.width)x\(displaySize.height) backingPixels=\(pxW)x\(pxH)"
+		)
 
 		for col in 0..<spec.frameCount {
 			let rect = CGRect(
@@ -247,9 +287,6 @@ final class MaliPet {
 			// one it cached first (a known symptom: pet freezes on one
 			// frame instead of animating). Drawing at the display size in
 			// @2x pixels also yields a sharp Retina presentation.
-			let pixelScale: CGFloat = 2
-			let pxW = Int((displaySize.width * pixelScale).rounded())
-			let pxH = Int((displaySize.height * pixelScale).rounded())
 			let owned: CGImage
 			if let ctx = CGContext(
 				data: nil,
@@ -260,7 +297,7 @@ final class MaliPet {
 				space: CGColorSpaceCreateDeviceRGB(),
 				bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
 			) {
-				ctx.interpolationQuality = .high
+				ctx.interpolationQuality = interpolation
 				ctx.draw(slice, in: CGRect(x: 0, y: 0, width: pxW, height: pxH))
 				owned = ctx.makeImage() ?? slice
 			} else {
@@ -282,6 +319,20 @@ final class MaliPet {
 	struct Frame {
 		let image: NSImage
 		let cgImage: CGImage
+	}
+
+	private enum FrameOutput {
+		case menubar
+		case sourceCell
+
+		var logLabel: String {
+			switch self {
+			case .menubar:
+				return "menubar"
+			case .sourceCell:
+				return "source-cell"
+			}
+		}
 	}
 
 	// MARK: - Helpers

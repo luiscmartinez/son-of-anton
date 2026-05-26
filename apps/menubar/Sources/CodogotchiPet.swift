@@ -123,6 +123,9 @@ final class CodogotchiPet {
 		self.cgSheet = cg
 		self.frameWidth = cg.width / CodogotchiPet.gridColumns
 		self.frameHeight = cg.height / CodogotchiPet.gridRows
+		dbgLog(
+			"DBG CodogotchiPet load: sheet=\(sheetURL.path) pixels=\(cg.width)x\(cg.height) grid=\(CodogotchiPet.gridColumns)x\(CodogotchiPet.gridRows) cell=\(frameWidth)x\(frameHeight)"
+		)
 	}
 
 	/// Return the per-state animation frames sliced from the codogotchi spritesheet.
@@ -132,14 +135,48 @@ final class CodogotchiPet {
 	/// - The spritesheet was absent at load time (soft degrade).
 	func frames(for state: ActivityState) -> [MaliPet.Frame] {
 		guard let cgSheet = cgSheet, let spec = CodogotchiPet.rowMap[state] else { return [] }
+		return frames(forRow: spec, cgSheet: cgSheet, state: state, output: .menubar)
+	}
 
+	/// Return codogotchi-sheet frames at native source-cell resolution for the
+	/// SpriteKit floating pet.
+	func floatingFrames(for state: ActivityState) -> [MaliPet.Frame] {
+		guard let cgSheet = cgSheet, let spec = CodogotchiPet.rowMap[state] else { return [] }
+		return frames(forRow: spec, cgSheet: cgSheet, state: state, output: .sourceCell)
+	}
+
+	private func frames(
+		forRow spec: RowSpec,
+		cgSheet: CGImage,
+		state: ActivityState,
+		output: FrameOutput
+	) -> [MaliPet.Frame] {
 		var out: [MaliPet.Frame] = []
 		out.reserveCapacity(spec.frameCount)
-		let targetHeight: CGFloat = 22
-		let scale = targetHeight / CGFloat(frameHeight)
-		let displaySize = NSSize(
-			width: CGFloat(frameWidth) * scale,
-			height: targetHeight
+		let displaySize: NSSize
+		let pxW: Int
+		let pxH: Int
+		let interpolation: CGInterpolationQuality
+		switch output {
+		case .menubar:
+			let targetHeight: CGFloat = 22
+			let scale = targetHeight / CGFloat(frameHeight)
+			displaySize = NSSize(
+				width: CGFloat(frameWidth) * scale,
+				height: targetHeight
+			)
+			let pixelScale: CGFloat = 2
+			pxW = Int((displaySize.width * pixelScale).rounded())
+			pxH = Int((displaySize.height * pixelScale).rounded())
+			interpolation = .high
+		case .sourceCell:
+			displaySize = NSSize(width: CGFloat(frameWidth), height: CGFloat(frameHeight))
+			pxW = frameWidth
+			pxH = frameHeight
+			interpolation = .none
+		}
+		dbgLog(
+			"DBG CodogotchiPet frames: output=\(output.logLabel) state=\(state.rawValue) row=\(spec.rowIndex) count=\(spec.frameCount) sourceCell=\(frameWidth)x\(frameHeight) imageSize=\(displaySize.width)x\(displaySize.height) backingPixels=\(pxW)x\(pxH)"
 		)
 
 		for col in 0..<spec.frameCount {
@@ -155,9 +192,6 @@ final class CodogotchiPet {
 				)
 				continue
 			}
-			let pixelScale: CGFloat = 2
-			let pxW = Int((displaySize.width * pixelScale).rounded())
-			let pxH = Int((displaySize.height * pixelScale).rounded())
 			let owned: CGImage
 			if let ctx = CGContext(
 				data: nil,
@@ -168,7 +202,7 @@ final class CodogotchiPet {
 				space: CGColorSpaceCreateDeviceRGB(),
 				bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
 			) {
-				ctx.interpolationQuality = .high
+				ctx.interpolationQuality = interpolation
 				ctx.draw(slice, in: CGRect(x: 0, y: 0, width: pxW, height: pxH))
 				owned = ctx.makeImage() ?? slice
 			} else {
@@ -179,6 +213,20 @@ final class CodogotchiPet {
 		}
 
 		return out
+	}
+
+	private enum FrameOutput {
+		case menubar
+		case sourceCell
+
+		var logLabel: String {
+			switch self {
+			case .menubar:
+				return "menubar"
+			case .sourceCell:
+				return "source-cell"
+			}
+		}
 	}
 
 	// MARK: - Helpers
