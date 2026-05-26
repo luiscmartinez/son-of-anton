@@ -162,6 +162,31 @@ final class FloatingPetControllerTests: XCTestCase {
 		)
 	}
 
+	func testPointerInBoundsUsesViewCoordinateSpace() {
+		let bounds = CGRect(x: 0, y: 0, width: 160, height: 160)
+		XCTAssertTrue(FloatingInteractionPolicy.pointerInBounds(CGPoint(x: 80, y: 80), bounds: bounds))
+		XCTAssertFalse(FloatingInteractionPolicy.pointerInBounds(CGPoint(x: -1, y: 80), bounds: bounds))
+	}
+
+	func testTrackingAreasRefreshOnlyWhenBoundsSizeChanges() {
+		let first = CGRect(x: 0, y: 0, width: 160, height: 160)
+		let sameSizeMoved = CGRect(x: 10, y: 20, width: 160, height: 160)
+		let resized = CGRect(x: 0, y: 0, width: 200, height: 180)
+
+		XCTAssertFalse(
+			FloatingInteractionPolicy.shouldRefreshTrackingAreas(
+				previousBounds: first,
+				newBounds: sameSizeMoved
+			)
+		)
+		XCTAssertTrue(
+			FloatingInteractionPolicy.shouldRefreshTrackingAreas(
+				previousBounds: first,
+				newBounds: resized
+			)
+		)
+	}
+
 	func testResizeAffordanceHiddenUntilPointerHovers() {
 		XCTAssertFalse(
 			FloatingInteractionPolicy.shouldShowResizeAffordance(
