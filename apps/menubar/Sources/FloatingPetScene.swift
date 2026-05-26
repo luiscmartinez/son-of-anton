@@ -167,25 +167,34 @@ final class FloatingPetScene: SKScene {
 		}
 
 		let prior = currentInteraction
+		let priorSource = currentSource
 		let preserveRunningCycle = Self.isRunningInteraction(prior)
+			&& Self.isRunningInteraction(interaction)
+		let preserveJumpingToRunningCycle = prior == .jumping
 			&& Self.isRunningInteraction(interaction)
 
 		currentInteraction = interaction
 		currentFrames = frames
 		currentSource = .codexInteraction
-		if preserveRunningCycle {
+		if preserveRunningCycle || preserveJumpingToRunningCycle {
 			frameIndex = frameIndex % frames.count
 			paintCurrentFrame()
 			dbgLog(
-				"DBG FloatingPetScene.setInteraction: \(interaction) preserved frameIndex=\(frameIndex) frameCount=\(frames.count) (running flip)"
+				"DBG FloatingPetScene.setInteraction: \(interaction) preserved frameIndex=\(frameIndex) frameCount=\(frames.count) (cycle preserved)"
 			)
 		} else {
 			frameIndex = 0
 			paintCurrentFrame()
-			dbgLog(
-				"DBG FloatingPetScene.setInteraction: \(interaction) frameCount=\(frames.count) frameIndex=0"
-			)
-			restartTimer()
+			if priorSource == .codexInteraction {
+				dbgLog(
+					"DBG FloatingPetScene.setInteraction: \(interaction) frameCount=\(frames.count) preserved timer (interaction swap)"
+				)
+			} else {
+				dbgLog(
+					"DBG FloatingPetScene.setInteraction: \(interaction) frameCount=\(frames.count) frameIndex=0"
+				)
+				restartTimer()
+			}
 		}
 	}
 
@@ -227,7 +236,10 @@ final class FloatingPetScene: SKScene {
 			switch currentSource {
 			case .codogotchi:
 				interval = CodogotchiPet.frameInterval
-			case .codex, .idleFallback, .codexInteraction:
+			case .codexInteraction:
+				// Stable cadence across jumping ↔ running swaps during drag.
+				interval = MaliPet.frameInterval
+			case .codex, .idleFallback:
 				interval = 1.0 / Double(max(currentFrames.count, 1))
 			}
 		}

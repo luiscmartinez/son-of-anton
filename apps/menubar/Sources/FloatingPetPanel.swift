@@ -150,6 +150,27 @@ enum FloatingInteractionPolicy {
 		)
 	}
 
+	/// Positions the panel so the `mouseDown` grab point stays under the cursor.
+	/// `grabOffsetInScreen` is the vector from the window origin to the click in
+	/// screen space (bottom-left origin, same as `NSWindow.frame`).
+	static func draggedFrame(
+		mouseLocationInScreen: CGPoint,
+		grabOffsetInScreen: CGPoint,
+		windowSize: CGSize,
+		visibleFrame: CGRect
+	) -> CGRect {
+		FloatingFramePolicy.clamp(
+			CGRect(
+				x: mouseLocationInScreen.x - grabOffsetInScreen.x,
+				y: mouseLocationInScreen.y - grabOffsetInScreen.y,
+				width: windowSize.width,
+				height: windowSize.height
+			),
+			to: visibleFrame
+		)
+	}
+
+	/// Cumulative screen delta from a fixed start (resize drags).
 	static func draggedFrame(
 		from frame: CGRect,
 		dragDelta: CGSize,
@@ -245,7 +266,9 @@ enum FloatingInteractionPolicy {
 		case .dragRegion:
 			if delta.width > 0 { return .runningRight }
 			if delta.width < 0 { return .runningLeft }
-			if previous == .runningLeft || previous == .runningRight {
+			// Vertical-only steps must not drop back to activity frames mid-drag
+			// (common on the first `mouseDragged` tick while hover is `.jumping`).
+			if previous == .runningLeft || previous == .runningRight || previous == .jumping {
 				return previous
 			}
 			return nil
@@ -255,7 +278,7 @@ enum FloatingInteractionPolicy {
 
 private final class FloatingPetInteractionView: NSView {
 	private enum ActiveInteraction {
-		case drag(startFrame: CGRect, startScreenPoint: CGPoint)
+		case drag(grabOffsetInScreen: CGPoint)
 		case resize(startFrame: CGRect, startScreenPoint: CGPoint)
 	}
 
@@ -272,6 +295,7 @@ private final class FloatingPetInteractionView: NSView {
 	private var boundsTrackingArea: NSTrackingArea?
 	private var affordanceTrackingArea: NSTrackingArea?
 	private var lastTrackingBoundsSize: CGSize = .zero
+	private var lastLayoutBoundsSize: CGSize = .zero
 	private var isReconfiguringTracking = false
 	private var resizeCursorPushed = false
 	private var localMouseMonitor: Any?
@@ -353,10 +377,17 @@ private final class FloatingPetInteractionView: NSView {
 		super.layout()
 		skView.frame = bounds
 		overlayView.frame = bounds
-		sceneSizeHandler(bounds.size)
-		reconfigureTrackingAreasIfNeeded(force: false)
+		let sizeChanged = bounds.size != lastLayoutBoundsSize
+		lastLayoutBoundsSize = bounds.size
+		if sizeChanged {
+			sceneSizeHandler(bounds.size)
+			reconfigureTrackingAreasIfNeeded(force: false)
+		}
 		elevateOverlayAboveSpriteKit()
-		syncPointerState(reason: "layout")
+		// Translate drags only move origin; skip pointer/tracking churn each frame.
+		if activeInteraction == nil || isResizing {
+			syncPointerState(reason: "layout")
+		}
 	}
 
 	override func mouseMoved(with event: NSEvent) {
@@ -398,7 +429,16 @@ private final class FloatingPetInteractionView: NSView {
 		let startScreenPoint = NSEvent.mouseLocation
 		switch FloatingInteractionPolicy.hitTest(point: localPoint, in: bounds) {
 		case .dragRegion:
-			activeInteraction = .drag(startFrame: window.frame, startScreenPoint: startScreenPoint)
+			let clickInScreen = screenLocation(for: event)
+			let grabOffset = CGPoint(
+				x: clickInScreen.x - window.frame.origin.x,
+				y: clickInScreen.y - window.frame.origin.y
+			)
+			activeInteraction = .drag(grabOffsetInScreen: grabOffset)
+			overlayView.showsResizeAffordance = false
+			dbgLog(
+				"DBG FloatingPetInteractionView translateDrag: mouseDown origin=\(window.frame.origin) clickInScreen=\(clickInScreen) grabOffset=\(grabOffset)"
+			)
 		case .resizeAffordance:
 			activeInteraction = .resize(startFrame: window.frame, startScreenPoint: startScreenPoint)
 			pushResizeCursor()
@@ -410,22 +450,33 @@ private final class FloatingPetInteractionView: NSView {
 		guard let window, let activeInteraction else { return }
 		let currentPoint = NSEvent.mouseLocation
 		let nextFrame: CGRect
-		let dragDelta: CGSize
 		let hitTarget: FloatingInteractionHitTarget
 
 		switch activeInteraction {
-		case let .drag(startFrame, startScreenPoint):
-			dragDelta = CGSize(
-				width: currentPoint.x - startScreenPoint.x,
-				height: currentPoint.y - startScreenPoint.y
-			)
+		case let .drag(grabOffsetInScreen):
+			let stepDelta = CGSize(width: event.deltaX, height: event.deltaY)
 			hitTarget = .dragRegion
+			let mouseInScreen = screenLocation(for: event)
+			let before = window.frame
 			nextFrame = FloatingInteractionPolicy.draggedFrame(
-				from: startFrame,
-				dragDelta: dragDelta,
+				mouseLocationInScreen: mouseInScreen,
+				grabOffsetInScreen: grabOffsetInScreen,
+				windowSize: before.size,
 				visibleFrame: visibleFrameProvider()
 			)
+			applyPanelFrame(nextFrame, isTranslate: true)
+			let interaction = FloatingInteractionPolicy.interaction(
+				forStepDelta: stepDelta,
+				hitTarget: hitTarget,
+				previous: lastEmittedInteraction
+			)
+			dbgLog(
+				"DBG FloatingPetInteractionView translateDrag: mouseInScreen=\(mouseInScreen) step=\(stepDelta.width)x\(stepDelta.height) origin \(before.origin)→\(nextFrame.origin) grabOffset=\(grabOffsetInScreen) picked=\(interaction.map { "\($0)" } ?? "nil")"
+			)
+			emitInteraction(interaction, reason: "mouseDragged-\(hitTarget)")
+			return
 		case let .resize(startFrame, startScreenPoint):
+			let dragDelta: CGSize
 			let rawDelta = CGSize(
 				width: currentPoint.x - startScreenPoint.x,
 				height: currentPoint.y - startScreenPoint.y
@@ -442,27 +493,20 @@ private final class FloatingPetInteractionView: NSView {
 			dbgLog(
 				"DBG FloatingPetInteractionView resizeDrag: raw=\(rawDelta.width)x\(rawDelta.height) horizontalDelta=\(FloatingInteractionPolicy.resizeHorizontalDelta(from: rawDelta)) startAspect=\(startAspect) endAspect=\(endAspect) panelFrame=\(nextFrame.width)x\(nextFrame.height)"
 			)
-		}
-
-		window.setFrame(nextFrame, display: true)
-		sceneSizeHandler(nextFrame.size)
-
-		let stepDelta = CGSize(width: event.deltaX, height: event.deltaY)
-		let interaction = FloatingInteractionPolicy.interaction(
-			forStepDelta: stepDelta,
-			hitTarget: hitTarget,
-			previous: lastEmittedInteraction
-		)
-		if hitTarget == .dragRegion {
-			dbgLog(
-				"DBG FloatingPetInteractionView translateDrag: step=\(stepDelta.width)x\(stepDelta.height) cumulative=\(dragDelta.width)x\(dragDelta.height) previous=\(lastEmittedInteraction.map { "\($0)" } ?? "nil") picked=\(interaction.map { "\($0)" } ?? "nil")"
+			applyPanelFrame(nextFrame, isTranslate: false)
+			let stepDelta = CGSize(width: event.deltaX, height: event.deltaY)
+			let interaction = FloatingInteractionPolicy.interaction(
+				forStepDelta: stepDelta,
+				hitTarget: hitTarget,
+				previous: lastEmittedInteraction
 			)
+			emitInteraction(interaction, reason: "mouseDragged-\(hitTarget)")
 		}
-		emitInteraction(interaction, reason: "mouseDragged-\(hitTarget)")
 	}
 
 	override func mouseUp(with event: NSEvent) {
 		let wasResizing = isResizing
+		window?.displayIfNeeded()
 		activeInteraction = nil
 		emitInteraction(nil, reason: "mouseUp-clear")
 		if let frame = window?.frame {
@@ -482,6 +526,38 @@ private final class FloatingPetInteractionView: NSView {
 		return false
 	}
 
+	private var isTranslating: Bool {
+		if case .drag = activeInteraction { return true }
+		return false
+	}
+
+	/// Screen location for the event cursor, using the window's base coordinate
+	/// system so it stays consistent with `NSWindow.frame` (bottom-left screen).
+	private func screenLocation(for event: NSEvent) -> CGPoint {
+		guard let window else { return NSEvent.mouseLocation }
+		return window.convertPoint(toScreen: event.locationInWindow)
+	}
+
+	private func applyPanelFrame(_ frame: CGRect, isTranslate: Bool) {
+		guard let window else { return }
+		let before = window.frame
+		guard frame != before else { return }
+
+		if isTranslate, frame.size == before.size {
+			window.setFrameOrigin(frame.origin)
+		} else {
+			window.setFrame(frame, display: false)
+		}
+
+		if frame.size != before.size {
+			sceneSizeHandler(frame.size)
+		}
+
+		dbgLog(
+			"DBG FloatingPetInteractionView applyPanelFrame: translate=\(isTranslate) origin \(before.origin)→\(frame.origin) size \(before.size)→\(frame.size)"
+		)
+	}
+
 	private func elevateOverlayAboveSpriteKit() {
 		addSubview(overlayView, positioned: .above, relativeTo: skView)
 	}
@@ -492,6 +568,10 @@ private final class FloatingPetInteractionView: NSView {
 			matching: [.mouseMoved, .leftMouseDragged, .leftMouseUp, .leftMouseDown]
 		) { [weak self] event in
 			guard let self, let window = self.window, event.window === window else { return event }
+			// `mouseDragged` on this view already moves the panel; skip duplicate overlay work.
+			if self.isTranslating, event.type == .leftMouseDragged {
+				return event
+			}
 			let localPoint = self.convert(event.locationInWindow, from: nil)
 			self.handlePointerEvent(at: localPoint, reason: "localMonitor-\(event.type.rawValue)")
 			return event
@@ -567,6 +647,9 @@ private final class FloatingPetInteractionView: NSView {
 	}
 
 	private func handlePointerEvent(at localPoint: CGPoint, reason: String) {
+		if isTranslating {
+			return
+		}
 		let inBounds = FloatingInteractionPolicy.pointerInBounds(localPoint, bounds: bounds)
 		let inAffordanceRect = FloatingInteractionPolicy.resizeAffordanceRect(in: bounds)
 			.contains(localPoint)

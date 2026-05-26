@@ -243,6 +243,34 @@ final class FloatingInteractionTests: XCTestCase {
 		)
 	}
 
+	func testVerticalStepHoldsJumpingDuringTranslate() {
+		XCTAssertEqual(
+			FloatingInteractionPolicy.interaction(
+				forStepDelta: CGSize(width: 0, height: 8),
+				hitTarget: .dragRegion,
+				previous: .jumping
+			),
+			.jumping,
+			"first drag ticks are often vertical-only; must not clear hover jumping"
+		)
+	}
+
+	func testDraggedFrameKeepsGrabPointUnderCursor() {
+		let grabOffset = CGPoint(x: 40, y: 30)
+		let windowSize = CGSize(width: 160, height: 160)
+		let mouse = CGPoint(x: 500, y: 400)
+		let visible = CGRect(x: 0, y: 0, width: 2000, height: 2000)
+		let frame = FloatingInteractionPolicy.draggedFrame(
+			mouseLocationInScreen: mouse,
+			grabOffsetInScreen: grabOffset,
+			windowSize: windowSize,
+			visibleFrame: visible
+		)
+		XCTAssertEqual(frame.origin.x, mouse.x - grabOffset.x, accuracy: 0.001)
+		XCTAssertEqual(frame.origin.y, mouse.y - grabOffset.y, accuracy: 0.001)
+		XCTAssertEqual(frame.size, windowSize)
+	}
+
 	func testStepReversalFlipsRunningWithoutCumulativeUndo() {
 		// Cumulative delta from mouseDown would still be leftward after a small
 		// rightward reversal; per-event step must flip immediately.
@@ -294,6 +322,25 @@ final class FloatingInteractionTests: XCTestCase {
 		XCTAssertEqual(
 			interaction, .jumping,
 			"resize affordance must pick the jumping reserved row regardless of drag direction"
+		)
+	}
+
+	func testJumpingToRunningPreservesFrameIndex() throws {
+		let scene = try makeScene()
+		scene.update(state: .idle, visualMode: .normal)
+		scene.setInteraction(.jumping)
+		for _ in 0 ..< 2 {
+			scene.advanceFrameForTesting()
+		}
+		let indexBefore = scene.currentFrameIndexForTesting
+		XCTAssertGreaterThan(indexBefore, 0)
+
+		scene.setInteraction(.runningRight)
+
+		XCTAssertEqual(scene.currentInteractionForTesting, .runningRight)
+		XCTAssertEqual(
+			scene.currentFrameIndexForTesting, indexBefore % 8,
+			"jumping → running must not reset the frame cycle on drag start"
 		)
 	}
 
