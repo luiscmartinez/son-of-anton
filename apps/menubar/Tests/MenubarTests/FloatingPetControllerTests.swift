@@ -162,6 +162,44 @@ final class FloatingPetControllerTests: XCTestCase {
 		)
 	}
 
+	func testResizeAffordanceHiddenUntilPointerHovers() {
+		XCTAssertFalse(
+			FloatingInteractionPolicy.shouldShowResizeAffordance(
+				pointerInAffordance: false,
+				isResizing: false
+			)
+		)
+		XCTAssertTrue(
+			FloatingInteractionPolicy.shouldShowResizeAffordance(
+				pointerInAffordance: true,
+				isResizing: false
+			)
+		)
+		XCTAssertTrue(
+			FloatingInteractionPolicy.shouldShowResizeAffordance(
+				pointerInAffordance: false,
+				isResizing: true
+			),
+			"affordance stays visible for the duration of an active resize drag"
+		)
+	}
+
+	func testHorizontalResizeDragUsesUniformScaleFromWidth() {
+		let delta = FloatingInteractionPolicy.resizeDragDelta(
+			from: CGSize(width: 40, height: 4)
+		)
+		XCTAssertEqual(delta.width, 40)
+		XCTAssertEqual(delta.height, 40)
+	}
+
+	func testDiagonalResizeDragUsesBothAxes() {
+		let delta = FloatingInteractionPolicy.resizeDragDelta(
+			from: CGSize(width: 30, height: 50)
+		)
+		XCTAssertEqual(delta.width, 30)
+		XCTAssertEqual(delta.height, 50)
+	}
+
 	func testFloatingInteractionResizeDeltasClampToMinAndMaxSizes() {
 		let visibleFrame = CGRect(x: 0, y: 0, width: 1000, height: 800)
 		let startingFrame = CGRect(x: 100, y: 120, width: 160, height: 160)

@@ -146,20 +146,41 @@ enum FloatingInteractionPolicy {
 		)
 	}
 
+	/// Maps raw pointer delta from a resize affordance drag into width/height
+	/// growth. Horizontal-dominant drags scale uniformly from width so
+	/// left-right motion resizes the pet; otherwise both axes apply (diagonal
+	/// top-left→bottom-right resize from the bottom-right affordance).
+	static func resizeDragDelta(from rawDelta: CGSize) -> CGSize {
+		if abs(rawDelta.width) >= abs(rawDelta.height) {
+			return CGSize(width: rawDelta.width, height: rawDelta.width)
+		}
+		return rawDelta
+	}
+
 	static func resizedFrame(
 		from frame: CGRect,
 		dragDelta: CGSize,
 		visibleFrame: CGRect
 	) -> CGRect {
-		FloatingFramePolicy.clamp(
+		let scaledDelta = resizeDragDelta(from: dragDelta)
+		return FloatingFramePolicy.clamp(
 			CGRect(
 				x: frame.origin.x,
 				y: frame.origin.y,
-				width: frame.width + dragDelta.width,
-				height: frame.height + dragDelta.height
+				width: frame.width + scaledDelta.width,
+				height: frame.height + scaledDelta.height
 			),
 			to: visibleFrame
 		)
+	}
+
+	/// Whether the resize affordance icon should paint for the current pointer
+	/// and interaction state.
+	static func shouldShowResizeAffordance(
+		pointerInAffordance: Bool,
+		isResizing: Bool
+	) -> Bool {
+		pointerInAffordance || isResizing
 	}
 
 	/// Pure-function mapping from an in-flight pointer drag delta and the
@@ -196,6 +217,8 @@ private final class FloatingPetInteractionView: NSView {
 	private let interactionHandler: (FloatingInteraction?) -> Void
 	private var activeInteraction: ActiveInteraction?
 	private var lastEmittedInteraction: FloatingInteraction?
+	private var affordanceHovered = false
+	private var affordanceTrackingArea: NSTrackingArea?
 	var frameChangeHandler: ((CGRect) -> Void)?
 
 	init(
@@ -214,6 +237,7 @@ private final class FloatingPetInteractionView: NSView {
 		skView.autoresizingMask = [.width, .height]
 		addSubview(skView)
 		addSubview(resizeAffordanceView)
+		resizeAffordanceView.isHidden = true
 	}
 
 	@available(*, unavailable)
@@ -223,6 +247,27 @@ private final class FloatingPetInteractionView: NSView {
 
 	func presentScene(_ scene: SKScene) {
 		skView.presentScene(scene)
+	}
+
+	override func viewDidMoveToWindow() {
+		super.viewDidMoveToWindow()
+		window?.acceptsMouseMovedEvents = true
+		updateTrackingAreas()
+	}
+
+	override func updateTrackingAreas() {
+		super.updateTrackingAreas()
+		if let affordanceTrackingArea {
+			removeTrackingArea(affordanceTrackingArea)
+		}
+		let area = NSTrackingArea(
+			rect: bounds,
+			options: [.activeAlways, .mouseMoved, .mouseEnteredAndExited, .inVisibleRect],
+			owner: self,
+			userInfo: nil
+		)
+		addTrackingArea(area)
+		affordanceTrackingArea = area
 	}
 
 	override var isFlipped: Bool { false }
@@ -236,6 +281,21 @@ private final class FloatingPetInteractionView: NSView {
 		super.layout()
 		skView.frame = bounds
 		resizeAffordanceView.frame = FloatingInteractionPolicy.resizeAffordanceRect(in: bounds)
+		updateTrackingAreas()
+	}
+
+	override func mouseMoved(with event: NSEvent) {
+		let localPoint = convert(event.locationInWindow, from: nil)
+		updateAffordanceHover(at: localPoint, reason: "mouseMoved")
+	}
+
+	override func mouseEntered(with event: NSEvent) {
+		let localPoint = convert(event.locationInWindow, from: nil)
+		updateAffordanceHover(at: localPoint, reason: "mouseEntered")
+	}
+
+	override func mouseExited(with event: NSEvent) {
+		updateAffordanceHover(at: nil, reason: "mouseExited")
 	}
 
 	override func mouseDown(with event: NSEvent) {
@@ -247,6 +307,7 @@ private final class FloatingPetInteractionView: NSView {
 			activeInteraction = .drag(startFrame: window.frame, startScreenPoint: startScreenPoint)
 		case .resizeAffordance:
 			activeInteraction = .resize(startFrame: window.frame, startScreenPoint: startScreenPoint)
+			updateAffordanceHover(at: localPoint, reason: "mouseDown-resize")
 		}
 	}
 
@@ -270,15 +331,19 @@ private final class FloatingPetInteractionView: NSView {
 				visibleFrame: visibleFrameProvider()
 			)
 		case let .resize(startFrame, startScreenPoint):
-			dragDelta = CGSize(
+			let rawDelta = CGSize(
 				width: currentPoint.x - startScreenPoint.x,
 				height: currentPoint.y - startScreenPoint.y
 			)
+			dragDelta = FloatingInteractionPolicy.resizeDragDelta(from: rawDelta)
 			hitTarget = .resizeAffordance
 			nextFrame = FloatingInteractionPolicy.resizedFrame(
 				from: startFrame,
-				dragDelta: dragDelta,
+				dragDelta: rawDelta,
 				visibleFrame: visibleFrameProvider()
+			)
+			dbgLog(
+				"DBG FloatingPetInteractionView resizeDrag: raw=\(rawDelta.width)x\(rawDelta.height) scaled=\(dragDelta.width)x\(dragDelta.height) frame=\(nextFrame.width)x\(nextFrame.height)"
 			)
 		}
 
@@ -295,6 +360,7 @@ private final class FloatingPetInteractionView: NSView {
 	}
 
 	override func mouseUp(with event: NSEvent) {
+		let wasResizing = isResizing
 		activeInteraction = nil
 		if lastEmittedInteraction != nil {
 			lastEmittedInteraction = nil
@@ -303,30 +369,92 @@ private final class FloatingPetInteractionView: NSView {
 		if let frame = window?.frame {
 			frameChangeHandler?(frame)
 		}
+		let localPoint = convert(event.locationInWindow, from: nil)
+		updateAffordanceHover(at: localPoint, reason: wasResizing ? "mouseUp-resize" : "mouseUp")
 	}
 
-	override func resetCursorRects() {
-		super.resetCursorRects()
-		addCursorRect(
-			FloatingInteractionPolicy.resizeAffordanceRect(in: bounds),
-			cursor: .resizeLeftRight
+	override func cursorUpdate(with event: NSEvent) {
+		let localPoint = convert(event.locationInWindow, from: nil)
+		if FloatingInteractionPolicy.resizeAffordanceRect(in: bounds).contains(localPoint) {
+			FloatingResizeAffordanceView.resizeCursor.set()
+		} else {
+			NSCursor.arrow.set()
+		}
+	}
+
+	private var isResizing: Bool {
+		if case .resize = activeInteraction { return true }
+		return false
+	}
+
+	private func updateAffordanceHover(at localPoint: CGPoint?, reason: String) {
+		let pointerInAffordance: Bool
+		if let localPoint {
+			pointerInAffordance = FloatingInteractionPolicy.resizeAffordanceRect(in: bounds)
+				.contains(localPoint)
+		} else {
+			pointerInAffordance = false
+		}
+
+		let shouldShow = FloatingInteractionPolicy.shouldShowResizeAffordance(
+			pointerInAffordance: pointerInAffordance,
+			isResizing: isResizing
 		)
+		let visibilityChanged = shouldShow != !resizeAffordanceView.isHidden
+		affordanceHovered = pointerInAffordance
+		resizeAffordanceView.isHidden = !shouldShow
+
+		if visibilityChanged || pointerInAffordance {
+			dbgLog(
+				"DBG FloatingPetInteractionView affordance: reason=\(reason) hover=\(pointerInAffordance) resizing=\(isResizing) visible=\(shouldShow) point=\(localPoint.map { "\($0.x),\($0.y)" } ?? "nil") rect=\(FloatingInteractionPolicy.resizeAffordanceRect(in: bounds))"
+			)
+		}
+
+		if shouldShow {
+			FloatingResizeAffordanceView.resizeCursor.set()
+		} else if !isResizing {
+			NSCursor.arrow.set()
+		}
 	}
 }
 
 private final class FloatingResizeAffordanceView: NSView {
+	static let resizeCursor: NSCursor = {
+		if let image = NSImage(
+			systemSymbolName: "arrow.up.left.and.arrow.down.right",
+			accessibilityDescription: "Resize floating pet"
+		) {
+			let config = NSImage.SymbolConfiguration(pointSize: 12, weight: .semibold)
+			let configured = image.withSymbolConfiguration(config) ?? image
+			configured.size = NSSize(width: 14, height: 14)
+			return NSCursor(image: configured, hotSpot: NSPoint(x: 7, y: 7))
+		}
+		return .crosshair
+	}()
+
 	override var isOpaque: Bool { false }
 
 	override func draw(_ dirtyRect: NSRect) {
-		NSColor.white.withAlphaComponent(0.42).setStroke()
-		let path = NSBezierPath()
-		path.lineWidth = 1.5
-		let inset: CGFloat = 7
+		let bgRect = bounds.insetBy(dx: 3, dy: 3)
+		let background = NSColor(calibratedRed: 0.07, green: 0.09, blue: 0.20, alpha: 0.94)
+		let rounded = NSBezierPath(roundedRect: bgRect, xRadius: 5, yRadius: 5)
+		background.setFill()
+		rounded.fill()
 
-		path.move(to: CGPoint(x: bounds.maxX - inset, y: bounds.minY + inset))
-		path.line(to: CGPoint(x: bounds.maxX - inset, y: bounds.maxY - inset))
-		path.move(to: CGPoint(x: bounds.maxX - inset, y: bounds.minY + inset))
-		path.line(to: CGPoint(x: bounds.minX + inset, y: bounds.minY + inset))
-		path.stroke()
+		guard let symbol = NSImage(
+			systemSymbolName: "arrow.up.left.and.arrow.down.right",
+			accessibilityDescription: nil
+		) else { return }
+
+		let config = NSImage.SymbolConfiguration(pointSize: 11, weight: .semibold)
+			.applying(.init(hierarchicalColor: .white))
+		let icon = symbol.withSymbolConfiguration(config) ?? symbol
+		let iconSide = min(bgRect.width, bgRect.height) - 4
+		icon.size = NSSize(width: iconSide, height: iconSide)
+		let origin = NSPoint(
+			x: bgRect.midX - iconSide / 2,
+			y: bgRect.midY - iconSide / 2
+		)
+		icon.draw(at: origin, from: .zero, operation: .sourceOver, fraction: 1)
 	}
 }
