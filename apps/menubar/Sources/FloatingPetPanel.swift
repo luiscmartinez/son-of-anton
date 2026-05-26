@@ -351,6 +351,7 @@ private final class FloatingPetInteractionView: NSView {
 	private var resizeCursorPushed = false
 	private var localMouseMonitor: Any?
 	private var globalMouseMonitor: Any?
+	private var globalKeyboardMonitor: Any?
 	private var hidePromptDismissObservers: [NSObjectProtocol] = []
 	private var pointerInsideFrame = false
 	private var affordanceHoverActive = false
@@ -709,6 +710,17 @@ private final class FloatingPetInteractionView: NSView {
 				self?.handleGlobalMouseDownWhileHidePromptVisible(event)
 			}
 		}
+
+		// Dismiss on any keyboard input (including Cmd+Tab / Alt+Tab system
+		// switchers) so the pill never lingers over the UI while the user is
+		// changing apps/windows.
+		globalKeyboardMonitor = NSEvent.addGlobalMonitorForEvents(
+			matching: [.keyDown, .keyUp, .flagsChanged]
+		) { [weak self] _ in
+			Task { @MainActor in
+				self?.dismissHidePrompt()
+			}
+		}
 	}
 
 	private func removeHidePromptDismissObservers() {
@@ -719,6 +731,10 @@ private final class FloatingPetInteractionView: NSView {
 		if let globalMouseMonitor {
 			NSEvent.removeMonitor(globalMouseMonitor)
 			self.globalMouseMonitor = nil
+		}
+		if let globalKeyboardMonitor {
+			NSEvent.removeMonitor(globalKeyboardMonitor)
+			self.globalKeyboardMonitor = nil
 		}
 	}
 
