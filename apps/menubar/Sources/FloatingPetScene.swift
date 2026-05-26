@@ -115,64 +115,40 @@ final class FloatingPetScene: SKScene {
 	/// activity-state animation remains in place. Passing `nil` restores the
 	/// ordinary activity-state animation.
 	func setInteraction(_ interaction: FloatingInteraction?) {
-		let prior = currentInteraction
-		let start = CFAbsoluteTimeGetCurrent()
-		var branch = "noop"
-		var paintMs = 0.0
-		var restartedTimer = false
-
 		guard let interaction else {
 			guard currentInteraction != nil else { return }
-			branch = "clear"
 			currentInteraction = nil
 			let resolved = resolveFrames(for: currentState)
 			currentFrames = resolved.frames
 			currentSource = resolved.source
 			frameIndex = 0
-			paintMs = FloatingPetPerfDebug.measure { paintCurrentFrame() }
+			paintCurrentFrame()
 			restartTimer()
-			restartedTimer = true
-			logSetInteraction(
-				from: prior, to: nil, branch: branch, start: start,
-				paintMs: paintMs, restartedTimer: restartedTimer, framesLoadMs: 0
-			)
 			return
 		}
 
 		if currentInteraction == interaction {
-			branch = "same-interaction"
-			logSetInteraction(
-				from: prior, to: interaction, branch: branch, start: start,
-				paintMs: paintMs, restartedTimer: restartedTimer, framesLoadMs: 0
-			)
 			return
 		}
 
-		var frames: [MaliPet.Frame] = []
-		let framesLoadMs = FloatingPetPerfDebug.measure {
-			frames = interactionFrames(interaction)
-		}
+		let frames = interactionFrames(interaction)
 		guard !frames.isEmpty else {
+			// Missing reserved row: keep current activity frames running so the
+			// floating pet does not blank out on a pet whose sheet lacks the
+			// reserved row.
 			if currentInteraction != nil {
-				branch = "missing-row-clear"
 				currentInteraction = nil
 				let resolved = resolveFrames(for: currentState)
 				currentFrames = resolved.frames
 				currentSource = resolved.source
 				frameIndex = 0
-				paintMs = FloatingPetPerfDebug.measure { paintCurrentFrame() }
+				paintCurrentFrame()
 				restartTimer()
-				restartedTimer = true
-			} else {
-				branch = "missing-row-noop"
 			}
-			logSetInteraction(
-				from: prior, to: interaction, branch: branch, start: start,
-				paintMs: paintMs, restartedTimer: restartedTimer, framesLoadMs: framesLoadMs
-			)
 			return
 		}
 
+		let prior = currentInteraction
 		let priorSource = currentSource
 		let priorFramesCount = currentFrames.count
 		let preserveRunningCycle = Self.isRunningInteraction(prior)
@@ -184,55 +160,22 @@ final class FloatingPetScene: SKScene {
 		currentFrames = frames
 		currentSource = .codexInteraction
 		if preserveRunningCycle || preserveJumpingToRunningCycle {
-			branch = preserveRunningCycle ? "preserve-running" : "preserve-jumping-to-running"
 			frameIndex = frameIndex % frames.count
-			paintMs = FloatingPetPerfDebug.measure { paintCurrentFrame() }
+			paintCurrentFrame()
 			if priorSource == .codexInteraction, demoFrameInterval == nil, priorFramesCount != frames.count {
 				restartTimer()
-				restartedTimer = true
 			}
 		} else {
-			branch = priorSource == .codexInteraction ? "swap-codex-interaction" : "swap-from-activity"
 			frameIndex = 0
-			paintMs = FloatingPetPerfDebug.measure { paintCurrentFrame() }
+			paintCurrentFrame()
 			if priorSource == .codexInteraction {
 				if demoFrameInterval == nil, priorFramesCount != frames.count {
 					restartTimer()
-					restartedTimer = true
 				}
 			} else {
 				restartTimer()
-				restartedTimer = true
 			}
 		}
-
-		logSetInteraction(
-			from: prior, to: interaction, branch: branch, start: start,
-			paintMs: paintMs, restartedTimer: restartedTimer, framesLoadMs: framesLoadMs
-		)
-	}
-
-	private func logSetInteraction(
-		from prior: FloatingInteraction?,
-		to interaction: FloatingInteraction?,
-		branch: String,
-		start: CFAbsoluteTime,
-		paintMs: Double,
-		restartedTimer: Bool,
-		framesLoadMs: Double
-	) {
-		let totalMs = (CFAbsoluteTimeGetCurrent() - start) * 1000
-		FloatingPetPerfDebug.setInteraction(
-			from: prior,
-			to: interaction,
-			branch: branch,
-			totalMs: totalMs,
-			framesLoadMs: framesLoadMs,
-			paintMs: paintMs,
-			restartedTimer: restartedTimer,
-			frameIndex: frameIndex,
-			frameCount: currentFrames.count
-		)
 	}
 
 	private static func isRunningInteraction(_ interaction: FloatingInteraction?) -> Bool {
@@ -277,12 +220,6 @@ final class FloatingPetScene: SKScene {
 			}
 		}
 
-		FloatingPetPerfDebug.restartTimer(
-			intervalMs: interval * 1000,
-			source: currentSource.logLabel,
-			frameCount: currentFrames.count
-		)
-
 		let newTimer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
 			Task { @MainActor in self?.tick() }
 		}
@@ -309,19 +246,6 @@ final class FloatingPetScene: SKScene {
 	}
 
 	private func paintCurrentFrame() {
-		let paintStart = CFAbsoluteTimeGetCurrent()
-		defer {
-			let paintMs = (CFAbsoluteTimeGetCurrent() - paintStart) * 1000
-			if paintMs > 4 {
-				FloatingPetPerfDebug.paintSlow(
-					ms: paintMs,
-					frameIndex: frameIndex,
-					source: currentSource.logLabel,
-					interaction: currentInteraction
-				)
-			}
-		}
-
 		guard !currentFrames.isEmpty else {
 			spriteNode.texture = nil
 			return
