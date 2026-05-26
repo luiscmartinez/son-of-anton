@@ -12,6 +12,7 @@ final class FloatingPetPanelController: FloatingPetPanelManaging {
 	private var currentState: ActivityState = .idle
 	private var currentMode: VisualMode = .normal
 	private var frameChangeHandler: ((CGRect) -> Void)?
+	var onHideFloatingPet: (() -> Void)?
 
 	init(
 		codexPet: MaliPet,
@@ -55,6 +56,7 @@ final class FloatingPetPanelController: FloatingPetPanelManaging {
 	}
 
 	func hide() {
+		(panel?.contentView as? FloatingPetInteractionView)?.dismissHidePromptIfPresent()
 		panel?.orderOut(nil)
 	}
 
@@ -116,10 +118,45 @@ final class FloatingPetPanelController: FloatingPetPanelManaging {
 			}
 		)
 		view.frameChangeHandler = frameChangeHandler
+		view.hideFloatingPetHandler = { [weak self] in
+			self?.onHideFloatingPet?()
+		}
 		return view
 	}
 }
 
+/// Layout for the in-frame “Hide Floating Pet” pill shown on right-click.
+enum FloatingPetHidePrompt {
+	static let font = NSFont.systemFont(ofSize: 13, weight: .medium)
+	static let horizontalPadding: CGFloat = 14
+	static let verticalPadding: CGFloat = 7
+
+	static func preferredSize(title: String = MenubarMenu.hideFloatingPetTitle) -> CGSize {
+		let textSize = (title as NSString).size(withAttributes: [.font: font])
+		let height = ceil(textSize.height) + verticalPadding * 2
+		let width = ceil(textSize.width) + horizontalPadding * 2
+		return CGSize(width: width, height: height)
+	}
+
+	static func frame(anchor: CGPoint, promptSize: CGSize, in bounds: CGRect) -> CGRect {
+		var origin = CGPoint(
+			x: anchor.x - promptSize.width * 0.35,
+			y: anchor.y - promptSize.height / 2
+		)
+		let margin: CGFloat = 4
+		origin.x = min(max(origin.x, bounds.minX + margin), bounds.maxX - promptSize.width - margin)
+		origin.y = min(max(origin.y, bounds.minY + margin), bounds.maxY - promptSize.height - margin)
+		return CGRect(origin: origin, size: promptSize)
+	}
+
+	static func shouldPresent(
+		at localPoint: CGPoint,
+		in bounds: CGRect,
+		hasActivePointerInteraction: Bool
+	) -> Bool {
+		bounds.contains(localPoint) && !hasActivePointerInteraction
+	}
+}
 
 enum FloatingInteractionHitTarget: Equatable {
 	case dragRegion
@@ -296,7 +333,9 @@ private final class FloatingPetInteractionView: NSView {
 	private var localMouseMonitor: Any?
 	private var pointerInsideFrame = false
 	private var affordanceHoverActive = false
+	private var hidePromptView: FloatingPetHidePromptView?
 	var frameChangeHandler: ((CGRect) -> Void)?
+	var hideFloatingPetHandler: (() -> Void)?
 
 	init(
 		frame: CGRect,
@@ -415,10 +454,32 @@ private final class FloatingPetInteractionView: NSView {
 		)
 	}
 
+	override func rightMouseDown(with event: NSEvent) {
+		let localPoint = convert(event.locationInWindow, from: nil)
+		if let hidePromptView, hidePromptView.frame.contains(localPoint) {
+			dismissHidePrompt()
+			return
+		}
+		guard FloatingPetHidePrompt.shouldPresent(
+			at: localPoint,
+			in: bounds,
+			hasActivePointerInteraction: activeInteraction != nil
+		) else {
+			return
+		}
+		presentHidePrompt(at: localPoint)
+	}
 
 	override func mouseDown(with event: NSEvent) {
 		guard let window else { return }
 		let localPoint = convert(event.locationInWindow, from: nil)
+		if let hidePromptView {
+			if hidePromptView.frame.contains(localPoint) {
+				hidePromptView.activate()
+				return
+			}
+			dismissHidePrompt()
+		}
 		let startScreenPoint = NSEvent.mouseLocation
 		switch FloatingInteractionPolicy.hitTest(point: localPoint, in: bounds) {
 		case .dragRegion:
@@ -546,20 +607,59 @@ private final class FloatingPetInteractionView: NSView {
 	private func installLocalMouseMonitorIfNeeded() {
 		guard localMouseMonitor == nil else { return }
 		localMouseMonitor = NSEvent.addLocalMonitorForEvents(
-			matching: [.mouseMoved, .leftMouseDragged, .leftMouseUp, .leftMouseDown]
+			matching: [
+				.mouseMoved,
+				.leftMouseDragged,
+				.leftMouseUp,
+				.leftMouseDown,
+				.rightMouseDown,
+			]
 		) { [weak self] event in
 			guard let self, let window = self.window, event.window === window else { return event }
+			let localPoint = self.convert(event.locationInWindow, from: nil)
+			if event.type == .rightMouseDown {
+				if let prompt = self.hidePromptView, !prompt.frame.contains(localPoint) {
+					self.dismissHidePrompt()
+				}
+				return event
+			}
+			if let prompt = self.hidePromptView, event.type == .leftMouseDown,
+				!prompt.frame.contains(localPoint) {
+				self.dismissHidePrompt()
+			}
 			// `mouseDragged` on this view already moves the panel; skip duplicate overlay work.
 			if self.isTranslating, event.type == .leftMouseDragged {
 				return event
 			}
-			let localPoint = self.convert(event.locationInWindow, from: nil)
 			self.handlePointerEvent(at: localPoint, reason: "localMonitor-\(event.type.rawValue)")
 			return event
 		}
 	}
 
+	private func presentHidePrompt(at localPoint: CGPoint) {
+		dismissHidePrompt()
+		let promptSize = FloatingPetHidePrompt.preferredSize()
+		let frame = FloatingPetHidePrompt.frame(
+			anchor: localPoint,
+			promptSize: promptSize,
+			in: bounds
+		)
+		let prompt = FloatingPetHidePromptView(frame: frame) { [weak self] in
+			self?.dismissHidePrompt()
+			self?.hideFloatingPetHandler?()
+		}
+		addSubview(prompt, positioned: .above, relativeTo: overlayView)
+		hidePromptView = prompt
+	}
 
+	func dismissHidePromptIfPresent() {
+		dismissHidePrompt()
+	}
+
+	private func dismissHidePrompt() {
+		hidePromptView?.removeFromSuperview()
+		hidePromptView = nil
+	}
 
 	private func removeLocalMouseMonitor() {
 		guard let localMouseMonitor else { return }
@@ -778,3 +878,71 @@ private final class FloatingPetOverlayView: NSView {
 	}
 }
 
+/// Frosted pill shown on right-click; matches the Codex “Close pet” control.
+private final class FloatingPetHidePromptView: NSView {
+	private let onActivate: () -> Void
+
+	private let effectView = NSVisualEffectView(frame: .zero)
+	private let tintView = NSView(frame: .zero)
+	private let label = NSTextField(labelWithString: MenubarMenu.hideFloatingPetTitle)
+
+	init(frame frameRect: NSRect, onActivate: @escaping () -> Void) {
+		self.onActivate = onActivate
+		super.init(frame: frameRect)
+		wantsLayer = true
+
+		effectView.material = .hudWindow
+		effectView.blendingMode = .withinWindow
+		effectView.state = .active
+		effectView.appearance = NSAppearance(named: .darkAqua)
+		effectView.autoresizingMask = [.width, .height]
+		addSubview(effectView)
+
+		tintView.wantsLayer = true
+		tintView.layer?.backgroundColor = NSColor.black.withAlphaComponent(0.42).cgColor
+		tintView.autoresizingMask = [.width, .height]
+		addSubview(tintView)
+
+		label.font = FloatingPetHidePrompt.font
+		label.textColor = .white
+		label.alignment = .center
+		label.lineBreakMode = .byTruncatingTail
+		label.maximumNumberOfLines = 1
+		label.translatesAutoresizingMaskIntoConstraints = false
+		addSubview(label)
+
+		NSLayoutConstraint.activate([
+			effectView.leadingAnchor.constraint(equalTo: leadingAnchor),
+			effectView.trailingAnchor.constraint(equalTo: trailingAnchor),
+			effectView.topAnchor.constraint(equalTo: topAnchor),
+			effectView.bottomAnchor.constraint(equalTo: bottomAnchor),
+			tintView.leadingAnchor.constraint(equalTo: leadingAnchor),
+			tintView.trailingAnchor.constraint(equalTo: trailingAnchor),
+			tintView.topAnchor.constraint(equalTo: topAnchor),
+			tintView.bottomAnchor.constraint(equalTo: bottomAnchor),
+			label.centerXAnchor.constraint(equalTo: centerXAnchor),
+			label.centerYAnchor.constraint(equalTo: centerYAnchor),
+		])
+	}
+
+	@available(*, unavailable)
+	required init?(coder: NSCoder) {
+		nil
+	}
+
+	override func layout() {
+		super.layout()
+		let radius = bounds.height / 2
+		effectView.layer?.cornerRadius = radius
+		effectView.layer?.masksToBounds = true
+		tintView.layer?.cornerRadius = radius
+		tintView.layer?.masksToBounds = true
+		layer?.cornerRadius = radius
+		layer?.borderColor = NSColor.white.withAlphaComponent(0.22).cgColor
+		layer?.borderWidth = 1
+	}
+
+	func activate() {
+		onActivate()
+	}
+}

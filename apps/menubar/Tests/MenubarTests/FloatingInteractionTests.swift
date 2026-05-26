@@ -108,6 +108,47 @@ final class FloatingInteractionTests: XCTestCase {
 		}
 	}
 
+	// MARK: - Hide floating pet prompt (right-click pill)
+
+	func testHidePromptPreferredSizeFitsTitle() {
+		let size = FloatingPetHidePrompt.preferredSize()
+		XCTAssertGreaterThan(size.width, 120)
+		XCTAssertGreaterThan(size.height, 24)
+	}
+
+	func testHidePromptFrameStaysInsideBounds() {
+		let bounds = CGRect(x: 0, y: 0, width: 200, height: 160)
+		let promptSize = FloatingPetHidePrompt.preferredSize()
+		let frame = FloatingPetHidePrompt.frame(
+			anchor: CGPoint(x: 190, y: 150),
+			promptSize: promptSize,
+			in: bounds
+		)
+		XCTAssertTrue(bounds.contains(frame))
+	}
+
+	func testHidePromptShouldNotPresentDuringActivePointerInteraction() {
+		let bounds = CGRect(x: 0, y: 0, width: 200, height: 160)
+		XCTAssertFalse(
+			FloatingPetHidePrompt.shouldPresent(
+				at: CGPoint(x: 100, y: 80),
+				in: bounds,
+				hasActivePointerInteraction: true
+			)
+		)
+	}
+
+	func testHidePromptShouldPresentInsideBoundsWhenIdle() {
+		let bounds = CGRect(x: 0, y: 0, width: 200, height: 160)
+		XCTAssertTrue(
+			FloatingPetHidePrompt.shouldPresent(
+				at: CGPoint(x: 100, y: 80),
+				in: bounds,
+				hasActivePointerInteraction: false
+			)
+		)
+	}
+
 	// MARK: - FloatingPetScene interaction overlay
 
 	func testSettingInteractionRunningRightSwapsFrames() throws {

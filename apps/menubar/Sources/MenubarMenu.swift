@@ -38,6 +38,7 @@ final class MenubarMenu: NSObject {
 	private let petFolderURL: URL
 	private let fileManager: FileManager
 	private let floatingPetController: FloatingPetVisibilityControlling?
+	private weak var builtMenu: NSMenu?
 
 	init(
 		workspace: MenuWorkspaceOpening = NSWorkspace.shared,
@@ -77,6 +78,7 @@ final class MenubarMenu: NSObject {
 	@MainActor
 	func build() -> NSMenu {
 		let menu = NSMenu()
+		builtMenu = menu
 
 		let openItem = NSMenuItem(
 			title: Self.openLogFolderTitle,
@@ -139,6 +141,14 @@ final class MenubarMenu: NSObject {
 
 	@objc func quitMenubar(_ sender: Any?) {
 		terminate()
+	}
+
+	/// Keeps the status-item menu toggle label in sync after hiding from the
+	/// floating pet surface (right-click pill or other non-menu paths).
+	@MainActor
+	func refreshFloatingPetMenuItemTitle() {
+		guard let builtMenu, builtMenu.items.count > 2 else { return }
+		builtMenu.items[2].title = floatingPetToggleTitle()
 	}
 
 	@MainActor

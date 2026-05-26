@@ -77,6 +77,25 @@ final class MenuItemsTests: XCTestCase {
 		XCTAssertEqual(hiddenBuilder.build().items[2].title, MenubarMenu.showFloatingPetTitle)
 	}
 
+	func testRefreshFloatingPetMenuItemTitleAfterExternalHide() {
+		let controller = FloatingPetVisibilitySpy(isFloatingPetVisible: true)
+		let builder = MenubarMenu(
+			workspace: WorkspaceOpenSpy(),
+			terminate: {},
+			logFolderURL: URL(fileURLWithPath: "/tmp/codogotchi-tests"),
+			petFolderURL: URL(fileURLWithPath: "/tmp/codex-pets"),
+			floatingPetController: controller
+		)
+		let menu = builder.build()
+		let toggleItem = menu.items[2]
+		XCTAssertEqual(toggleItem.title, MenubarMenu.hideFloatingPetTitle)
+
+		controller.setFloatingPetVisible(false)
+		builder.refreshFloatingPetMenuItemTitle()
+
+		XCTAssertEqual(toggleItem.title, MenubarMenu.showFloatingPetTitle)
+	}
+
 	func testFloatingPetToggleCallsControllerAndRefreshesTitle() {
 		let controller = FloatingPetVisibilitySpy(isFloatingPetVisible: false)
 		let builder = MenubarMenu(

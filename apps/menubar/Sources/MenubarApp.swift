@@ -49,6 +49,8 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 	/// stay alive for the lifetime of the menu item target.
 	var floatingPetController: FloatingPetController?
 
+	/// Panel shell used for the floating pet; held so the hide prompt can call back.
+	var floatingPetPanelController: FloatingPetPanelController?
 
 	/// Opaque observer token for `NSWorkspace.didWakeNotification`. Held
 	/// strongly so the block-based observer is not deallocated while the app
@@ -128,6 +130,7 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 				codogotchiPet: codogotchiPet,
 				demoFrameInterval: demoInterval
 			)
+			self.floatingPetPanelController = floatingPanel
 			self.floatingPetController = FloatingPetController(
 				panel: floatingPanel,
 				visibleFrameProvider: Self.visibleFloatingFrame
@@ -139,6 +142,12 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 		let menuBuilder = MenubarMenu(floatingPetController: self.floatingPetController)
 		item.menu = menuBuilder.build()
 		self.menuBuilder = menuBuilder
+		floatingPetPanelController?.onHideFloatingPet = { [weak self] in
+			guard let self else { return }
+			self.floatingPetController?.setFloatingPetVisible(false)
+			self.menuBuilder?.refreshFloatingPetMenuItemTitle()
+		}
+
 		let stateFanout = PetStateFanout(
 			applyToMenubar: { [weak renderer = self.renderer] state, mode in
 				renderer?.update(state: state, visualMode: mode)
