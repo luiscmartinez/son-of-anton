@@ -2,7 +2,6 @@ import AppKit
 import CoreImage
 import CoreImage.CIFilterBuiltins
 import Foundation
-import QuartzCore
 
 /// Whether the renderer paints the active state's frames at full saturation
 /// (`.normal`) or with saturation collapsed to grayscale (`.desaturated`).
@@ -212,11 +211,8 @@ final class MenubarRenderer {
 				interval = MaliPet.animationCycleDuration / Double(max(currentFrames.count, 1))
 			}
 		}
-		dbgLog("DBG restartTimer: source=\(currentSource) interval=\(interval)")
 		let newTimer = Timer(timeInterval: interval, repeats: true) {
 			[weak self] _ in
-			let t = CACurrentMediaTime()
-			dbgLog("DBG t=\(t) timer.block fired")
 			Task { @MainActor in self?.tick() }
 		}
 		RunLoop.main.add(newTimer, forMode: .common)
@@ -225,24 +221,16 @@ final class MenubarRenderer {
 
 	private func tick() {
 		guard !currentFrames.isEmpty else {
-			dbgLog("DBG tick: currentFrames empty, skipping")
 			return
 		}
 		frameIndex = (frameIndex + 1) % currentFrames.count
-		let t = CACurrentMediaTime()
-		dbgLog("DBG t=\(t) tick: frameIndex=\(frameIndex) of \(currentFrames.count)")
 		paintCurrent()
 	}
 
 	private func paintCurrent() {
 		guard let frame = renderedCurrentFrame() else {
-			dbgLog("DBG paintCurrent: renderedCurrentFrame returned nil (mode=\(currentMode))")
 			return
 		}
-		let t = CACurrentMediaTime()
-		dbgLog(
-			"DBG t=\(t) paintCurrent: emitting frame idx=\(frameIndex) size=\(frame.size.width)x\(frame.size.height)"
-		)
 		sink(frame)
 	}
 }

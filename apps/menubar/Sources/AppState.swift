@@ -68,7 +68,6 @@ enum AppStateStore {
 			data = try Data(contentsOf: url)
 		} catch {
 			if FileManager.default.fileExists(atPath: url.path) {
-				dbgLog("AppStateStore.load: falling back after unreadable app-state.json: \(error.localizedDescription)")
 			}
 			return fallback
 		}

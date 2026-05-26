@@ -29,7 +29,6 @@
 		A867342EFD852FB363D4DD7C /* FloatingPetPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C473FDED57B163FBBB6F3CF1 /* FloatingPetPanel.swift */; };
 		A92DC2BEE3B5EFA1E191BA32 /* state-json in Resources */ = {isa = PBXBuildFile; fileRef = 4412C28CB80A89E0E021EC03 /* state-json */; };
 		BA3F2EF6D3F5E093C9DFFBE9 /* AppStateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8F15B1B99434EA9F9005052 /* AppStateTests.swift */; };
-		BB53DA9188A9F0A4F7A6FB48 /* DebugLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 883A13B953EAD18008D03F98 /* DebugLog.swift */; };
 		BBAE72D92861A7901C3EBB73 /* PetConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9646F68B64C22ABAE0FE52EA /* PetConfig.swift */; };
 		C4F4151A25F6ED0D587172FD /* StateJsonReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E5A328D013E03984657DE8F /* StateJsonReaderTests.swift */; };
 		CAB640A6BB3B62D88C3DC0FC /* TransitionLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = DABEF68EEC70787763CE3E3D /* TransitionLog.swift */; };
@@ -71,7 +70,6 @@
 		5BC62595488CFA83A5ED66AF /* TransitionLogTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TransitionLogTests.swift; sourceTree = "<group>"; };
 		5CE9EFEFECAFAC8156F61DF7 /* FloatingPetControllerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingPetControllerTests.swift; sourceTree = "<group>"; };
 		72DE062B5722F00B659A555C /* CodogotchiTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CodogotchiTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		883A13B953EAD18008D03F98 /* DebugLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DebugLog.swift; sourceTree = "<group>"; };
 		8BC14DBFFFD8DF9F8C3DDA8F /* StateJsonReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StateJsonReader.swift; sourceTree = "<group>"; };
 		8CF4712922D6C0BA86E1D1A4 /* FloatingInteractionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FloatingInteractionTests.swift; sourceTree = "<group>"; };
 		9646F68B64C22ABAE0FE52EA /* PetConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PetConfig.swift; sourceTree = "<group>"; };
@@ -132,7 +130,6 @@
 				FB013AD16C8FDB083F522012 /* ActivityState.swift */,
 				F60153C0C8806DC3EB2137C9 /* AppState.swift */,
 				31DA139C1DC07DF2DC2417E3 /* CodogotchiPet.swift */,
-				883A13B953EAD18008D03F98 /* DebugLog.swift */,
 				09112F189EA04FABD5D4833E /* DemoConfig.swift */,
 				B49E0C3473A936DCB90AFE2A /* DemoCycleDriver.swift */,
 				E97D90D6AFBAC5EB23BBC4A8 /* FloatingInteraction.swift */,
@@ -275,7 +272,6 @@
 				5D332CB1205CD66508BB99BD /* ActivityState.swift in Sources */,
 				83BF56E6794A2BBFBCEE42E3 /* AppState.swift in Sources */,
 				A28BAB9D5F23FFBE6C429720 /* CodogotchiPet.swift in Sources */,
-				BB53DA9188A9F0A4F7A6FB48 /* DebugLog.swift in Sources */,
 				D82CE832ED27D2C047026D62 /* DemoConfig.swift in Sources */,
 				EA37D54D592388A3D881C2B2 /* DemoCycleDriver.swift in Sources */,
 				04E4BF3ECD02EFD4B252E27C /* FloatingInteraction.swift in Sources */,

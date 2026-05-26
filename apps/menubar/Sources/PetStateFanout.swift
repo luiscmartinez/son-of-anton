@@ -16,9 +16,6 @@ final class PetStateFanout {
 	}
 
 	func apply(state: ActivityState, visualMode: VisualMode) {
-		dbgLog(
-			"DBG PetStateFanout.apply: state=\(state.rawValue) visualMode=\(visualMode)"
-		)
 		applyToMenubar(state, visualMode)
 		applyToFloatingPet(state, visualMode)
 	}

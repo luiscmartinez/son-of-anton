@@ -2,7 +2,6 @@ import AppKit
 import CoreImage
 import CoreImage.CIFilterBuiltins
 import Foundation
-import QuartzCore
 import SpriteKit
 
 @MainActor
@@ -61,9 +60,6 @@ final class FloatingPetScene: SKScene {
 		currentFrames = initialFrames.frames
 		currentSource = initialFrames.source
 		paintCurrentFrame()
-		dbgLog(
-			"DBG FloatingPetScene init: size=\(size.width)x\(size.height) idleFrames=\(initialFrames.frames.count) demoFrameInterval=\(demoFrameInterval.map { String($0) } ?? "nil")"
-		)
 		restartTimer()
 	}
 
@@ -85,7 +81,6 @@ final class FloatingPetScene: SKScene {
 
 	func update(state: ActivityState, visualMode: VisualMode) {
 		let stateChanged = state != currentState || currentFrames.isEmpty
-		let modeChanged = visualMode != currentMode
 		currentState = state
 		currentMode = visualMode
 
@@ -94,9 +89,6 @@ final class FloatingPetScene: SKScene {
 		// interaction is cleared. The latest state is still stored so
 		// `setInteraction(nil)` resumes from the most recent live/demo state.
 		if currentInteraction != nil {
-			dbgLog(
-				"DBG FloatingPetScene.update: deferred (interaction=\(String(describing: currentInteraction))) state=\(state.rawValue) frameIndex=\(frameIndex) timerActive=\(timer != nil)"
-			)
 			paintCurrentFrame()
 			return
 		}
@@ -109,10 +101,6 @@ final class FloatingPetScene: SKScene {
 		}
 
 		paintCurrentFrame()
-
-		dbgLog(
-			"DBG FloatingPetScene.update: state=\(state.rawValue) visualMode=\(visualMode) stateChanged=\(stateChanged) modeChanged=\(modeChanged) source=\(currentSource.logLabel) frameCount=\(currentFrames.count) frameIndex=\(frameIndex) timerActive=\(timer != nil)"
-		)
 
 		if stateChanged || timer == nil {
 			restartTimer()
@@ -135,9 +123,6 @@ final class FloatingPetScene: SKScene {
 			currentSource = resolved.source
 			frameIndex = 0
 			paintCurrentFrame()
-			dbgLog(
-				"DBG FloatingPetScene.setInteraction: cleared → state=\(currentState.rawValue) frameCount=\(currentFrames.count)"
-			)
 			restartTimer()
 			return
 		}
@@ -156,9 +141,6 @@ final class FloatingPetScene: SKScene {
 				paintCurrentFrame()
 				restartTimer()
 			}
-			dbgLog(
-				"DBG FloatingPetScene.setInteraction: missing row for \(interaction) — keeping activity frames"
-			)
 			return
 		}
 
@@ -181,32 +163,16 @@ final class FloatingPetScene: SKScene {
 			frameIndex = frameIndex % frames.count
 			paintCurrentFrame()
 			if priorSource == .codexInteraction, demoFrameInterval == nil, priorFramesCount != frames.count {
-				dbgLog(
-					"DBG FloatingPetScene.setInteraction: \(interaction) frameCount=\(frames.count) restarting timer (codex interaction frame-count change)"
-				)
 				restartTimer()
 			}
-			dbgLog(
-				"DBG FloatingPetScene.setInteraction: \(interaction) preserved frameIndex=\(frameIndex) frameCount=\(frames.count) (cycle preserved)"
-			)
 		} else {
 			frameIndex = 0
 			paintCurrentFrame()
 			if priorSource == .codexInteraction {
 				if demoFrameInterval == nil, priorFramesCount != frames.count {
-					dbgLog(
-						"DBG FloatingPetScene.setInteraction: \(interaction) frameCount=\(frames.count) restarting timer (codex interaction frame-count change)"
-					)
 					restartTimer()
-				} else {
-					dbgLog(
-						"DBG FloatingPetScene.setInteraction: \(interaction) frameCount=\(frames.count) preserved timer (interaction swap)"
-					)
 				}
 			} else {
-				dbgLog(
-					"DBG FloatingPetScene.setInteraction: \(interaction) frameCount=\(frames.count) frameIndex=0"
-				)
 				restartTimer()
 			}
 		}
@@ -239,7 +205,6 @@ final class FloatingPetScene: SKScene {
 		timer?.invalidate()
 		guard !currentFrames.isEmpty else {
 			timer = nil
-			dbgLog("DBG FloatingPetScene.restartTimer: no frames — timer cleared")
 			return
 		}
 
@@ -255,12 +220,7 @@ final class FloatingPetScene: SKScene {
 			}
 		}
 
-		dbgLog(
-			"DBG FloatingPetScene.restartTimer: source=\(currentSource.logLabel) interval=\(interval)s frameCount=\(currentFrames.count) frameIndex=\(frameIndex)"
-		)
 		let newTimer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
-			let t = CACurrentMediaTime()
-			dbgLog("DBG t=\(t) FloatingPetScene.timer fired")
 			Task { @MainActor in self?.tick() }
 		}
 		RunLoop.main.add(newTimer, forMode: .common)
@@ -269,14 +229,9 @@ final class FloatingPetScene: SKScene {
 
 	private func tick() {
 		guard !currentFrames.isEmpty else {
-			dbgLog("DBG FloatingPetScene.tick: currentFrames empty — skipping")
 			return
 		}
 		frameIndex = (frameIndex + 1) % currentFrames.count
-		let t = CACurrentMediaTime()
-		dbgLog(
-			"DBG t=\(t) FloatingPetScene.tick: frameIndex=\(frameIndex) of \(currentFrames.count) state=\(currentState.rawValue) interaction=\(String(describing: currentInteraction))"
-		)
 		paintCurrentFrame()
 	}
 
@@ -321,24 +276,10 @@ final class FloatingPetScene: SKScene {
 		spriteNode.colorBlendFactor = colorBlendFactor
 		let spriteSize = fittedSpriteSize(for: frame.image.size)
 		spriteNode.size = spriteSize
-		dbgLog(
-			"DBG FloatingPetScene paint: state=\(currentState.rawValue) source=\(currentSource.logLabel) frameIndex=\(frameIndex) texturePixels=\(textureImage.width)x\(textureImage.height) frameImageSize=\(frame.image.size.width)x\(frame.image.size.height) sceneSize=\(size.width)x\(size.height) spriteSize=\(spriteSize.width)x\(spriteSize.height) skViewStretchScale=\(skViewStretchScaleDescription()) filtering=nearest"
-		)
 	}
 
 	private func fittedSpriteSize(for imageSize: CGSize) -> CGSize {
 		FloatingFramePolicy.fittedSpriteSize(imageSize: imageSize, panelSize: size)
-	}
-
-	/// When `scene.size` lags the `SKView` bounds, `scaleMode = .resizeFill` magnifies
-	/// the pet non-uniformly — log the implied stretch for diagnosis.
-	private func skViewStretchScaleDescription() -> String {
-		guard let view = spriteNode.scene?.view, size.width > 0, size.height > 0 else {
-			return "n/a"
-		}
-		let sx = view.bounds.width / size.width
-		let sy = view.bounds.height / size.height
-		return String(format: "%.3fx%.3f", sx, sy)
 	}
 
 	private func layoutLayers() {

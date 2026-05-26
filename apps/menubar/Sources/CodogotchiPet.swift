@@ -123,9 +123,6 @@ final class CodogotchiPet {
 		self.cgSheet = cg
 		self.frameWidth = cg.width / CodogotchiPet.gridColumns
 		self.frameHeight = cg.height / CodogotchiPet.gridRows
-		dbgLog(
-			"DBG CodogotchiPet load: sheet=\(sheetURL.path) pixels=\(cg.width)x\(cg.height) grid=\(CodogotchiPet.gridColumns)x\(CodogotchiPet.gridRows) cell=\(frameWidth)x\(frameHeight)"
-		)
 	}
 
 	/// Return the per-state animation frames sliced from the codogotchi spritesheet.
@@ -175,9 +172,6 @@ final class CodogotchiPet {
 			pxH = frameHeight
 			interpolation = .none
 		}
-		dbgLog(
-			"DBG CodogotchiPet frames: output=\(output.logLabel) state=\(state.rawValue) row=\(spec.rowIndex) count=\(spec.frameCount) sourceCell=\(frameWidth)x\(frameHeight) imageSize=\(displaySize.width)x\(displaySize.height) backingPixels=\(pxW)x\(pxH)"
-		)
 
 		for col in 0..<spec.frameCount {
 			let rect = CGRect(

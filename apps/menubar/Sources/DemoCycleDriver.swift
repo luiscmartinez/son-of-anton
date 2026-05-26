@@ -71,13 +71,9 @@ final class DemoCycleDriver {
 	/// motion without waiting `tickInterval` seconds for the first paint.
 	func start() {
 		stop()
-		dbgLog(
-			"DBG DemoCycleDriver.start: tickInterval=\(tickInterval) sandboxedPath=\(sandboxedPath.path) fixturesDirectory=\(fixturesDirectory.path)"
-		)
 		runTick()
 		timer = Timer.scheduledTimer(withTimeInterval: tickInterval, repeats: true) {
 			[weak self] _ in
-			dbgLog("DBG DemoCycleDriver: timer fired")
 			Task { @MainActor in self?.runTick() }
 		}
 	}
@@ -95,20 +91,15 @@ final class DemoCycleDriver {
 	}
 
 	private func runTick() {
-		dbgLog("DBG DemoCycleDriver.runTick: entering, index=\(index)")
 		do {
 			try advance()
-			dbgLog("DBG DemoCycleDriver.runTick: advance OK, next index=\(index)")
 		} catch {
-			dbgLog("DBG DemoCycleDriver.runTick: advance FAILED (\(error))")
+			NSLog("DemoCycleDriver: tick failed: \(error)")
 		}
 	}
 
 	private func advance() throws {
 		let entry = Self.cycle[index]
-		dbgLog(
-			"DBG DemoCycleDriver.advance: picking entry index=\(index) state=\(entry.state.rawValue) fixture=\(entry.fixtureFilename)"
-		)
 		index = (index + 1) % Self.cycle.count
 
 		let fixtureURL = fixturesDirectory.appendingPathComponent(entry.fixtureFilename)

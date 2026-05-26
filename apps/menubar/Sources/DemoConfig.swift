@@ -64,9 +64,6 @@ struct DemoConfig: Equatable {
 		let env = ProcessInfo.processInfo.environment
 		let args = ProcessInfo.processInfo.arguments
 		let result = from(environment: env, arguments: args)
-		dbgLog(
-			"DBG DemoConfig.forLaunch: CODOGOTCHI_DEMO=\(env["CODOGOTCHI_DEMO"] ?? "<unset>") --demo-in-args=\(args.contains("--demo")) isDemoMode=\(result.isDemoMode) pollingTarget=\(result.pollingTarget.path)"
-		)
 		return result
 	}
 }

@@ -1,5 +1,4 @@
 import AppKit
-import QuartzCore
 
 /// Menu-bar agent entry point.
 ///
@@ -49,6 +48,7 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 	/// Held strongly so the floating panel and its persisted visibility state
 	/// stay alive for the lifetime of the menu item target.
 	var floatingPetController: FloatingPetController?
+
 
 	/// Opaque observer token for `NSWorkspace.didWakeNotification`. Held
 	/// strongly so the block-based observer is not deallocated while the app
@@ -116,17 +116,7 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 			let renderer = MenubarRenderer(
 				codexPet: codexPet, codogotchiPet: codogotchiPet,
 				sink: { [weak item] image in
-					let t = CACurrentMediaTime()
-					let hasButton = item?.button != nil
-					dbgLog(
-						"DBG t=\(t) sink: hasItem=\(item != nil) hasButton=\(hasButton) in=\(image.size.width)x\(image.size.height)"
-					)
 					item?.button?.image = image
-					let actual = item?.button?.image?.size
-					let win = item?.button?.window
-					dbgLog(
-						"DBG t=\(t) sink: after-set actual=\(actual?.width ?? -1)x\(actual?.height ?? -1) windowVisible=\(win?.isVisible ?? false) buttonHidden=\(item?.button?.isHidden ?? true)"
-					)
 				},
 				demoFrameInterval: demoInterval
 			)
@@ -149,7 +139,6 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 		let menuBuilder = MenubarMenu(floatingPetController: self.floatingPetController)
 		item.menu = menuBuilder.build()
 		self.menuBuilder = menuBuilder
-
 		let stateFanout = PetStateFanout(
 			applyToMenubar: { [weak renderer = self.renderer] state, mode in
 				renderer?.update(state: state, visualMode: mode)
@@ -178,35 +167,22 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 			log.start()
 			self.transitionLog = log
 		}
-		dbgLog(
-			"DBG MenubarApp: branching — isDemoMode=\(config.isDemoMode) rendererLoaded=\(self.renderer != nil)"
-		)
 		if config.isDemoMode, self.renderer != nil {
 			let fixtures = Self.bundledDemoFixturesDirectory()
-			dbgLog(
-				"DBG MenubarApp.demo: bundleResourceURL=\(Bundle.main.resourceURL?.path ?? "<nil>") fixturesDir=\(fixtures?.path ?? "<nil>")"
-			)
 			if let fixturesDirectory = fixtures {
 				let contents =
 					(try? FileManager.default.contentsOfDirectory(atPath: fixturesDirectory.path))
 					?? []
-				dbgLog("DBG MenubarApp.demo: fixtures contents=\(contents)")
 				let driver = DemoCycleDriver(
 					sandboxedPath: config.pollingTarget,
 					fixturesDirectory: fixturesDirectory,
 					apply: { state in
-						dbgLog("DBG demoDriver.apply: state=\(state.rawValue)")
 						stateFanout.applyDemo(state: state)
 					},
 					transitionLog: self.transitionLog
 				)
 				driver.start()
 				self.demoDriver = driver
-				dbgLog("DBG MenubarApp.demo: DemoCycleDriver started")
-			} else {
-				dbgLog(
-					"DBG MenubarApp.demo: fixtures NOT FOUND — driver not started, renderer stays in initial idle"
-				)
 			}
 		} else if self.renderer != nil {
 			// Live polling — read the hook's `~/.codogotchi/state.json` at 1Hz

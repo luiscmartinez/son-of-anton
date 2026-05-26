@@ -181,9 +181,6 @@ final class MaliPet {
 		self.cgSheet = cg
 		self.frameWidth = cg.width / MaliPet.gridColumns
 		self.frameHeight = cg.height / MaliPet.gridRows
-		dbgLog(
-			"DBG MaliPet load: sheet=\(sheetURL.path) pixels=\(cg.width)x\(cg.height) grid=\(MaliPet.gridColumns)x\(MaliPet.gridRows) cell=\(frameWidth)x\(frameHeight)"
-		)
 	}
 
 	/// Return the per-state animation frames sliced from the spritesheet.
@@ -258,9 +255,6 @@ final class MaliPet {
 			pxH = frameHeight
 			interpolation = .none
 		}
-		dbgLog(
-			"DBG MaliPet frames: output=\(output.logLabel) row=\(spec.rowIndex) count=\(spec.frameCount) sourceCell=\(frameWidth)x\(frameHeight) imageSize=\(displaySize.width)x\(displaySize.height) backingPixels=\(pxW)x\(pxH)"
-		)
 
 		for col in 0..<spec.frameCount {
 			let rect = CGRect(

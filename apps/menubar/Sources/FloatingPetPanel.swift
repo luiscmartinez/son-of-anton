@@ -61,9 +61,6 @@ final class FloatingPetPanelController: FloatingPetPanelManaging {
 	func apply(state: ActivityState, visualMode: VisualMode) {
 		currentState = state
 		currentMode = visualMode
-		dbgLog(
-			"DBG FloatingPetPanelController.apply: state=\(state.rawValue) visualMode=\(visualMode) scenePresent=\(scene != nil)"
-		)
 		scene?.update(state: state, visualMode: visualMode)
 	}
 
@@ -81,9 +78,6 @@ final class FloatingPetPanelController: FloatingPetPanelManaging {
 		let previous = scene.size
 		guard previous != panelSize else { return }
 		scene.size = panelSize
-		dbgLog(
-			"DBG FloatingPetPanelController sceneSize: \(previous.width)x\(previous.height) → \(panelSize.width)x\(panelSize.height)"
-		)
 	}
 
 	private func makePanel(frame: CGRect) -> NSPanel {
@@ -125,6 +119,7 @@ final class FloatingPetPanelController: FloatingPetPanelManaging {
 		return view
 	}
 }
+
 
 enum FloatingInteractionHitTarget: Equatable {
 	case dragRegion
@@ -399,20 +394,17 @@ private final class FloatingPetInteractionView: NSView {
 		let localPoint = convert(event.locationInWindow, from: nil)
 		if kind == Self.trackingKindAffordance {
 			affordanceHoverActive = true
-			dbgLog("DBG FloatingPetInteractionView affordance: trackingArea mouseEntered")
 		}
 		handlePointerEvent(at: localPoint, reason: "mouseEntered(\(kind ?? "bounds"))")
 	}
 
 	override func mouseExited(with event: NSEvent) {
 		guard !isReconfiguringTracking else {
-			dbgLog("DBG FloatingPetInteractionView affordance: mouseExited suppressed during tracking reconfig")
 			return
 		}
 		let kind = event.trackingArea?.userInfo?["kind"] as? String
 		if kind == Self.trackingKindAffordance {
 			affordanceHoverActive = false
-			dbgLog("DBG FloatingPetInteractionView affordance: trackingArea mouseExited")
 		}
 		if kind == Self.trackingKindBounds || kind == nil {
 			pointerInsideFrame = false
@@ -422,6 +414,7 @@ private final class FloatingPetInteractionView: NSView {
 			reason: "mouseExited(\(kind ?? "bounds"))"
 		)
 	}
+
 
 	override func mouseDown(with event: NSEvent) {
 		guard let window else { return }
@@ -436,9 +429,6 @@ private final class FloatingPetInteractionView: NSView {
 			)
 			activeInteraction = .drag(grabOffsetInScreen: grabOffset)
 			overlayView.showsResizeAffordance = false
-			dbgLog(
-				"DBG FloatingPetInteractionView translateDrag: mouseDown origin=\(window.frame.origin) clickInScreen=\(clickInScreen) grabOffset=\(grabOffset)"
-			)
 		case .resizeAffordance:
 			activeInteraction = .resize(startFrame: window.frame, startScreenPoint: startScreenPoint)
 			pushResizeCursor()
@@ -470,9 +460,6 @@ private final class FloatingPetInteractionView: NSView {
 				hitTarget: hitTarget,
 				previous: lastEmittedInteraction
 			)
-			dbgLog(
-				"DBG FloatingPetInteractionView translateDrag: mouseInScreen=\(mouseInScreen) step=\(stepDelta.width)x\(stepDelta.height) origin \(before.origin)→\(nextFrame.origin) grabOffset=\(grabOffsetInScreen) picked=\(interaction.map { "\($0)" } ?? "nil")"
-			)
 			emitInteraction(interaction, reason: "mouseDragged-\(hitTarget)")
 			return
 		case let .resize(startFrame, startScreenPoint):
@@ -490,9 +477,6 @@ private final class FloatingPetInteractionView: NSView {
 				visibleFrame: visibleFrameProvider()
 			)
 			let endAspect = nextFrame.height > 0 ? nextFrame.width / nextFrame.height : 1
-			dbgLog(
-				"DBG FloatingPetInteractionView resizeDrag: raw=\(rawDelta.width)x\(rawDelta.height) horizontalDelta=\(FloatingInteractionPolicy.resizeHorizontalDelta(from: rawDelta)) startAspect=\(startAspect) endAspect=\(endAspect) panelFrame=\(nextFrame.width)x\(nextFrame.height)"
-			)
 			applyPanelFrame(nextFrame, isTranslate: false)
 			let stepDelta = CGSize(width: event.deltaX, height: event.deltaY)
 			let interaction = FloatingInteractionPolicy.interaction(
@@ -553,9 +537,6 @@ private final class FloatingPetInteractionView: NSView {
 			sceneSizeHandler(frame.size)
 		}
 
-		dbgLog(
-			"DBG FloatingPetInteractionView applyPanelFrame: translate=\(isTranslate) origin \(before.origin)→\(frame.origin) size \(before.size)→\(frame.size)"
-		)
 	}
 
 	private func elevateOverlayAboveSpriteKit() {
@@ -576,14 +557,14 @@ private final class FloatingPetInteractionView: NSView {
 			self.handlePointerEvent(at: localPoint, reason: "localMonitor-\(event.type.rawValue)")
 			return event
 		}
-		dbgLog("DBG FloatingPetInteractionView tracking: installed local mouse monitor")
 	}
+
+
 
 	private func removeLocalMouseMonitor() {
 		guard let localMouseMonitor else { return }
 		NSEvent.removeMonitor(localMouseMonitor)
 		self.localMouseMonitor = nil
-		dbgLog("DBG FloatingPetInteractionView tracking: removed local mouse monitor")
 	}
 
 	private func reconfigureTrackingAreasIfNeeded(force: Bool) {
@@ -635,9 +616,6 @@ private final class FloatingPetInteractionView: NSView {
 		affordanceTrackingArea = affordanceArea
 
 		lastTrackingBoundsSize = bounds.size
-		dbgLog(
-			"DBG FloatingPetInteractionView tracking: reconfigured bounds=\(bounds.width)x\(bounds.height) affordanceRect=\(affordanceRect) force=\(force)"
-		)
 	}
 
 	private func syncPointerState(reason: String) {
@@ -670,14 +648,12 @@ private final class FloatingPetInteractionView: NSView {
 		guard !resizeCursorPushed else { return }
 		NSCursor.closedHand.push()
 		resizeCursorPushed = true
-		dbgLog("DBG FloatingPetInteractionView affordance: pushed closedHand cursor")
 	}
 
 	private func popResizeCursorIfNeeded() {
 		guard resizeCursorPushed else { return }
 		NSCursor.pop()
 		resizeCursorPushed = false
-		dbgLog("DBG FloatingPetInteractionView affordance: popped closedHand cursor")
 	}
 
 	private func applyAffordanceCursor(for localPoint: CGPoint) {
@@ -703,22 +679,12 @@ private final class FloatingPetInteractionView: NSView {
 			isResizing: isResizing
 		)
 		let affordanceRect = FloatingInteractionPolicy.resizeAffordanceRect(in: bounds)
-		let outlineChanged = overlayView.showsFrameOutline != pointerInsideFrame
 		let affordanceChanged = overlayView.showsResizeAffordance != shouldShowAffordance
-		overlayView.showsFrameOutline = pointerInsideFrame
 		overlayView.showsResizeAffordance = shouldShowAffordance
 		overlayView.resizeAffordanceRect = affordanceRect
-		if outlineChanged || affordanceChanged || pointerInAffordance {
+		if affordanceChanged || pointerInAffordance {
 			elevateOverlayAboveSpriteKit()
 			overlayView.needsDisplay = true
-		}
-
-		if outlineChanged || affordanceChanged || reason.contains("prepare") || reason.contains("layout")
-			|| reason.contains("mouseDown") || reason.contains("mouseUp")
-		{
-			dbgLog(
-				"DBG FloatingPetInteractionView pointer: reason=\(reason) inBounds=\(pointerInsideFrame) inAffordance=\(pointerInAffordance) affordanceHoverActive=\(affordanceHoverActive) resizing=\(isResizing) showOutline=\(pointerInsideFrame) showAffordance=\(shouldShowAffordance) point=\(localPoint.x),\(localPoint.y) bounds=\(bounds) affordanceRect=\(affordanceRect)"
-			)
 		}
 
 		if pointerInsideFrame || isResizing {
@@ -734,9 +700,6 @@ private final class FloatingPetInteractionView: NSView {
 		guard interaction != lastEmittedInteraction else { return }
 		lastEmittedInteraction = interaction
 		interactionHandler(interaction)
-		dbgLog(
-			"DBG FloatingPetInteractionView emitInteraction: reason=\(reason) interaction=\(interaction.map { "\($0)" } ?? "nil")"
-		)
 	}
 
 	/// Hover feedback when no drag is active; skipped while `mouseDragged` owns
@@ -751,10 +714,9 @@ private final class FloatingPetInteractionView: NSView {
 	}
 }
 
-/// Draws debug frame outline and the resize affordance icon in a single layer
-/// above SpriteKit so subview hiding / Metal compositing cannot swallow them.
+/// Draws the resize affordance icon in a layer above SpriteKit so subview
+/// hiding / Metal compositing cannot swallow it.
 private final class FloatingPetOverlayView: NSView {
-	var showsFrameOutline = false
 	var showsResizeAffordance = false
 	var resizeAffordanceRect: CGRect = .zero
 
@@ -763,13 +725,6 @@ private final class FloatingPetOverlayView: NSView {
 	override func hitTest(_ point: NSPoint) -> NSView? { nil }
 
 	override func draw(_ dirtyRect: NSRect) {
-		if showsFrameOutline {
-			NSColor.white.withAlphaComponent(0.85).setStroke()
-			let outline = NSBezierPath(rect: bounds.insetBy(dx: 0.5, dy: 0.5))
-			outline.lineWidth = 1
-			outline.stroke()
-		}
-
 		guard showsResizeAffordance else { return }
 		let drawRect = resizeAffordanceRect.isEmpty
 			? FloatingInteractionPolicy.resizeAffordanceRect(in: bounds)
@@ -780,7 +735,6 @@ private final class FloatingPetOverlayView: NSView {
 	static func drawResizeAffordance(in affordanceBounds: CGRect) {
 		let bgRect = affordanceBounds.insetBy(dx: 3, dy: 3)
 		guard bgRect.width > 4, bgRect.height > 4 else {
-			dbgLog("DBG FloatingPetOverlayView.draw: affordance rect too small \(affordanceBounds)")
 			return
 		}
 
@@ -806,7 +760,6 @@ private final class FloatingPetOverlayView: NSView {
 			return
 		}
 
-		dbgLog("DBG FloatingPetOverlayView.draw: SF symbol missing — vector fallback")
 		drawFallbackArrows(in: bgRect)
 	}
 
@@ -824,3 +777,4 @@ private final class FloatingPetOverlayView: NSView {
 		path.stroke()
 	}
 }
+
