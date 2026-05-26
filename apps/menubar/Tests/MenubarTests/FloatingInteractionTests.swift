@@ -110,20 +110,53 @@ final class FloatingInteractionTests: XCTestCase {
 
 	// MARK: - Hide floating pet prompt (right-click pill)
 
+	func testHidePromptTitleMatchesCodexLabel() {
+		XCTAssertEqual(FloatingPetHidePrompt.title, "Hide pet")
+	}
+
 	func testHidePromptPreferredSizeFitsTitle() {
 		let size = FloatingPetHidePrompt.preferredSize()
-		XCTAssertGreaterThan(size.width, 120)
+		XCTAssertGreaterThan(size.width, 70)
 		XCTAssertGreaterThan(size.height, 24)
 	}
 
-	func testHidePromptFrameStaysInsideBounds() {
+	func testHidePromptFrameAnchorsTopLeftAtClick() {
 		let bounds = CGRect(x: 0, y: 0, width: 200, height: 160)
+		let anchor = CGPoint(x: 48, y: 120)
 		let promptSize = FloatingPetHidePrompt.preferredSize()
 		let frame = FloatingPetHidePrompt.frame(
-			anchor: CGPoint(x: 190, y: 150),
+			anchor: anchor,
 			promptSize: promptSize,
 			in: bounds
 		)
+		XCTAssertEqual(frame.minX, anchor.x, accuracy: 0.5)
+		XCTAssertEqual(frame.maxY, anchor.y, accuracy: 0.5)
+		XCTAssertTrue(bounds.contains(frame))
+	}
+
+	func testHidePromptFrameKeepsTopLeftAnchorWhenExtendingPastRightEdge() {
+		let bounds = CGRect(x: 0, y: 0, width: 200, height: 160)
+		let anchor = CGPoint(x: 170, y: 120)
+		let promptSize = FloatingPetHidePrompt.preferredSize()
+		let frame = FloatingPetHidePrompt.frame(
+			anchor: anchor,
+			promptSize: promptSize,
+			in: bounds
+		)
+		XCTAssertEqual(frame.minX, anchor.x, accuracy: 0.5)
+		XCTAssertEqual(frame.maxY, anchor.y, accuracy: 0.5)
+		XCTAssertGreaterThan(frame.maxX, bounds.maxX)
+	}
+
+	func testHidePromptFrameClampsTopLeftWhenAgainstLeftEdge() {
+		let bounds = CGRect(x: 0, y: 0, width: 200, height: 160)
+		let promptSize = FloatingPetHidePrompt.preferredSize()
+		let frame = FloatingPetHidePrompt.frame(
+			anchor: CGPoint(x: 2, y: 120),
+			promptSize: promptSize,
+			in: bounds
+		)
+		XCTAssertGreaterThanOrEqual(frame.minX, 4)
 		XCTAssertTrue(bounds.contains(frame))
 	}
 
