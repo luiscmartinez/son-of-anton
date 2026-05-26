@@ -205,41 +205,65 @@ final class FloatingInteractionTests: XCTestCase {
 
 	// MARK: - Interaction direction policy
 
-	func testRightwardDragSelectsRunningRight() {
+	func testRightwardStepSelectsRunningRight() {
 		let interaction = FloatingInteractionPolicy.interaction(
-			forDragDelta: CGSize(width: 12, height: 0),
+			forStepDelta: CGSize(width: 12, height: 0),
 			hitTarget: .dragRegion
 		)
 		XCTAssertEqual(interaction, .runningRight)
 	}
 
-	func testLeftwardDragSelectsRunningLeft() {
+	func testLeftwardStepSelectsRunningLeft() {
 		let interaction = FloatingInteractionPolicy.interaction(
-			forDragDelta: CGSize(width: -12, height: 0),
+			forStepDelta: CGSize(width: -12, height: 0),
 			hitTarget: .dragRegion
 		)
 		XCTAssertEqual(interaction, .runningLeft)
 	}
 
-	func testPredominantlyVerticalDragHasNoInteraction() {
+	func testVerticalStepWithNoPreviousRunningHasNoInteraction() {
 		let interaction = FloatingInteractionPolicy.interaction(
-			forDragDelta: CGSize(width: 0, height: 30),
+			forStepDelta: CGSize(width: 0, height: 30),
 			hitTarget: .dragRegion
 		)
 		XCTAssertNil(
 			interaction,
-			"vertical-only drag must not pick a horizontal running animation"
+			"vertical-only step with no prior running interaction stays nil"
 		)
 	}
 
-	func testDiagonalDragWithHorizontalComponentSelectsRunning() {
+	func testVerticalStepHoldsPreviousRunningDirection() {
+		XCTAssertEqual(
+			FloatingInteractionPolicy.interaction(
+				forStepDelta: CGSize(width: 0, height: 8),
+				hitTarget: .dragRegion,
+				previous: .runningLeft
+			),
+			.runningLeft
+		)
+	}
+
+	func testStepReversalFlipsRunningWithoutCumulativeUndo() {
+		// Cumulative delta from mouseDown would still be leftward after a small
+		// rightward reversal; per-event step must flip immediately.
+		XCTAssertEqual(
+			FloatingInteractionPolicy.interaction(
+				forStepDelta: CGSize(width: 4, height: 0),
+				hitTarget: .dragRegion,
+				previous: .runningLeft
+			),
+			.runningRight
+		)
+	}
+
+	func testDiagonalStepWithHorizontalComponentSelectsRunning() {
 		let interaction = FloatingInteractionPolicy.interaction(
-			forDragDelta: CGSize(width: 12, height: 30),
+			forStepDelta: CGSize(width: 12, height: 30),
 			hitTarget: .dragRegion
 		)
 		XCTAssertEqual(
 			interaction, .runningRight,
-			"any non-zero horizontal drag delta selects a running row"
+			"any non-zero horizontal step selects a running row"
 		)
 	}
 
@@ -264,12 +288,31 @@ final class FloatingInteractionTests: XCTestCase {
 
 	func testResizeAffordanceSelectsJumping() {
 		let interaction = FloatingInteractionPolicy.interaction(
-			forDragDelta: CGSize(width: 12, height: 12),
+			forStepDelta: CGSize(width: 12, height: 12),
 			hitTarget: .resizeAffordance
 		)
 		XCTAssertEqual(
 			interaction, .jumping,
 			"resize affordance must pick the jumping reserved row regardless of drag direction"
+		)
+	}
+
+	func testRunningDirectionFlipPreservesFrameIndex() throws {
+		let scene = try makeScene()
+		scene.update(state: .idle, visualMode: .normal)
+		scene.setInteraction(.runningRight)
+		for _ in 0 ..< 3 {
+			scene.advanceFrameForTesting()
+		}
+		let indexBeforeFlip = scene.currentFrameIndexForTesting
+		XCTAssertGreaterThan(indexBeforeFlip, 0)
+
+		scene.setInteraction(.runningLeft)
+
+		XCTAssertEqual(scene.currentInteractionForTesting, .runningLeft)
+		XCTAssertEqual(
+			scene.currentFrameIndexForTesting, indexBeforeFlip,
+			"running-left ↔ running-right must not reset the frame cycle"
 		)
 	}
 }

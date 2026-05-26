@@ -162,15 +162,35 @@ final class FloatingPetScene: SKScene {
 			return
 		}
 
+		if currentInteraction == interaction {
+			return
+		}
+
+		let prior = currentInteraction
+		let preserveRunningCycle = Self.isRunningInteraction(prior)
+			&& Self.isRunningInteraction(interaction)
+
 		currentInteraction = interaction
 		currentFrames = frames
 		currentSource = .codexInteraction
-		frameIndex = 0
-		paintCurrentFrame()
-		dbgLog(
-			"DBG FloatingPetScene.setInteraction: \(interaction) frameCount=\(frames.count)"
-		)
-		restartTimer()
+		if preserveRunningCycle {
+			frameIndex = frameIndex % frames.count
+			paintCurrentFrame()
+			dbgLog(
+				"DBG FloatingPetScene.setInteraction: \(interaction) preserved frameIndex=\(frameIndex) frameCount=\(frames.count) (running flip)"
+			)
+		} else {
+			frameIndex = 0
+			paintCurrentFrame()
+			dbgLog(
+				"DBG FloatingPetScene.setInteraction: \(interaction) frameCount=\(frames.count) frameIndex=0"
+			)
+			restartTimer()
+		}
+	}
+
+	private static func isRunningInteraction(_ interaction: FloatingInteraction?) -> Bool {
+		interaction == .runningLeft || interaction == .runningRight
 	}
 
 	// MARK: - Test access

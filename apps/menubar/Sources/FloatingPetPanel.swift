@@ -231,21 +231,24 @@ enum FloatingInteractionPolicy {
 		return .jumping
 	}
 
-	/// Pure-function mapping from an in-flight pointer drag delta and the
-	/// hit-tested target to the reserved-row interaction the floating scene
-	/// should display. The resize affordance always picks `.jumping`; drags on
-	/// the drag region pick `.runningRight` or `.runningLeft` from horizontal
-	/// screen delta only (vertical-only drags return `nil`).
+	/// Maps a single drag event's screen-space step (not cumulative delta from
+	/// `mouseDown`) to the reserved-row interaction. Vertical-only steps keep
+	/// the previous running direction so frame translation stays smooth.
 	static func interaction(
-		forDragDelta delta: CGSize,
-		hitTarget: FloatingInteractionHitTarget
+		forStepDelta delta: CGSize,
+		hitTarget: FloatingInteractionHitTarget,
+		previous: FloatingInteraction? = nil
 	) -> FloatingInteraction? {
 		switch hitTarget {
 		case .resizeAffordance:
 			return .jumping
 		case .dragRegion:
-			guard delta.width != 0 else { return nil }
-			return delta.width > 0 ? .runningRight : .runningLeft
+			if delta.width > 0 { return .runningRight }
+			if delta.width < 0 { return .runningLeft }
+			if previous == .runningLeft || previous == .runningRight {
+				return previous
+			}
+			return nil
 		}
 	}
 }
@@ -444,10 +447,17 @@ private final class FloatingPetInteractionView: NSView {
 		window.setFrame(nextFrame, display: true)
 		sceneSizeHandler(nextFrame.size)
 
+		let stepDelta = CGSize(width: event.deltaX, height: event.deltaY)
 		let interaction = FloatingInteractionPolicy.interaction(
-			forDragDelta: dragDelta,
-			hitTarget: hitTarget
+			forStepDelta: stepDelta,
+			hitTarget: hitTarget,
+			previous: lastEmittedInteraction
 		)
+		if hitTarget == .dragRegion {
+			dbgLog(
+				"DBG FloatingPetInteractionView translateDrag: step=\(stepDelta.width)x\(stepDelta.height) cumulative=\(dragDelta.width)x\(dragDelta.height) previous=\(lastEmittedInteraction.map { "\($0)" } ?? "nil") picked=\(interaction.map { "\($0)" } ?? "nil")"
+			)
+		}
 		emitInteraction(interaction, reason: "mouseDragged-\(hitTarget)")
 	}
 
