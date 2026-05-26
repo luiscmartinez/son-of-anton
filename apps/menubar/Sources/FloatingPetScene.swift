@@ -2,6 +2,7 @@ import AppKit
 import CoreImage
 import CoreImage.CIFilterBuiltins
 import Foundation
+import QuartzCore
 import SpriteKit
 
 @MainActor
@@ -22,11 +23,15 @@ final class FloatingPetScene: SKScene {
 	private var currentFrames: [MaliPet.Frame] = []
 	private var currentSource: FloatingFrameSource = .codex
 	private var frameIndex: Int = 0
+	private var timer: Timer?
+	/// When set, overrides sheet-specific frame intervals (demo mode).
+	private let demoFrameInterval: TimeInterval?
 
 	init(
 		size: CGSize,
 		codexPet: MaliPet,
 		codogotchiPet: CodogotchiPet?,
+		demoFrameInterval: TimeInterval? = nil,
 		desaturateFrame: ((MaliPet.Frame) -> CGImage?)? = nil,
 		interactionFramesProvider: ((FloatingInteraction) -> [MaliPet.Frame])? = nil
 	) {
@@ -40,6 +45,7 @@ final class FloatingPetScene: SKScene {
 		self.interactionFrames = interactionFramesProvider ?? { interaction in
 			codexPet.floatingFrames(forInteraction: interaction)
 		}
+		self.demoFrameInterval = demoFrameInterval
 		super.init(size: size)
 
 		backgroundColor = .clear
@@ -55,6 +61,14 @@ final class FloatingPetScene: SKScene {
 		currentFrames = initialFrames.frames
 		currentSource = initialFrames.source
 		paintCurrentFrame()
+		dbgLog(
+			"DBG FloatingPetScene init: size=\(size.width)x\(size.height) idleFrames=\(initialFrames.frames.count) demoFrameInterval=\(demoFrameInterval.map { String($0) } ?? "nil")"
+		)
+		restartTimer()
+	}
+
+	deinit {
+		timer?.invalidate()
 	}
 
 	@available(*, unavailable)
@@ -71,6 +85,7 @@ final class FloatingPetScene: SKScene {
 
 	func update(state: ActivityState, visualMode: VisualMode) {
 		let stateChanged = state != currentState || currentFrames.isEmpty
+		let modeChanged = visualMode != currentMode
 		currentState = state
 		currentMode = visualMode
 
@@ -79,6 +94,9 @@ final class FloatingPetScene: SKScene {
 		// interaction is cleared. The latest state is still stored so
 		// `setInteraction(nil)` resumes from the most recent live/demo state.
 		if currentInteraction != nil {
+			dbgLog(
+				"DBG FloatingPetScene.update: deferred (interaction=\(String(describing: currentInteraction))) state=\(state.rawValue) frameIndex=\(frameIndex) timerActive=\(timer != nil)"
+			)
 			paintCurrentFrame()
 			return
 		}
@@ -91,6 +109,14 @@ final class FloatingPetScene: SKScene {
 		}
 
 		paintCurrentFrame()
+
+		dbgLog(
+			"DBG FloatingPetScene.update: state=\(state.rawValue) visualMode=\(visualMode) stateChanged=\(stateChanged) modeChanged=\(modeChanged) source=\(currentSource.logLabel) frameCount=\(currentFrames.count) frameIndex=\(frameIndex) timerActive=\(timer != nil)"
+		)
+
+		if stateChanged || timer == nil {
+			restartTimer()
+		}
 	}
 
 	/// Apply or clear a transient mouse-reactive interaction overlay
@@ -109,6 +135,10 @@ final class FloatingPetScene: SKScene {
 			currentSource = resolved.source
 			frameIndex = 0
 			paintCurrentFrame()
+			dbgLog(
+				"DBG FloatingPetScene.setInteraction: cleared → state=\(currentState.rawValue) frameCount=\(currentFrames.count)"
+			)
+			restartTimer()
 			return
 		}
 
@@ -124,7 +154,11 @@ final class FloatingPetScene: SKScene {
 				currentSource = resolved.source
 				frameIndex = 0
 				paintCurrentFrame()
+				restartTimer()
 			}
+			dbgLog(
+				"DBG FloatingPetScene.setInteraction: missing row for \(interaction) — keeping activity frames"
+			)
 			return
 		}
 
@@ -133,6 +167,10 @@ final class FloatingPetScene: SKScene {
 		currentSource = .codexInteraction
 		frameIndex = 0
 		paintCurrentFrame()
+		dbgLog(
+			"DBG FloatingPetScene.setInteraction: \(interaction) frameCount=\(frames.count)"
+		)
+		restartTimer()
 	}
 
 	// MARK: - Test access
@@ -149,10 +187,55 @@ final class FloatingPetScene: SKScene {
 	var currentColorBlendFactorForTesting: CGFloat { spriteNode.colorBlendFactor }
 
 	func advanceFrameForTesting() {
-		advanceFrame()
+		tick()
 	}
 
 	// MARK: - Internals
+
+	private func restartTimer() {
+		timer?.invalidate()
+		guard !currentFrames.isEmpty else {
+			timer = nil
+			dbgLog("DBG FloatingPetScene.restartTimer: no frames — timer cleared")
+			return
+		}
+
+		let interval: TimeInterval
+		if let demo = demoFrameInterval {
+			interval = demo
+		} else {
+			switch currentSource {
+			case .codogotchi:
+				interval = CodogotchiPet.frameInterval
+			case .codex, .idleFallback, .codexInteraction:
+				interval = 1.0 / Double(max(currentFrames.count, 1))
+			}
+		}
+
+		dbgLog(
+			"DBG FloatingPetScene.restartTimer: source=\(currentSource.logLabel) interval=\(interval)s frameCount=\(currentFrames.count) frameIndex=\(frameIndex)"
+		)
+		let newTimer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
+			let t = CACurrentMediaTime()
+			dbgLog("DBG t=\(t) FloatingPetScene.timer fired")
+			Task { @MainActor in self?.tick() }
+		}
+		RunLoop.main.add(newTimer, forMode: .common)
+		timer = newTimer
+	}
+
+	private func tick() {
+		guard !currentFrames.isEmpty else {
+			dbgLog("DBG FloatingPetScene.tick: currentFrames empty — skipping")
+			return
+		}
+		frameIndex = (frameIndex + 1) % currentFrames.count
+		let t = CACurrentMediaTime()
+		dbgLog(
+			"DBG t=\(t) FloatingPetScene.tick: frameIndex=\(frameIndex) of \(currentFrames.count) state=\(currentState.rawValue) interaction=\(String(describing: currentInteraction))"
+		)
+		paintCurrentFrame()
+	}
 
 	private func resolveFrames(for state: ActivityState) -> (frames: [MaliPet.Frame], source: FloatingFrameSource) {
 		let codexFrames = codexPet.floatingFrames(for: state)
@@ -162,12 +245,6 @@ final class FloatingPetScene: SKScene {
 		if !codogotchiFrames.isEmpty { return (codogotchiFrames, .codogotchi) }
 
 		return (codexPet.floatingFrames(for: .idle), .idleFallback)
-	}
-
-	private func advanceFrame() {
-		guard !currentFrames.isEmpty else { return }
-		frameIndex = (frameIndex + 1) % currentFrames.count
-		paintCurrentFrame()
 	}
 
 	private func paintCurrentFrame() {

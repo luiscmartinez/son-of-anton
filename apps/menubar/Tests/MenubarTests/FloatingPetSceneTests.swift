@@ -111,6 +111,24 @@ final class FloatingPetSceneTests: XCTestCase {
 		XCTAssertEqual(scene.currentFramesForTesting.count, 4)
 	}
 
+	func testAnimationTimerAdvancesFrames() throws {
+		let scene = try makeScene()
+		scene.update(state: .idle, visualMode: .normal)
+		XCTAssertEqual(scene.currentFrameIndexForTesting, 0)
+
+		let advanced = expectation(description: "timer advances frame index")
+		DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+			advanced.fulfill()
+		}
+		wait(for: [advanced], timeout: 1.0)
+
+		XCTAssertGreaterThan(
+			scene.currentFrameIndexForTesting,
+			0,
+			"floating pet should advance frames on a repeating timer like MenubarRenderer"
+		)
+	}
+
 	func testMissingCodogotchiFramesFallBackToIdle() throws {
 		let missingPet = try CodogotchiPet(petDirectory: missingCodogotchiPetDirectory())
 		let scene = try makeScene(codogotchiPet: missingPet)

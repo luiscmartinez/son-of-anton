@@ -5,6 +5,7 @@ import SpriteKit
 final class FloatingPetPanelController: FloatingPetPanelManaging {
 	private let codexPet: MaliPet
 	private let codogotchiPet: CodogotchiPet?
+	private let demoFrameInterval: TimeInterval?
 	private let visibleFrameProvider: () -> CGRect
 	private var panel: NSPanel?
 	private var scene: FloatingPetScene?
@@ -15,12 +16,14 @@ final class FloatingPetPanelController: FloatingPetPanelManaging {
 	init(
 		codexPet: MaliPet,
 		codogotchiPet: CodogotchiPet?,
+		demoFrameInterval: TimeInterval? = nil,
 		visibleFrameProvider: @escaping () -> CGRect = {
 			NSScreen.main?.visibleFrame ?? CGRect(x: 0, y: 0, width: 800, height: 600)
 		}
 	) {
 		self.codexPet = codexPet
 		self.codogotchiPet = codogotchiPet
+		self.demoFrameInterval = demoFrameInterval
 		self.visibleFrameProvider = visibleFrameProvider
 	}
 
@@ -32,7 +35,8 @@ final class FloatingPetPanelController: FloatingPetPanelManaging {
 			let scene = FloatingPetScene(
 				size: frame.size,
 				codexPet: codexPet,
-				codogotchiPet: codogotchiPet
+				codogotchiPet: codogotchiPet,
+				demoFrameInterval: demoFrameInterval
 			)
 			scene.update(state: currentState, visualMode: currentMode)
 			self.scene = scene
@@ -53,6 +57,9 @@ final class FloatingPetPanelController: FloatingPetPanelManaging {
 	func apply(state: ActivityState, visualMode: VisualMode) {
 		currentState = state
 		currentMode = visualMode
+		dbgLog(
+			"DBG FloatingPetPanelController.apply: state=\(state.rawValue) visualMode=\(visualMode) scenePresent=\(scene != nil)"
+		)
 		scene?.update(state: state, visualMode: visualMode)
 	}
 
