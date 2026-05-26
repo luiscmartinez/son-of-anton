@@ -211,3 +211,7 @@ playground.xcworkspace
 .codogotchi-test-home/
 .env.local
 *-subagent-review.trace.log
+
+# agy-cli
+**/*/.antigravitycli
+.antigravitycli
