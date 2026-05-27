@@ -36,7 +36,7 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 
 	/// Holds the NDJSON transition log writer so its heartbeat `Timer` and
 	/// lazily-opened file handle survive past `applicationDidFinishLaunching`.
-	/// `nil` while a `MaliPet` failure keeps the app on the placeholder
+	/// `nil` while a `CodexPet` failure keeps the app on the placeholder
 	/// icon — there is no driver to feed the log in that state.
 	var transitionLog: TransitionLog?
 
@@ -102,7 +102,7 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 		self.demoConfig = config
 
 		do {
-			let codexPet = try MaliPet()
+			let codexPet = try CodexPet()
 			// Soft degrade: if the codogotchi pet directory is absent or its
 			// spritesheet is missing, pass nil — the nine SoA-owned states fall
 			// back to idle until the sheet is installed at the default path.
@@ -136,7 +136,7 @@ final class MenubarApp: NSObject, NSApplicationDelegate {
 				visibleFrameProvider: Self.visibleFloatingFrame
 			)
 		} catch {
-			NSLog("MenubarApp: MaliPet load failed — keeping placeholder icon (\(error))")
+			NSLog("MenubarApp: CodexPet load failed — keeping placeholder icon (\(error))")
 		}
 
 		let menuBuilder = MenubarMenu(floatingPetController: self.floatingPetController)

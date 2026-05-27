@@ -11,7 +11,7 @@ import Foundation
 /// Missing spritesheet is a soft failure: `init` succeeds and `frames(for:)`
 /// returns an empty array for all states, letting the renderer fall back to
 /// `.idle`. Malformed spritesheet (grid not divisible by 24×9) is a hard
-/// failure that throws `MaliPetLoadError.spritesheetIncompatibleGrid`.
+/// failure that throws `CodexPetLoadError.spritesheetIncompatibleGrid`.
 final class CodogotchiPet {
 	let id: String
 	let displayName: String
@@ -48,7 +48,7 @@ final class CodogotchiPet {
 	static let gridRows = 9
 
 	/// Per-frame display interval for codogotchi-sheet animations (~167 ms/frame).
-	/// Codex-sheet frames use `MaliPet.frameInterval` (~188 ms/frame for 8-frame rows).
+	/// Codex-sheet frames use `CodexPet.frameInterval` (~188 ms/frame for 8-frame rows).
 	static let frameInterval: TimeInterval = 167.0 / 1000.0
 
 	private let cgSheet: CGImage?
@@ -63,7 +63,7 @@ final class CodogotchiPet {
 	///
 	/// Reads `pet.json` for `id` and `displayName`; then attempts to load
 	/// `codogotchi-spritesheet.webp`. Missing spritesheet → soft degrade (no
-	/// throw). Malformed grid → throws `MaliPetLoadError.spritesheetIncompatibleGrid`.
+	/// throw). Malformed grid → throws `CodexPetLoadError.spritesheetIncompatibleGrid`.
 	init(petDirectory: String) throws {
 		let dirURL = URL(fileURLWithPath: petDirectory)
 
@@ -72,7 +72,7 @@ final class CodogotchiPet {
 		do {
 			petJsonData = try Data(contentsOf: petJsonURL)
 		} catch {
-			throw MaliPetLoadError.petJsonNotFound
+			throw CodexPetLoadError.petJsonNotFound
 		}
 
 		let manifest: CodogotchiManifest
@@ -81,7 +81,7 @@ final class CodogotchiPet {
 			decoder.keyDecodingStrategy = .convertFromSnakeCase
 			manifest = try decoder.decode(CodogotchiManifest.self, from: petJsonData)
 		} catch {
-			throw MaliPetLoadError.petJsonMalformed
+			throw CodexPetLoadError.petJsonMalformed
 		}
 
 		self.id = manifest.id
@@ -103,11 +103,11 @@ final class CodogotchiPet {
 		}
 
 		guard let image = NSImage(contentsOfFile: sheetURL.path) else {
-			throw MaliPetLoadError.spritesheetUnreadable
+			throw CodexPetLoadError.spritesheetUnreadable
 		}
 
 		guard let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-			throw MaliPetLoadError.spritesheetUnreadable
+			throw CodexPetLoadError.spritesheetUnreadable
 		}
 
 		guard
@@ -116,7 +116,7 @@ final class CodogotchiPet {
 			cg.width % CodogotchiPet.gridColumns == 0,
 			cg.height % CodogotchiPet.gridRows == 0
 		else {
-			throw MaliPetLoadError.spritesheetIncompatibleGrid
+			throw CodexPetLoadError.spritesheetIncompatibleGrid
 		}
 
 		self.spritesheet = image
@@ -130,14 +130,14 @@ final class CodogotchiPet {
 	/// Returns an empty array when:
 	/// - The state is not in `rowMap` (Codex-sheet-owned states).
 	/// - The spritesheet was absent at load time (soft degrade).
-	func frames(for state: ActivityState) -> [MaliPet.Frame] {
+	func frames(for state: ActivityState) -> [CodexPet.Frame] {
 		guard let cgSheet = cgSheet, let spec = CodogotchiPet.rowMap[state] else { return [] }
 		return frames(forRow: spec, cgSheet: cgSheet, state: state, output: .menubar)
 	}
 
 	/// Return codogotchi-sheet frames at native source-cell resolution for the
 	/// SpriteKit floating pet.
-	func floatingFrames(for state: ActivityState) -> [MaliPet.Frame] {
+	func floatingFrames(for state: ActivityState) -> [CodexPet.Frame] {
 		guard let cgSheet = cgSheet, let spec = CodogotchiPet.rowMap[state] else { return [] }
 		return frames(forRow: spec, cgSheet: cgSheet, state: state, output: .sourceCell)
 	}
@@ -147,8 +147,8 @@ final class CodogotchiPet {
 		cgSheet: CGImage,
 		state: ActivityState,
 		output: FrameOutput
-	) -> [MaliPet.Frame] {
-		var out: [MaliPet.Frame] = []
+	) -> [CodexPet.Frame] {
+		var out: [CodexPet.Frame] = []
 		out.reserveCapacity(spec.frameCount)
 		let displaySize: NSSize
 		let pxW: Int
@@ -203,7 +203,7 @@ final class CodogotchiPet {
 				owned = slice
 			}
 			let image = NSImage(cgImage: owned, size: displaySize)
-			out.append(MaliPet.Frame(image: image, cgImage: owned))
+			out.append(CodexPet.Frame(image: image, cgImage: owned))
 		}
 
 		return out

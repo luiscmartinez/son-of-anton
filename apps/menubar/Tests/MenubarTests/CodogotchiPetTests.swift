@@ -193,7 +193,7 @@ final class CodogotchiPetTests: XCTestCase {
 
 	func testIncompatibleGridThrows() throws {
 		// A spritesheet that is not divisible by 24 cols × 9 rows must throw
-		// spritesheetIncompatibleGrid — same hard-fail policy as MaliPet.
+		// spritesheetIncompatibleGrid — same hard-fail policy as CodexPet.
 		let tmp = FileManager.default.temporaryDirectory
 			.appendingPathComponent("codogotchi-bad-sheet-\(UUID().uuidString)")
 		try FileManager.default.createDirectory(at: tmp, withIntermediateDirectories: true)
@@ -209,8 +209,8 @@ final class CodogotchiPetTests: XCTestCase {
 		try stubPng.write(to: tmp.appendingPathComponent("codogotchi-spritesheet.webp"))
 
 		XCTAssertThrowsError(try CodogotchiPet(petDirectory: tmp.path)) { error in
-			guard let loadError = error as? MaliPetLoadError else {
-				XCTFail("expected MaliPetLoadError, got \(error)")
+			guard let loadError = error as? CodexPetLoadError else {
+				XCTFail("expected CodexPetLoadError, got \(error)")
 				return
 			}
 			XCTAssertEqual(
@@ -243,11 +243,11 @@ final class CodogotchiPetTests: XCTestCase {
 // MARK: - Cross-loader disjointness
 
 final class CrossLoaderRowMapTests: XCTestCase {
-	func testMaliPetAndCodogotchiRowMapsAreDisjoint() {
-		let overlap = Set(MaliPet.rowMap.keys).intersection(Set(CodogotchiPet.rowMap.keys))
+	func testCodexPetAndCodogotchiRowMapsAreDisjoint() {
+		let overlap = Set(CodexPet.rowMap.keys).intersection(Set(CodogotchiPet.rowMap.keys))
 		XCTAssertTrue(
 			overlap.isEmpty,
-			"MaliPet and CodogotchiPet row maps must not share states — resolution order would silently shadow codogotchi: \(overlap)"
+			"CodexPet and CodogotchiPet row maps must not share states — resolution order would silently shadow codogotchi: \(overlap)"
 		)
 	}
 }

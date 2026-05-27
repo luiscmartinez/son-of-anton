@@ -3,11 +3,11 @@ import XCTest
 
 @testable import Codogotchi
 
-/// Behavior contract for `MaliPet` — the pet asset loader and per-state
+/// Behavior contract for `CodexPet` — the pet asset loader and per-state
 /// frame extractor for Phase 02. Fixtures live at
 /// `apps/menubar/Fixtures/mali/` so tests run on machines without
 /// `~/.codex/pets/mali/` populated.
-final class MaliPetTests: XCTestCase {
+final class CodexPetTests: XCTestCase {
 	// MARK: - Fixture path helpers
 
 	private func fixtureDirectory() -> String {
@@ -23,16 +23,16 @@ final class MaliPetTests: XCTestCase {
 	// MARK: - Load
 
 	func testLoaderSucceedsFromFixtureDirectory() throws {
-		let pet = try MaliPet(petDirectory: fixtureDirectory())
+		let pet = try CodexPet(petDirectory: fixtureDirectory())
 		XCTAssertEqual(pet.id, "mali")
 		XCTAssertEqual(pet.displayName, "Mali")
 	}
 
 	func testLoaderThrowsWhenDirectoryMissing() {
 		let missing = "/tmp/codogotchi-missing-pet-\(UUID().uuidString)"
-		XCTAssertThrowsError(try MaliPet(petDirectory: missing)) { error in
-			guard let loadError = error as? MaliPetLoadError else {
-				XCTFail("expected MaliPetLoadError, got \(error)")
+		XCTAssertThrowsError(try CodexPet(petDirectory: missing)) { error in
+			guard let loadError = error as? CodexPetLoadError else {
+				XCTFail("expected CodexPetLoadError, got \(error)")
 				return
 			}
 			// Missing-directory must collapse to petJsonNotFound, not the
@@ -49,7 +49,7 @@ final class MaliPetTests: XCTestCase {
 	// MARK: - Frame extraction
 
 	func testFramesForImplementingReturnsExpectedShape() throws {
-		let pet = try MaliPet(petDirectory: fixtureDirectory())
+		let pet = try CodexPet(petDirectory: fixtureDirectory())
 		let frames = pet.frames(for: .implementing)
 		XCTAssertFalse(frames.isEmpty, "implementing row must yield frames")
 
@@ -70,7 +70,7 @@ final class MaliPetTests: XCTestCase {
 	}
 
 	func testFloatingFramesUseSourceCellResolution() throws {
-		let pet = try MaliPet(petDirectory: fixtureDirectory())
+		let pet = try CodexPet(petDirectory: fixtureDirectory())
 		let frames = pet.floatingFrames(for: .implementing)
 		let first = try XCTUnwrap(frames.first)
 
@@ -86,7 +86,7 @@ final class MaliPetTests: XCTestCase {
 	}
 
 	func testEveryCodexSheetStateHasNonEmptyFrames() throws {
-		let pet = try MaliPet(petDirectory: fixtureDirectory())
+		let pet = try CodexPet(petDirectory: fixtureDirectory())
 		// Phase 03 Codex-sheet states — celebrating is intentionally absent (wired in P3.04).
 		for state in [ActivityState.idle, .implementing, .runningTests, .waiting, .requestingInput, .errored] {
 			XCTAssertFalse(pet.frames(for: state).isEmpty, "\(state) must yield frames")
@@ -110,7 +110,7 @@ final class ActivityStateEnumTests: XCTestCase {
 	}
 }
 
-final class MaliPetRowMapExpansionTests: XCTestCase {
+final class CodexPetRowMapExpansionTests: XCTestCase {
 	private func fixtureDirectory() -> String {
 		let thisFile = URL(fileURLWithPath: #file)
 		return thisFile
@@ -122,29 +122,29 @@ final class MaliPetRowMapExpansionTests: XCTestCase {
 	}
 
 	func testRowMapWaitingRowIndex() {
-		XCTAssertEqual(MaliPet.rowMap[.waiting]?.rowIndex, 6)
+		XCTAssertEqual(CodexPet.rowMap[.waiting]?.rowIndex, 6)
 	}
 
 	func testRowMapRequestingInputRowIndex() {
-		XCTAssertEqual(MaliPet.rowMap[.requestingInput]?.rowIndex, 3)
+		XCTAssertEqual(CodexPet.rowMap[.requestingInput]?.rowIndex, 3)
 	}
 
 	func testRowMapErroredRowIndex() {
-		XCTAssertEqual(MaliPet.rowMap[.errored]?.rowIndex, 5)
+		XCTAssertEqual(CodexPet.rowMap[.errored]?.rowIndex, 5)
 	}
 
 	func testCelebratingRemovedFromRowMap() {
-		XCTAssertNil(MaliPet.rowMap[.celebrating])
+		XCTAssertNil(CodexPet.rowMap[.celebrating])
 	}
 
 	func testWaitingFramesCountAndRow() throws {
-		let pet = try MaliPet(petDirectory: fixtureDirectory())
+		let pet = try CodexPet(petDirectory: fixtureDirectory())
 		let frames = pet.frames(for: .waiting)
 		XCTAssertEqual(frames.count, 8, ".waiting must yield 8 frames from row 6")
 	}
 
 	func testIdleFramesRegressionIs8() throws {
-		let pet = try MaliPet(petDirectory: fixtureDirectory())
+		let pet = try CodexPet(petDirectory: fixtureDirectory())
 		XCTAssertEqual(pet.frames(for: .idle).count, 8, ".idle regression: must still yield 8 frames from row 0")
 	}
 }

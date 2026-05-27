@@ -19,7 +19,7 @@ enum VisualMode: Equatable {
 /// The renderer uses this to select the correct per-frame interval without
 /// having to inspect the frame count or call into either loader.
 enum SpriteSource {
-	/// Frame came from `MaliPet` (Codex sheet, ~188 ms/frame for 8-frame rows).
+	/// Frame came from `CodexPet` (Codex sheet, ~188 ms/frame for 8-frame rows).
 	case codex
 	/// Frame came from `CodogotchiPet` (codogotchi sheet, ~167 ms/frame).
 	case codogotchi
@@ -32,7 +32,7 @@ enum SpriteSource {
 /// `NSStatusItem`, animating whichever spritesheet serves the current state.
 ///
 /// Resolution order for any `ActivityState`:
-/// 1. `MaliPet` (Codex sheet) — checked first via `MaliPet.rowMap`.
+/// 1. `CodexPet` (Codex sheet) — checked first via `CodexPet.rowMap`.
 /// 2. `CodogotchiPet` (codogotchi sheet) — checked second.
 /// 3. Idle fallback — `.idle` frames from the Codex sheet when both return empty.
 ///
@@ -52,7 +52,7 @@ final class MenubarRenderer {
 	/// emitted `NSImage` for assertion.
 	typealias ImageSink = (NSImage) -> Void
 
-	private let codexPet: MaliPet
+	private let codexPet: CodexPet
 	/// Nil when the codogotchi sheet was not installed at launch (soft degrade).
 	/// The nine SoA-owned states fall back to idle rendering while nil.
 	private let codogotchiPet: CodogotchiPet?
@@ -61,7 +61,7 @@ final class MenubarRenderer {
 
 	private var currentState: ActivityState = .idle
 	private var currentMode: VisualMode = .normal
-	private var currentFrames: [MaliPet.Frame] = []
+	private var currentFrames: [CodexPet.Frame] = []
 	private var currentSource: SpriteSource = .codex
 	private var frameIndex: Int = 0
 	private var timer: Timer?
@@ -71,7 +71,7 @@ final class MenubarRenderer {
 	private let demoFrameInterval: TimeInterval?
 
 	init(
-		codexPet: MaliPet,
+		codexPet: CodexPet,
 		codogotchiPet: CodogotchiPet?,
 		sink: @escaping ImageSink,
 		demoFrameInterval: TimeInterval? = nil
@@ -174,7 +174,7 @@ final class MenubarRenderer {
 		}
 	}
 
-	private func desaturate(_ frame: MaliPet.Frame) -> NSImage? {
+	private func desaturate(_ frame: CodexPet.Frame) -> NSImage? {
 		// Use the CGImage from the Frame directly instead of asking
 		// AppKit to vend one via NSImage.cgImage(forProposedRect:), which
 		// intermittently returns nil when the NSImage's logical size differs
@@ -208,7 +208,7 @@ final class MenubarRenderer {
 				// Codex sheet cycles all rows in ~1.5 s by dividing by the actual
 				// frame count. Variable frame counts per row (8, 6, 4) each
 				// produce a ~1.5 s animation cycle.
-				interval = MaliPet.animationCycleDuration / Double(max(currentFrames.count, 1))
+				interval = CodexPet.animationCycleDuration / Double(max(currentFrames.count, 1))
 			}
 		}
 		let newTimer = Timer(timeInterval: interval, repeats: true) {

@@ -1,107 +1,118 @@
 # Phase 05: Lite Install And Onboarding
 
-**Delivery status:** Draft product plan (not yet decomposed).
+**Delivery status:** Product plan approved (2026-05-27). App Store distribution is explicitly non-blocking for Phase 05 exit.
 
 ## TL;DR
 
-**Goal:** Make Codogotchi usable as a standalone desktop pet immediately after App Store install, with no CLI enrollment, no Convex URL, and no RPG setup required.
+**Goal:** Make Codogotchi a standalone macOS desktop pet that works immediately after **local install** (Xcode build, signed `.app`, or equivalent dev distribution)—hooks, bundled pet, honest platform copy—without requiring Convex enrollment or Terminal for the default path.
 
 **Ships:**
 
-- A first-run Lite onboarding that auto-enables the pet, installs hooks where possible, and makes “why is my pet not animating?” impossible to miss.
-- Settings-first configuration: install/status of hooks per platform, pet selection, and an “Enable Alive (RPG)” unlock path.
-- A single canonical local home (`~/.codogotchi/`) with bundled pet assets so Codogotchi does not depend on `~/.codex/pets/*` to render.
+- App-first Lite onboarding: first-run sheet (hooks explained, consent, backup-then-install) plus a minimal Settings window (Hooks, Pet, Alive stub).
+- CLI split: `codogotchi setup` (Lite) and `codogotchi rpg` (opt-in RPG enrollment); `features.rpg_enabled` defaults false for greenfield, true after `rpg`.
+- Canonical `~/.codogotchi/` with bundled **Maew** assets; no runtime dependency on `~/.codex/pets/*`.
+- Plain-language documentation that Cursor may animate via the **Claude third-party hooks bridge** until Phase 06.
 
 **Defers:**
 
-- Cursor/VS Code/Antigravity parity, attention tray + TTL, and signal honesty improvements (Phase 06).
-- XP/level HUD, health visuals/decay, loot equip, premium packs (Phase 08+).
+- **App Store submission**, Apple Developer Program enrollment, store listing, and review-driven packaging (later phase when the product is viable—not a Phase 05 gate).
+- Native Cursor / VS Code / Antigravity hook installers and truthful `source_origin` (Phase 06).
+- Full in-app RPG enrollment UI and multi-tab Settings (Phase 10).
+- Attention tray, signal honesty, HUD, health, loot (Phase 06+ / Phase 08+).
 
 ---
 
-Codogotchi already functions as a `state.json` visualizer: the macOS app renders local state and the hook binary writes it. The product friction is onboarding: the only “happy path” today is the Phase 01 CLI `setup` flow, which front-loads Convex enrollment and multiple credentials. Phase 05 flips the default: Lite is the product, Alive (RPG) is an opt-in upgrade.
+Codogotchi is a `state.json` visualizer: the macOS app renders local state; the hook binary writes it. Phase 01 coupled everything to `codogotchi setup` (handle, Convex, GitHub, WakaTime). Phase 05 flips the product default: **Lite is the product**, **Alive (RPG) is opt-in**. **App-first** means the macOS app owns onboarding—not that Phase 05 requires App Store approval. The operator is a **single developer** until stated otherwise—no backward-compatibility code paths or generic migration UX; greenfield defaults plus a **final ticket** that updates the developer’s own config to the new schema with `rpg_enabled: true`. Working target: **Phases 05–14 by 2026-06-30**; App Store registration waits until the stack is product-ready.
 
 ## Phase Goal
 
 This phase should leave the product in a state where:
 
-- A user can install Codogotchi from the App Store, launch it, and see a working pet without touching Terminal.
-- If hooks are not installed or not firing, the app clearly explains what’s missing and offers a one-click path to fix it.
-- The app does not require Codex to be installed or running; Codex pets become an optional import source, not a hard dependency.
+- After **local install** (documented build/run path—e.g. Release build from Xcode, copy to `/Applications`, or project runbook), launch shows a working pet (bundled Maew) without Terminal or Convex.
+- First-run onboarding explains hooks, asks consent, **backs up existing hook JSON before writing**, and surfaces honest per-platform status until events fire.
+- A developer with an existing RPG setup remains on RPG after phase close (manual config ticket), while the documented greenfield path stays Lite.
 
 ## Committed Scope
 
-### Lite-First App Store Onboarding
+### App-First Onboarding (Menubar Sheet)
 
-- On first launch, Codogotchi shows a minimal onboarding surface (single window or Settings-first flow) that:
-  - Explains that Codogotchi animations are driven by agent hooks.
-  - Detects which agent platforms are present on disk (Codex, Claude Code, Cursor, VS Code, Antigravity) and which are unsupported in this phase.
-  - Offers “Install hooks” actions with clear success/failure feedback per platform.
-- Codogotchi remains functional in a degraded mode when hooks cannot be installed automatically:
-  - The pet still renders and can run demo mode.
-  - The UI presents a persistent, user-visible “Hooks not active” status until at least one hook event is observed.
+- On first launch, show a **menubar-attached onboarding sheet** (not a full Settings product) that:
+  - States that animation is driven by agent hooks (text files under the user’s home directory).
+  - Detects which platforms are present on disk (Codex, Claude Code, Cursor, VS Code, Antigravity) and labels which are **installable in this phase** vs deferred.
+  - Uses **consent-first** hook install: explain what will be written, then **Install hooks**—no silent overwrite of user hook config.
+  - **Backs up** existing Codex / Claude Code hook config (timestamped copy or sidecar) immediately before inserting Codogotchi entries.
+- Degraded mode when hooks are missing or not firing:
+  - Pet still renders (bundled assets + demo mode).
+  - Persistent **Hooks not active** status until at least one hook event is observed, with a clear next action.
 
-### Hook Installation Policy (macOS App)
+### Minimal Settings Window
 
-- Default posture: install hooks automatically when the platform allows it without requiring the user to hand-edit config files.
-- When a platform requires user action/permission (or the install path is ambiguous), Codogotchi:
-  - Explains the exact action required.
-  - Provides a one-click “Open config location” affordance.
-  - Does not pretend hooks are active when they are not.
+A small Settings window (expanded in Phase 10), not a substitute for first-run onboarding:
 
-This phase covers only platforms that Codogotchi can install reliably today:
+- **Hooks:** per-platform status (`not installed | installed | firing recently | unknown`), install/uninstall for supported platforms, last event time and `source_origin` when available.
+- **Pet:** select active pet from `~/.codogotchi/pets/`; optional import/copy from `~/.codex/pets/*` into the canonical store (no live-read from Codex at runtime).
+- **Alive (RPG):** **stub only**—what RPG unlocks and that enrollment is `codogotchi rpg` today; full in-app enroll deferred to Phase 10.
 
-- Codex hooks (`~/.codex/hooks.json` + related config).
-- Claude Code hooks (`~/.claude/settings.json`).
+### Hook Install Scope (Phase 05)
 
-Other platforms are explicitly deferred (Phase 06+).
+Reliable installers in this phase:
 
-### Settings-First Configuration (No CLI Required)
+- Codex (`~/.codex/hooks.json` and related).
+- Claude Code (`~/.claude/settings.json`).
 
-Add a Settings window (may be minimal in Phase 05, expanded later) with:
+**Cursor (documentation, not native install):** Onboarding, README, and runbook must state clearly:
 
-- **Hooks** (or Developer) section:
-  - Per-platform hook status: `not installed | installed | firing recently | unknown`.
-  - Install/uninstall actions for supported platforms.
-  - “Last hook event seen” timestamp and detected `source_origin` when available.
-- **Pet** section:
-  - Select active pet from a local canonical store under `~/.codogotchi/pets/`.
-  - Optional import from Codex pets when `~/.codex/pets` exists (best-effort; no multi-pet UX polish required yet).
-- **Alive (RPG)** upsell/unlock entrypoint:
-  - A clear “Enable Alive (RPG)” call-to-action that moves the user into enrollment (Phase 10 formalizes the full multi-tab settings surface).
+- Cursor may animate the pet when **Settings → Features → Third-party skills** is enabled and Claude-compat hooks list `codogotchi-hook`.
+- Transition logs may show `source_origin: claude_code` and Cursor tool names (`Shell`, `Grep`, …)—that is the **bridge**, not proof of a native Cursor hooks file.
+- Native `~/.cursor/hooks.json` install and honest `source_origin: cursor` → Phase 06.
 
-CLI support (`codogotchi hooks install`, `codogotchi enroll`) is allowed as a developer convenience, but it is not the primary path in this phase.
+### CLI Product Surface
 
-### Bundled Pet Assets + Canonical Local Pet Store
+| Command | Role |
+| --- | --- |
+| `codogotchi setup` | **Lite:** install Codex + Claude Code hooks, seed minimal `~/.codogotchi/config.json` with `features.rpg_enabled: false`, optional pet id (default Maew). No required handle or Convex URL. |
+| `codogotchi rpg` | **Alive:** current interactive enrollment (handle, Convex, optional GitHub/WakaTime, first sync), sets `features.rpg_enabled: true`. |
 
-- Ship at least one complete pet inside the app bundle and seed it into `~/.codogotchi/pets/<id>/` on first run.
-- Codogotchi must be able to render without any dependency on `~/.codex/pets/*`.
-- Codex pets are optional: the app can copy/import a selected Codex pet into the canonical codogotchi store, but does not live-read from the Codex folder at runtime.
+- RPG commands (`sync`, `loot`, etc.) refuse with a clear message when `rpg_enabled === false`, pointing to `codogotchi rpg` or the Settings stub.
+- Remove `CODOGOTCHI_CONVEX_URL` from hook shell commands unless a later feature needs it.
+- CLI is **developer convenience**; App-first onboarding is the exit-condition hero path.
 
-### Single-User Migration (No Backward Compatibility)
+### Bundled Pet + Canonical Store
 
-- No backward compatibility guarantees are required.
-- It is acceptable to migrate or replace existing local config and hook installation artifacts as needed to support the Lite-first product.
-- The plan must still keep failure modes understandable: if existing config is invalid or partial, Codogotchi should offer a “Reset to Lite defaults” action.
+- Ship **Maew** as the default bundled pet (`pet.json` + codogotchi spritesheet) and seed `~/.codogotchi/pets/maew/` on first run when no loadable pet exists.
+- App must render without `~/.codex/pets/*`.
+- Codex-format pets remain an optional import source into `~/.codogotchi/pets/<id>/`.
+
+### Operator Migration (Single User)
+
+- **No** backward-compatibility branches for legacy config shapes in product code.
+- **No** generic “migration wizard” for arbitrary users.
+- **Final Phase 05 ticket:** update the developer’s existing `~/.codogotchi/config.json` to the new schema with **`features.rpg_enabled: true`** and any required fields—preserving current RPG behavior post-landing.
+- Greenfield / “Reset to Lite defaults” remains available for testing; not applied to the operator config automatically.
 
 ## Explicit Deferrals
 
-- Platform parity beyond Codex + Claude Code (Cursor / VS Code / Antigravity adapters, tool alias tables, fixtures).
-- Attention bubble + tray + TTL decay.
-- Signal honesty improvements (origin attribution fixes, `tool.command` persistence, `work_mode` taxonomy).
-- Convex enrollment UX inside the app, XP/HP/loot UI, premium gating, and equip rendering.
+- **Mac App Store distribution:** Apple Developer Program account, app signing for store, notarization for store submission, App Store Connect metadata, and review. Phase 05 only requires a reproducible **developer install** path documented in README/runbook. Store readiness is a later milestone (after Phases 05–14 land on the 2026-06-30 working deadline).
+- Native Cursor, VS Code, and Antigravity hook installers; tool-alias tables and attribution fixes (Phase 06).
+- Full Settings tabs (General, Health, Loot, Developer depth) and in-app RPG enrollment flow (Phase 10).
+- Attention bubble, tray, TTL, signal honesty (`tool.command`, `work_mode`, origin fixes).
+- Convex schema changes; XP/HP/loot HUD; premium gating; equip rendering (Phase 08+).
 
 ## Exit Condition
 
-Phase 05 is done when a clean machine can:
+Phase 05 is done when a **clean machine** (or fresh macOS user account) can:
 
-1. Install Codogotchi from the App Store and launch it.
-2. See the pet render immediately using bundled assets.
-3. Install Codex and/or Claude Code hooks from Settings without editing JSON by hand (for supported platforms).
-4. Observe the pet react to real hook events, and see hook status reflect “firing recently”.
-5. Understand the degraded path when hooks cannot be installed (clear copy + next action).
+1. Install and launch Codogotchi via the **documented local path** (not App Store)—e.g. build Release from Xcode, install the `.app` to `/Applications` (or run from DerivedData per runbook), open once without prior `~/.codogotchi/` config.
+2. See Maew render immediately from bundled assets.
+3. Complete first-run onboarding (sheet): understand hooks, consent, backup-then-install for Codex and/or Claude Code.
+4. Install hooks from minimal Settings if needed; observe the pet react to real events with status **firing recently**.
+5. Read in-app or README copy that explains **Cursor-via-Claude-bridge** behavior until Phase 06.
+
+And when the **operator** can:
+
+6. Run `codogotchi setup` / `codogotchi rpg` as documented without `setup` implying RPG enrollment.
+7. Continue daily use with **`rpg_enabled: true`** after the final config ticket (no silent downgrade to Lite).
 
 ## Retrospective
 
-`required` — this phase changes the product’s primary onboarding boundary (CLI-first → App-first) and will likely surface durable learnings about platform hook installability and UX failure modes.
-
+`required` — Phase 05 changes the primary onboarding boundary (CLI-first → App-first) and will surface durable learnings about hook install consent, backup/restore, and cross-platform copy honesty.

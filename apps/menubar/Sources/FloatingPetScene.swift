@@ -6,11 +6,11 @@ import SpriteKit
 
 @MainActor
 final class FloatingPetScene: SKScene {
-	private let codexPet: MaliPet
+	private let codexPet: CodexPet
 	private let codogotchiPet: CodogotchiPet?
 	private let ciContext: CIContext
-	private let desaturateFrame: (MaliPet.Frame) -> CGImage?
-	private let interactionFrames: (FloatingInteraction) -> [MaliPet.Frame]
+	private let desaturateFrame: (CodexPet.Frame) -> CGImage?
+	private let interactionFrames: (FloatingInteraction) -> [CodexPet.Frame]
 
 	private let petLayer = SKNode()
 	private let overlayLayer = SKNode()
@@ -19,7 +19,7 @@ final class FloatingPetScene: SKScene {
 	private var currentState: ActivityState = .idle
 	private var currentMode: VisualMode = .normal
 	private var currentInteraction: FloatingInteraction?
-	private var currentFrames: [MaliPet.Frame] = []
+	private var currentFrames: [CodexPet.Frame] = []
 	private var currentSource: FloatingFrameSource = .codex
 	private var frameIndex: Int = 0
 	private var timer: Timer?
@@ -28,11 +28,11 @@ final class FloatingPetScene: SKScene {
 
 	init(
 		size: CGSize,
-		codexPet: MaliPet,
+		codexPet: CodexPet,
 		codogotchiPet: CodogotchiPet?,
 		demoFrameInterval: TimeInterval? = nil,
-		desaturateFrame: ((MaliPet.Frame) -> CGImage?)? = nil,
-		interactionFramesProvider: ((FloatingInteraction) -> [MaliPet.Frame])? = nil
+		desaturateFrame: ((CodexPet.Frame) -> CGImage?)? = nil,
+		interactionFramesProvider: ((FloatingInteraction) -> [CodexPet.Frame])? = nil
 	) {
 		self.codexPet = codexPet
 		self.codogotchiPet = codogotchiPet
@@ -216,7 +216,7 @@ final class FloatingPetScene: SKScene {
 			case .codogotchi:
 				interval = CodogotchiPet.frameInterval
 			case .codexInteraction, .codex, .idleFallback:
-				interval = MaliPet.animationCycleDuration / Double(max(currentFrames.count, 1))
+				interval = CodexPet.animationCycleDuration / Double(max(currentFrames.count, 1))
 			}
 		}
 
@@ -235,7 +235,7 @@ final class FloatingPetScene: SKScene {
 		paintCurrentFrame()
 	}
 
-	private func resolveFrames(for state: ActivityState) -> (frames: [MaliPet.Frame], source: FloatingFrameSource) {
+	private func resolveFrames(for state: ActivityState) -> (frames: [CodexPet.Frame], source: FloatingFrameSource) {
 		let codexFrames = codexPet.floatingFrames(for: state)
 		if !codexFrames.isEmpty { return (codexFrames, .codex) }
 
@@ -289,7 +289,7 @@ final class FloatingPetScene: SKScene {
 		spriteNode.position = .zero
 	}
 
-	private static func desaturate(_ frame: MaliPet.Frame, ciContext: CIContext) -> CGImage? {
+	private static func desaturate(_ frame: CodexPet.Frame, ciContext: CIContext) -> CGImage? {
 		let ci = CIImage(cgImage: frame.cgImage)
 		let filter = CIFilter.colorControls()
 		filter.inputImage = ci

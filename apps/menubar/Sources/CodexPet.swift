@@ -1,10 +1,10 @@
 import AppKit
 import Foundation
 
-/// Failure modes for `MaliPet(petDirectory:)`. Surfaced as named cases so the
+/// Failure modes for `CodexPet(petDirectory:)`. Surfaced as named cases so the
 /// caller (P2.05 renderer, P2.06 demo mode) can map them to user-visible
 /// failure visuals without re-parsing an error string.
-enum MaliPetLoadError: Error, Equatable {
+enum CodexPetLoadError: Error, Equatable {
 	case petJsonNotFound
 	case petJsonMalformed
 	case spritesheetNotFound
@@ -46,7 +46,7 @@ struct RowSpec: Equatable {
 /// Hardcoded map is deliberate over `pet.json` extension or a sibling
 /// rows file because the format extension belongs to Phase 06's multi-pet
 /// catalog work — see the ticket Rationale section.
-final class MaliPet {
+final class CodexPet {
 	let id: String
 	let displayName: String
 	let spritesheet: NSImage
@@ -117,7 +117,7 @@ final class MaliPet {
 	private var floatingInteractionFrameCache: [FloatingInteraction: [Frame]] = [:]
 
 	convenience init() throws {
-		try self.init(petDirectory: MaliPet.defaultPetDirectoryPath())
+		try self.init(petDirectory: CodexPet.defaultPetDirectoryPath())
 	}
 
 	/// Load a pet from `petDirectory`. Reads `pet.json` and the spritesheet
@@ -130,7 +130,7 @@ final class MaliPet {
 		do {
 			petJsonData = try Data(contentsOf: petJsonURL)
 		} catch {
-			throw MaliPetLoadError.petJsonNotFound
+			throw CodexPetLoadError.petJsonNotFound
 		}
 
 		let manifest: PetManifest
@@ -139,12 +139,12 @@ final class MaliPet {
 			decoder.keyDecodingStrategy = .convertFromSnakeCase
 			manifest = try decoder.decode(PetManifest.self, from: petJsonData)
 		} catch {
-			throw MaliPetLoadError.petJsonMalformed
+			throw CodexPetLoadError.petJsonMalformed
 		}
 
 		let sheetURL = dirURL.appendingPathComponent(manifest.spritesheetPath)
 		guard FileManager.default.fileExists(atPath: sheetURL.path) else {
-			throw MaliPetLoadError.spritesheetNotFound
+			throw CodexPetLoadError.spritesheetNotFound
 		}
 
 		// `NSImage(contentsOfFile:)` decodes WebP via ImageIO on macOS 13+. If
@@ -152,13 +152,13 @@ final class MaliPet {
 		// `CGImageSourceCreateWithURL` and convert the fixture to PNG; see
 		// the ticket Rationale section.
 		guard let image = NSImage(contentsOfFile: sheetURL.path) else {
-			throw MaliPetLoadError.spritesheetUnreadable
+			throw CodexPetLoadError.spritesheetUnreadable
 		}
 
 		guard
 			let cg = image.cgImage(forProposedRect: nil, context: nil, hints: nil)
 		else {
-			throw MaliPetLoadError.spritesheetUnreadable
+			throw CodexPetLoadError.spritesheetUnreadable
 		}
 
 		// 8 columns × 9 rows is a load-time invariant. The runtime row map
@@ -170,20 +170,20 @@ final class MaliPet {
 		// 12×9 spritesheet would otherwise pass a width-only minimum
 		// check and silently slice misaligned frames.
 		guard
-			cg.width >= MaliPet.gridColumns,
-			cg.height >= MaliPet.gridRows,
-			cg.width % MaliPet.gridColumns == 0,
-			cg.height % MaliPet.gridRows == 0
+			cg.width >= CodexPet.gridColumns,
+			cg.height >= CodexPet.gridRows,
+			cg.width % CodexPet.gridColumns == 0,
+			cg.height % CodexPet.gridRows == 0
 		else {
-			throw MaliPetLoadError.spritesheetIncompatibleGrid
+			throw CodexPetLoadError.spritesheetIncompatibleGrid
 		}
 
 		self.id = manifest.id
 		self.displayName = manifest.displayName
 		self.spritesheet = image
 		self.cgSheet = cg
-		self.frameWidth = cg.width / MaliPet.gridColumns
-		self.frameHeight = cg.height / MaliPet.gridRows
+		self.frameWidth = cg.width / CodexPet.gridColumns
+		self.frameHeight = cg.height / CodexPet.gridRows
 		prewarmFloatingInteractionFrameCache()
 	}
 
@@ -200,7 +200,7 @@ final class MaliPet {
 	/// flipped-coordinate-system gotcha applies to `NSGraphicsContext`
 	/// drawing, not to `CGImage.cropping(to:)` — see the Swift notes file.)
 	func frames(for state: ActivityState) -> [Frame] {
-		guard let spec = MaliPet.rowMap[state] else { return [] }
+		guard let spec = CodexPet.rowMap[state] else { return [] }
 		return frames(forRow: spec, output: .menubar)
 	}
 
@@ -208,7 +208,7 @@ final class MaliPet {
 	/// floating pet. Unlike `frames(for:)`, this does not pre-scale to the
 	/// menu-bar icon size before SpriteKit receives the texture.
 	func floatingFrames(for state: ActivityState) -> [Frame] {
-		guard let spec = MaliPet.rowMap[state] else { return [] }
+		guard let spec = CodexPet.rowMap[state] else { return [] }
 		return frames(forRow: spec, output: .sourceCell)
 	}
 
@@ -246,8 +246,8 @@ final class MaliPet {
 		for interaction: FloatingInteraction,
 		output: FrameOutput
 	) -> [Frame] {
-		guard let spec = MaliPet.interactionRowMap[interaction] else { return [] }
-		guard spec.rowIndex < MaliPet.gridRows, spec.frameCount <= MaliPet.gridColumns else {
+		guard let spec = CodexPet.interactionRowMap[interaction] else { return [] }
+		guard spec.rowIndex < CodexPet.gridRows, spec.frameCount <= CodexPet.gridColumns else {
 			return []
 		}
 		return frames(forRow: spec, output: output)
@@ -296,7 +296,7 @@ final class MaliPet {
 			// crash the menubar.
 			guard let slice = cgSheet.cropping(to: rect) else {
 				assertionFailure(
-					"MaliPet.frames(forRow: \(spec)) — cropping returned nil for rect \(rect); rowMap or grid invariant broken"
+					"CodexPet.frames(forRow: \(spec)) — cropping returned nil for rect \(rect); rowMap or grid invariant broken"
 				)
 				continue
 			}

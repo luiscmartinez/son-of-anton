@@ -6,7 +6,7 @@ import XCTest
 /// P4.07 — Mouse-reactive reserved Codex rows.
 ///
 /// These tests assert that the reserved Codex rows (`running-right`,
-/// `running-left`, `jumping`) are exposed by `MaliPet` independently of
+/// `running-left`, `jumping`) are exposed by `CodexPet` independently of
 /// `ActivityState`, that the `FloatingPetScene` honours them as a transient
 /// interaction overlay above the activity-driven animation, that missing
 /// reserved rows degrade gracefully to the current activity frames, and
@@ -38,23 +38,23 @@ final class FloatingInteractionTests: XCTestCase {
 
 	private func makeScene(
 		size: CGSize = CGSize(width: 180, height: 140),
-		codexPet: MaliPet? = nil,
+		codexPet: CodexPet? = nil,
 		codogotchiPet: CodogotchiPet? = nil,
-		interactionFramesProvider: ((FloatingInteraction) -> [MaliPet.Frame])? = nil
+		interactionFramesProvider: ((FloatingInteraction) -> [CodexPet.Frame])? = nil
 	) throws -> FloatingPetScene {
 		try FloatingPetScene(
 			size: size,
-			codexPet: codexPet ?? MaliPet(petDirectory: maliFixtureDirectory()),
+			codexPet: codexPet ?? CodexPet(petDirectory: maliFixtureDirectory()),
 			codogotchiPet: codogotchiPet ?? CodogotchiPet(petDirectory: maewFixtureDirectory()),
 			interactionFramesProvider: interactionFramesProvider
 		)
 	}
 
-	// MARK: - MaliPet reserved-row exposure
+	// MARK: - CodexPet reserved-row exposure
 
 	func testInteractionRowMapRunningRightRowIndex() {
 		XCTAssertEqual(
-			MaliPet.interactionRowMap[.runningRight]?.rowIndex,
+			CodexPet.interactionRowMap[.runningRight]?.rowIndex,
 			1,
 			"running-right must use Codex row 1 per the animation-state-vocabulary contract"
 		)
@@ -62,7 +62,7 @@ final class FloatingInteractionTests: XCTestCase {
 
 	func testInteractionRowMapRunningLeftRowIndex() {
 		XCTAssertEqual(
-			MaliPet.interactionRowMap[.runningLeft]?.rowIndex,
+			CodexPet.interactionRowMap[.runningLeft]?.rowIndex,
 			2,
 			"running-left must use Codex row 2 per the animation-state-vocabulary contract"
 		)
@@ -70,7 +70,7 @@ final class FloatingInteractionTests: XCTestCase {
 
 	func testInteractionRowMapJumpingRowIndex() {
 		XCTAssertEqual(
-			MaliPet.interactionRowMap[.jumping]?.rowIndex,
+			CodexPet.interactionRowMap[.jumping]?.rowIndex,
 			4,
 			"jumping must use Codex row 4 per the animation-state-vocabulary contract"
 		)
@@ -78,7 +78,7 @@ final class FloatingInteractionTests: XCTestCase {
 
 	func testReservedRowsAbsentFromActivityRowMap() {
 		let reservedRowIndices: Set<Int> = [1, 2, 4]
-		let activityRowIndices = Set(MaliPet.rowMap.values.map(\.rowIndex))
+		let activityRowIndices = Set(CodexPet.rowMap.values.map(\.rowIndex))
 		XCTAssertTrue(
 			activityRowIndices.isDisjoint(with: reservedRowIndices),
 			"ActivityState row map must not consume reserved rows \(reservedRowIndices); found \(activityRowIndices)"
@@ -86,7 +86,7 @@ final class FloatingInteractionTests: XCTestCase {
 	}
 
 	func testInteractionFramesNonEmptyFromFixture() throws {
-		let pet = try MaliPet(petDirectory: maliFixtureDirectory())
+		let pet = try CodexPet(petDirectory: maliFixtureDirectory())
 		for interaction in FloatingInteraction.allCases {
 			let frames = pet.frames(forInteraction: interaction)
 			XCTAssertFalse(
@@ -97,7 +97,7 @@ final class FloatingInteractionTests: XCTestCase {
 	}
 
 	func testFloatingInteractionFramesReuseCachedBackingImages() throws {
-		let pet = try MaliPet(petDirectory: maliFixtureDirectory())
+		let pet = try CodexPet(petDirectory: maliFixtureDirectory())
 		for interaction in FloatingInteraction.allCases {
 			let first = pet.floatingFrames(forInteraction: interaction)
 			let second = pet.floatingFrames(forInteraction: interaction)
@@ -112,9 +112,9 @@ final class FloatingInteractionTests: XCTestCase {
 	}
 
 	func testInteractionFramesNotExposedViaActivityState() throws {
-		let pet = try MaliPet(petDirectory: maliFixtureDirectory())
+		let pet = try CodexPet(petDirectory: maliFixtureDirectory())
 		for activity in ActivityState.allCases {
-			guard let spec = MaliPet.rowMap[activity] else { continue }
+			guard let spec = CodexPet.rowMap[activity] else { continue }
 			XCTAssertFalse(
 				[1, 2, 4].contains(spec.rowIndex),
 				"ActivityState.\(activity) must not resolve to a reserved interaction row (got row \(spec.rowIndex))"
@@ -200,7 +200,7 @@ final class FloatingInteractionTests: XCTestCase {
 	// MARK: - FloatingPetScene interaction overlay
 
 	func testSettingInteractionRunningRightSwapsFrames() throws {
-		let pet = try MaliPet(petDirectory: maliFixtureDirectory())
+		let pet = try CodexPet(petDirectory: maliFixtureDirectory())
 		let scene = try makeScene(codexPet: pet)
 		scene.update(state: .idle, visualMode: .normal)
 		let idleFirstFrame = try XCTUnwrap(pet.frames(for: .idle).first?.image.tiffRepresentation)

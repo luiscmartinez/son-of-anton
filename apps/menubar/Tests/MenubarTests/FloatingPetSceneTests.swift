@@ -43,11 +43,11 @@ final class FloatingPetSceneTests: XCTestCase {
 	private func makeScene(
 		size: CGSize = CGSize(width: 180, height: 140),
 		codogotchiPet: CodogotchiPet? = nil,
-		desaturateFrame: ((MaliPet.Frame) -> CGImage?)? = nil
+		desaturateFrame: ((CodexPet.Frame) -> CGImage?)? = nil
 	) throws -> FloatingPetScene {
 		try FloatingPetScene(
 			size: size,
-			codexPet: MaliPet(petDirectory: maliFixtureDirectory()),
+			codexPet: CodexPet(petDirectory: maliFixtureDirectory()),
 			codogotchiPet: codogotchiPet ?? CodogotchiPet(petDirectory: maewFixtureDirectory()),
 			desaturateFrame: desaturateFrame
 		)

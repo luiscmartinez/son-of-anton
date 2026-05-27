@@ -34,8 +34,8 @@ final class MenubarRendererTests: XCTestCase {
 			.path
 	}
 
-	private func makeCodexPet() throws -> MaliPet {
-		try MaliPet(petDirectory: maliFixtureDirectory())
+	private func makeCodexPet() throws -> CodexPet {
+		try CodexPet(petDirectory: maliFixtureDirectory())
 	}
 
 	private func makeCodogotchiPet() throws -> CodogotchiPet {
@@ -126,7 +126,7 @@ final class MenubarRendererTests: XCTestCase {
 		XCTAssertEqual(
 			renderer.currentFramesForTesting.count,
 			codexPet.frames(for: .waiting).count,
-			".waiting is in MaliPet.rowMap — must resolve from Codex sheet first"
+			".waiting is in CodexPet.rowMap — must resolve from Codex sheet first"
 		)
 	}
 
@@ -140,7 +140,7 @@ final class MenubarRendererTests: XCTestCase {
 		XCTAssertEqual(
 			renderer.currentFramesForTesting.count,
 			codogotchiPet.frames(for: .panicking).count,
-			".panicking is not in MaliPet.rowMap — must fall through to codogotchi sheet"
+			".panicking is not in CodexPet.rowMap — must fall through to codogotchi sheet"
 		)
 		XCTAssertEqual(
 			renderer.currentFramesForTesting.count,

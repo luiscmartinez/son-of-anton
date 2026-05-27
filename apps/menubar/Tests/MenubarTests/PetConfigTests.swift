@@ -92,12 +92,12 @@ final class PetConfigTests: XCTestCase {
 
 	// MARK: - Loader directory paths
 
-	func testMaliPetDefaultPathUsesResolvedPetName() throws {
+	func testCodexPetDefaultPathUsesResolvedPetName() throws {
 		try withTempHome { dir in
 			try writeConfig(#"{"pet": "charlie"}"#, in: dir)
 			XCTAssertTrue(
-				MaliPet.defaultPetDirectoryPath().hasSuffix("/charlie"),
-				"MaliPet default path must use resolved pet name, got: \(MaliPet.defaultPetDirectoryPath())"
+				CodexPet.defaultPetDirectoryPath().hasSuffix("/charlie"),
+				"CodexPet default path must use resolved pet name, got: \(CodexPet.defaultPetDirectoryPath())"
 			)
 		}
 	}

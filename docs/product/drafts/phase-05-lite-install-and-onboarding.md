@@ -1,7 +1,7 @@
 # Phase 05 Draft — Lite Install and Onboarding
 
 _Drafted: 2026-05-27_
-_Status: Pre-planning draft — not yet through `/soa plan`_
+_Status: Draft input — product plan at `docs/product/plans/phase-05-lite-install-and-onboarding.md` (grill-me complete, awaiting approval)_
 _Source: [codogotchi-ideation-storm-roadmap-draft.md](../../notes/public/codogotchi-ideation-storm-roadmap-draft.md), lite-vs-alive product model_
 
 ---

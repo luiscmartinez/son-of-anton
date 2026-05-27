@@ -3,7 +3,7 @@ import SpriteKit
 
 @MainActor
 final class FloatingPetPanelController: FloatingPetPanelManaging {
-	private let codexPet: MaliPet
+	private let codexPet: CodexPet
 	private let codogotchiPet: CodogotchiPet?
 	private let demoFrameInterval: TimeInterval?
 	private let visibleFrameProvider: () -> CGRect
@@ -15,7 +15,7 @@ final class FloatingPetPanelController: FloatingPetPanelManaging {
 	var onHideFloatingPet: (() -> Void)?
 
 	init(
-		codexPet: MaliPet,
+		codexPet: CodexPet,
 		codogotchiPet: CodogotchiPet?,
 		demoFrameInterval: TimeInterval? = nil,
 		visibleFrameProvider: @escaping () -> CGRect = {
