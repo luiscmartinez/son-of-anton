@@ -51,6 +51,12 @@ _Prior shipped: Phase 01–04 ([phase-04-floating-pet.md](../plans/phase-04-floa
 
 ---
 
+## Field finding (2026-05-27) — Cursor without `~/.cursor/hooks.json`
+
+Dogfooding confirmed: the pet animates during **Cursor Agent** sessions even when `~/.cursor/hooks.json` has no Codogotchi entries. Cursor loads **Claude Code–compatible** hooks from `~/.claude/settings.json` when **Settings → Features → Third-party skills** is enabled ([Cursor third-party hooks](https://cursor.com/docs/reference/third-party-hooks)). `codogotchi setup` / `hooks install` wires `codogotchi-hook` there (and in `~/.codex/hooks.json`), not in Cursor’s native hooks file. Transition logs then show `source_origin: "claude_code"` and Cursor tool names (`Shell`, `Grep`, …) — a **mis-label**, not proof the event came from the Claude Code app. Phase **06** makes attribution honest and adds a native `~/.cursor/hooks.json` installer; Phases **05** and **10** should document the bridge for lite onboarding and debugging.
+
+---
+
 ## Research links
 
 - [Ideation storm](../../notes/public/codogotchi-ideation-storm-roadmap-draft.md)

@@ -18,6 +18,7 @@ Replace JSON-and-Finder onboarding with a **Settings window**: the control plane
 - Pet selection is `config.json` + Reveal `~/.codex/pets/`.
 - Loot is CLI `loot` reading JSONL — no visual delight.
 - No in-app view of `state.json` or transition log.
+- Cursor users see the pet work with **empty `~/.cursor/hooks.json`** and cannot tell whether hooks are native, Claude-bridge, or broken — logs show `claude_code` during Cursor Agent work ([platform research](../../notes/public/codogotchi-platform-extension-and-signal-pipeline-research.md)).
 
 ---
 
@@ -59,6 +60,8 @@ Menubar → **Settings…** opens a standard macOS window (not a tiny panel). Ta
 - Pretty-print `state.json` (refresh button)
 - Tail or paginate `state-transitions.log`
 - Toggle log verbosity for future hook fields (`work_mode`, `tool_command`)
+- **Hook diagnostics (lite + alive):** show last-seen `source_event.origin` / tool name; explain when `claude_code` + `Shell`/`Grep` likely means **Cursor via third-party bridge** (link: enable **Third-party skills**, verify `~/.claude/settings.json` contains `codogotchi-hook`, contrast with empty `~/.cursor/hooks.json`)
+- Optional read-only summary: hooks installed in Claude / Codex / Cursor native paths (file exists + Codogotchi command present)
 
 ---
 
@@ -77,6 +80,7 @@ Menubar → **Settings…** opens a standard macOS window (not a tiny panel). Ta
 2. Alive user can set WakaTime + GitHub + handle without Terminal.
 3. Developer tab shows live `state.json` matching hook output.
 4. Loot tab renders at least one earned item as a card from `loot.log`.
+5. Developer tab or help text answers “why does my pet react in Cursor when `~/.cursor/hooks.json` is empty?” without requiring external docs.
 
 ---
 

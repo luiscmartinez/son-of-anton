@@ -19,6 +19,7 @@ HUD (Phase 08) rewires to new level function; Convex migrates `stage` → `level
 - `STAGE_THRESHOLDS` has 5 tiers (`packages/engine/src/xp.ts`).
 - UI will say “Level” while backend says `stage` — confusing.
 - One global curve does not match “personalized grind” intent from ideation.
+- `xp_by_source` / signal attribution still keys off hook `origin`; until Phase 06/07, Cursor-heavy users may accrue under **`claude_code`** in Convex while actually coding in Cursor — migration plan should not bake in that mis-label long term.
 
 ---
 

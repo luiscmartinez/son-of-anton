@@ -77,11 +77,25 @@ Users who only want “pet that reacts to my agent” must still enroll in the f
 - If `profile.json` absent, `hp: 100`, `hp_overlay: thriving` (current behavior)
 - Do not require sync cron for animation
 
+### 7. Document Cursor via Claude third-party hooks (no native installer in this phase)
+
+**Field finding (2026-05-27):** Many Cursor users already see the pet react during **Cursor Agent** work with an **empty** `~/.cursor/hooks.json`. Cursor can load hooks from **`~/.claude/settings.json`** when **Third-party skills** is enabled ([Cursor docs](https://cursor.com/docs/reference/third-party-hooks)). `hooks install` wires `codogotchi-hook` there (same as today’s `setup`); the menubar app only polls `~/.codogotchi/state.json` — it never reads Cursor’s hooks file directly.
+
+**Lite onboarding must say this plainly:**
+
+| What users see | What is actually happening |
+| --- | --- |
+| Pet moves in Cursor | Cursor fired `codogotchi-hook` via the **Claude-compat bridge**, not `~/.cursor/hooks.json` |
+| Log says `source_origin: claude_code` | **Heuristic mis-label** — Cursor sends camelCase events (`preToolUse`); hook defaults non-snake_case to `claude_code` |
+| Tool names `Shell`, `Grep`, `Write` | Fingerprint of **Cursor Agent** stdin (Claude Code hooks typically see `Bash`) |
+
+README / runbook: verify bridge with `jq '.hooks' ~/.claude/settings.json | grep codogotchi-hook` and `tail -f ~/.codogotchi/state-transitions.log`. Call out **Third-party skills** in Cursor Settings. Native `~/.cursor/hooks.json` install and truthful `source_origin: cursor` → **Phase 06**.
+
 ---
 
 ## Defers
 
-- Multi-platform hooks (Cursor, VS Code, Antigravity) → **Phase 06**
+- Native multi-platform hooks (`~/.cursor/hooks.json`, VS Code, Antigravity) and truthful `source_origin` → **Phase 06** (Cursor may already animate via Claude bridge until then)
 - Attention tray, TTL, bubble UX → **Phase 06**
 - Settings window and RPG unlock UI → **Phase 10**
 - Convex schema changes
@@ -106,7 +120,7 @@ Users who only want “pet that reacts to my agent” must still enroll in the f
 
 ## Cross-repo
 
-- Son-of-Anton: no code required; `.soa/events.ndjson` continues to work when consumer runs SoA with `codogotchi.enabled` (lite users benefit automatically on hook fire).
+- Son-of-Anton: no code required; `.soa/events.ndjson` continues to work when consumer runs SoA with `codogotchi.enabled` (lite users benefit automatically on hook fire — including Cursor sessions that invoke `codogotchi-hook` through the Claude bridge).
 
 ---
 
@@ -115,6 +129,7 @@ Users who only want “pet that reacts to my agent” must still enroll in the f
 1. Command naming: `enroll` vs `setup --rpg` vs keep `setup` for RPG only?
 2. Single bundled pet id (Mali vs Maew vs new mascot)?
 3. App-first vs CLI-first seeding of `~/.codogotchi/pets/`?
+4. Lite README: lead with “works in Cursor today via Third-party skills + Claude hooks” vs wait until Phase 06 native Cursor installer?
 
 ---
 

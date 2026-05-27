@@ -34,6 +34,7 @@ Phase 03–04 render activity states; HP overlays were explicitly deferred. Hear
 ### 3. Decay product rule (document + wire)
 
 - Proposed: lose **½ heart** per **12 hours** without coding activity (composite signal TBD in plan: WakaTime hours, hook activity, GitHub, sync window)
+- Hook-fired activity counts whether the event came from Codex, Claude Code, or **Cursor via the Claude-compat bridge** (same `state.json` hot path); RPG signal sources for decay should not assume `source_origin` in logs is ground truth until Phase 06/07 honesty work ships
 - Engine `health.ts` may already implement day-based decay — align UI copy and HUD hearts with server truth
 
 ### 4. RPG gate

@@ -17,7 +17,7 @@ This phase is **infrastructure** for lite + alive users; it does not require RPG
 ## The problem
 
 - SoA writes only to **per-repo** `.soa/events.ndjson`; the hook only tails on the **next** hook invocation — missed gates during long quiet periods.
-- Cursor/VS Code attribution and command strings incomplete (Phase 06 starts this; Phase 07 completes contract + SoA path).
+- Cursor/VS Code attribution and command strings incomplete (Phase 06 starts this; Phase 07 completes contract + SoA path). Until then, **Cursor Agent traffic often appears as `source_origin: claude_code`** because hooks run through Cursor’s **Claude third-party bridge** (`~/.claude/settings.json`) and `rawHookOrigin()` mis-classifies camelCase events — debugging “which IDE fired this?” from `state-transitions.log` alone is misleading ([platform research](../../notes/public/codogotchi-platform-extension-and-signal-pipeline-research.md)).
 - Transition log cannot answer “what shell command caused this state?”
 
 ---
@@ -38,12 +38,13 @@ This phase is **infrastructure** for lite + alive users; it does not require RPG
 
 ### 3. Transition log v2 fields
 
-- `tool_command`, `work_mode`, `platform` on state change lines
+- `tool_command`, `work_mode`, `platform` on state change lines (`platform` must reflect **actual** agent surface: `cursor` vs `claude_code` vs `codex`, not bridge heuristic defaults)
 - Backward compatible readers ignore unknown fields
 
 ### 4. Documentation
 
 - Troubleshooting: `codogotchi.enabled`, global vs repo gate files
+- Troubleshooting: **empty `~/.cursor/hooks.json` but pet still animates in Cursor** → third-party Claude hooks + `codogotchi-hook` in `~/.claude/settings.json`; how to read `Shell`/`Grep` vs `Bash` in logs
 - Update `docs/contracts/soa-event-feed.md` producer/consumer boundary
 
 ---

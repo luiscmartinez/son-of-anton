@@ -91,6 +91,7 @@ Runtime: when premium entitled + equipped, floating/menubar renderer prefers equ
 - **Phase 10** Settings + Loot gallery
 - **Phase 10** pet import / `~/.codogotchi/pets/` canonical layout
 - **Phase 11** optional (level-gated loot rarity can wait)
+- **Phase 06–07** recommended before loot tied to `source_origin` / platform-specific drops (Cursor vs Claude vs Codex)
 
 ---
 

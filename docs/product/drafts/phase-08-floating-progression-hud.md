@@ -55,7 +55,7 @@ Menubar: optional single “needs attention” dot only (defer if costly)
 ### 6. Data source
 
 - Prefer cached `~/.codogotchi/profile.json` refreshed by sync; stale indicator optional
-- Hook continues to mirror `hp` on `state.json` for animation-adjacent reads
+- Hook continues to mirror `hp` on `state.json` for animation-adjacent reads (including Cursor sessions that fire hooks via the **Claude third-party bridge** until Phase 06 native Cursor attribution lands — animation path unchanged for lite users)
 
 ---
 
