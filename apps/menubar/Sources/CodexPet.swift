@@ -300,6 +300,13 @@ final class CodexPet {
 				)
 				continue
 			}
+			// Some third-party Codex-compatible sheets leave trailing frames fully
+			// transparent or pure placeholder magenta. Skip those frames so
+			// renderers animate only meaningful frames and preserve cycle timing
+			// by dividing 1.5 s over the remaining frame count.
+			guard Self.hasRenderablePixels(slice) else {
+				continue
+			}
 			// Materialize the cropped slice into a self-contained CGImage so
 			// the resulting NSImage owns its pixel data outright. Cropping
 			// returns a view that shares cgSheet's buffer; AppKit's status
@@ -353,6 +360,60 @@ final class CodexPet {
 				return "source-cell"
 			}
 		}
+	}
+
+	private static func hasRenderablePixels(_ image: CGImage) -> Bool {
+		let width = image.width
+		let height = image.height
+		guard width > 0, height > 0 else { return false }
+		guard let ctx = CGContext(
+			data: nil,
+			width: width,
+			height: height,
+			bitsPerComponent: 8,
+			bytesPerRow: 0,
+			space: CGColorSpaceCreateDeviceRGB(),
+			bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+		) else {
+			// If pixel normalization fails, keep the frame rather than dropping
+			// potentially valid art due to CoreGraphics context setup issues.
+			return true
+		}
+
+		ctx.interpolationQuality = .none
+		ctx.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))
+		guard let data = ctx.data else { return true }
+
+		let bytes = data.bindMemory(to: UInt8.self, capacity: width * height * 4)
+		let count = width * height
+		var opaqueCount = 0
+		var visibleCount = 0
+
+		// Normalized RGBA8 from premultiplied-last bitmap context.
+		for i in 0..<count {
+			let base = i * 4
+			let r = Int(bytes[base])
+			let g = Int(bytes[base + 1])
+			let b = Int(bytes[base + 2])
+			let a = Int(bytes[base + 3])
+
+			if a <= 8 {
+				continue
+			}
+			opaqueCount += 1
+
+			// Treat fully/sufficiently saturated placeholder magenta as blank.
+			let isPlaceholderMagenta = r >= 240 && g <= 20 && b >= 240
+			if !isPlaceholderMagenta {
+				visibleCount += 1
+				if visibleCount > 0 {
+					return true
+				}
+			}
+		}
+
+		// Entirely transparent or entirely placeholder-magenta frame.
+		return opaqueCount > 0 && visibleCount > 0
 	}
 
 	// MARK: - Helpers
