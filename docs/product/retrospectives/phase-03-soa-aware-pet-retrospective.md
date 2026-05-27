@@ -1,6 +1,6 @@
 # Phase 03 — SoA-aware pet retrospective
 
-Source plan: [`docs/product/plans/phase-03.md`](../plans/phase-03.md).
+Source plan: [`docs/product/plans/phase-03-soa-aware-pet-animation-coverage.md`](../plans/phase-03-soa-aware-pet-animation-coverage.md).
 Delivery plan: [`docs/product/delivery/phase-03/implementation-plan.md`](../delivery/phase-03/implementation-plan.md).
 
 ## Scope delivered

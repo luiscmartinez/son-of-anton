@@ -8,7 +8,7 @@ Red: skip
 ## Outcome
 
 - `docs/product/retrospectives/phase-04-floating-pet-retrospective.md` exists and records what shipped, pain points, surprises, and follow-up lessons.
-- `docs/product/plans/phase-04.md` delivery status reflects the final shipped/decomposed state.
+- `docs/product/plans/phase-04-floating-pet.md` delivery status reflects the final shipped/decomposed state.
 - README and app-local docs describe Codogotchi as a menu bar plus floating pet app, not a menu-bar-only app.
 - Any stale Phase 03 references that call floating pet a future Phase 04 deferral are either updated or left with clear historical context.
 - Deferred HP hearts, XP bar, stage indicator, focus-aware visibility, catalog, and distribution polish remain clearly deferred.

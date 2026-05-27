@@ -45,7 +45,7 @@ Scope: cli
 > Append here (do not edit above) when behavior or trade-offs change during implementation.
 
 - **`runSync` injection seams.** Source clients are passed in as a `SourceReaders` quartet (`claude`, `codex`, `github`, `wakatime`) keyed by source name. `Promise.all` runs all four; each is wrapped in a try/catch inside `runOne`, so a thrown error becomes a null signal plus an entry in `errors[]`. Tests inject mock readers; the router builds production readers from config via `defaultReaders(config)`.
-- **`since` derivation.** Read from `~/.codogotchi/profile.json` (`last_signal_at_by_source`) and parsed per source. Missing or invalid timestamps fall back to `null`; each reader treats that as **forward-only from `now`** (no historical lookback). See [`phase-01-as-shipped.md`](../../plans/phase-01-as-shipped.md).
+- **`since` derivation.** Read from `~/.codogotchi/profile.json` (`last_signal_at_by_source`) and parsed per source. Missing or invalid timestamps fall back to `null`; each reader treats that as **forward-only from `now`** (no historical lookback). See [`phase-01-as-shipped-delta.md`](../../plans/phase-01-as-shipped-delta.md).
 - **Exit code.** Exactly the locked spec: `0` if at least one source succeeded **or** the POST succeeded; `1` only when **all four sources failed AND** the POST failed. POST errors are caught (`postSucceeded = false`) and never thrown out of `runSync`.
 - **Atomic cache writes.** `profile.json` uses the same `writeFile`+`rename` pattern as `config.json` so a kill mid-write can't corrupt the cache.
 - **Loot log.** New loot events are appended as JSONL to `~/.codogotchi/loot.log` after a successful POST. No rotation in this ticket — loot volume is low; revisit if it ever matters.

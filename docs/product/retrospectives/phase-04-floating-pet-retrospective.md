@@ -1,6 +1,6 @@
 # Phase 04 — Floating pet retrospective
 
-Source plan: [`docs/product/plans/phase-04.md`](../plans/phase-04.md).
+Source plan: [`docs/product/plans/phase-04-floating-pet.md`](../plans/phase-04-floating-pet.md).
 Delivery plan: [`docs/product/delivery/phase-04/implementation-plan.md`](../delivery/phase-04/implementation-plan.md).
 
 ## Scope delivered

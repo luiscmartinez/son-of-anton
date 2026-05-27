@@ -4,7 +4,7 @@
 
 ## Epic
 
-Source product plan: [`docs/product/plans/phase-04.md`](../../plans/phase-04.md).
+Source product plan: [`docs/product/plans/phase-04-floating-pet.md`](../../plans/phase-04-floating-pet.md).
 
 ## Product Contract
 

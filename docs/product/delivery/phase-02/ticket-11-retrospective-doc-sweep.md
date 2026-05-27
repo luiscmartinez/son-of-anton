@@ -23,7 +23,7 @@ Red: skip
   - `README.md` — only if user-visible behavior, commands, or project status changed.
   - `.son-of-anton/CLAUDE.md` — only if the orchestrator surface or rules changed (unlikely in Phase 02).
   - `docs/contracts/animation-state-vocabulary.md` — only if implementation surfaced an honest contract gap beyond the P2.02 forward-compat clause.
-  - `docs/product/plans/phase-02.md` — if and only if material divergence occurred; write `docs/product/plans/phase-02-as-shipped.md` to capture the delta (mirroring Phase 01's `phase-01-as-shipped.md` pattern). Skip if no material divergence.
+  - `docs/product/plans/phase-02-menu-bar-pet-foundations.md` — if and only if material divergence occurred; write `docs/product/plans/phase-02-as-shipped-ci-macos-tests.md` to capture the delta (mirroring Phase 01's `phase-01-as-shipped-delta.md` pattern). Skip if no material divergence.
   - `docs/template/overview/start-here.md` — only if delivered scope, commands, status, or deferrals changed.
 
 ## Red
@@ -35,7 +35,7 @@ Red: skip
 - Use the `soa-write-retrospective` skill to scaffold the retro doc; fill it in honestly. The skill owns section structure; this ticket owns the *content*.
 - Curate the swift-notes INDEX by reading each `P2.NN-*.md` file in `notes/private/phase-02-swift-notes/` and writing the one-line hooks.
 - Run the doc-drift sweep deliberately: open each candidate doc, check against current behavior, edit only if drift is real.
-- If `phase-02-as-shipped.md` is needed, write it; if not, explicitly state in the retro that no material divergence occurred.
+- If `phase-02-as-shipped-ci-macos-tests.md` is needed, write it; if not, explicitly state in the retro that no material divergence occurred.
 
 ## Refactor
 

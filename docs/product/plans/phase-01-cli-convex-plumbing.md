@@ -63,7 +63,7 @@ GitHub authentication in Phase 01 is a **Personal Access Token stored in `~/.cod
 
 All four signal sources must work end-to-end in Phase 01. None are deferred. None are stubbed.
 
-> **As-shipped (2026-05-20):** Signal ingest is **forward-only** (no historical backfill on first sync) and per-source XP **accumulates** each sync. The bullets below state the **original plan**; see [`phase-01-as-shipped.md`](phase-01-as-shipped.md) for current behavior.
+> **As-shipped (2026-05-20):** Signal ingest is **forward-only** (no historical backfill on first sync) and per-source XP **accumulates** each sync. The bullets below state the **original plan**; see [`phase-01-as-shipped-delta.md`](phase-01-as-shipped-delta.md) for current behavior.
 
 - **Claude Code JSONL** parsing for token counts via `~/.claude/projects/**/*.jsonl`.
 - **Codex JSONL** parsing through the same parser path. The two formats are compatible enough to share most logic, and shipping Codex support in Phase 01 doubles the addressable validation surface for almost no cost.

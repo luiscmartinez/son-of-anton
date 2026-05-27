@@ -1,10 +1,10 @@
 # Phase 01 validation runbook (7 days, two profiles)
 
-Phase 01 is "done" when **all eight** exit conditions in `docs/product/plans/phase-01.md` are demonstrably true. This runbook is the operator-side procedure for verifying each one. Both Phase 01 users (owner + buddy) follow it end-to-end on their own machines. Daily findings go in `docs/runbooks/phase-01-validation-log.md`.
+Phase 01 is "done" when **all eight** exit conditions in `docs/product/plans/phase-01-cli-convex-plumbing.md` are demonstrably true. This runbook is the operator-side procedure for verifying each one. Both Phase 01 users (owner + buddy) follow it end-to-end on their own machines. Daily findings go in `docs/runbooks/phase-01-validation-log.md`.
 
 The runbook is intentionally concrete — every check is a command, query, or screenshot, not a feeling.
 
-**Signal ingest (as-shipped):** XP counts activity **from install forward** only—no 90-day / 20-PR backfill on first sync. Run Day 0 before the week you intend to measure, and expect EC2 to need real sessions (or flagged seeds) after setup. See [`docs/product/plans/phase-01-as-shipped.md`](../product/plans/phase-01-as-shipped.md).
+**Signal ingest (as-shipped):** XP counts activity **from install forward** only—no 90-day / 20-PR backfill on first sync. Run Day 0 before the week you intend to measure, and expect EC2 to need real sessions (or flagged seeds) after setup. See [`docs/product/plans/phase-01-as-shipped-delta.md`](../product/plans/phase-01-as-shipped-delta.md).
 
 ## Day 0 — Walkthrough (kickoff)
 

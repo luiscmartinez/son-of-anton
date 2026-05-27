@@ -16,7 +16,7 @@ Scope: docs
 - `README.md` rewritten to match the as-shipped product surface (commands, install, where data lives, what's deferred). No stale references to features that did not ship.
 - `AGENTS.md` and `CLAUDE.md` reviewed for drift; any updates to commands, paths, or workflows captured.
 - `docs/` swept for outdated runbooks, contracts, or links. Specifically: `docs/contracts/animation-state-vocabulary.md` reflects any P1.18 revisions; `docs/contracts/soa-event-feed.md` cross-references the SoA repo's mirrored doc.
-- A short `docs/product/plans/phase-01-as-shipped.md` (or similar) captures any divergence between the plan and what actually shipped, so Phase 02 planning can read the truth, not the intent.
+- A short `docs/product/plans/phase-01-as-shipped-delta.md` (or similar) captures any divergence between the plan and what actually shipped, so Phase 02 planning can read the truth, not the intent.
 
 ## Red
 

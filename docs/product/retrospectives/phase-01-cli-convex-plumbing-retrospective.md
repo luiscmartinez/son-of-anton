@@ -1,6 +1,6 @@
 # Phase 01 — CLI + Convex plumbing retrospective
 
-Source plan: [`docs/product/plans/phase-01.md`](../plans/phase-01.md).
+Source plan: [`docs/product/plans/phase-01-cli-convex-plumbing.md`](../plans/phase-01-cli-convex-plumbing.md).
 Delivery plan: [`docs/product/delivery/phase-01/implementation-plan.md`](../delivery/phase-01/implementation-plan.md).
 
 ## Scope delivered
@@ -107,7 +107,7 @@ for launchd + cron and a `scorePR` debug log; validation runbook skeleton at
 
 After the stacked PR chain landed, signal ingest was revised to match
 product intent (documented in
-[`phase-01-as-shipped.md`](../plans/phase-01-as-shipped.md)):
+[`phase-01-as-shipped-delta.md`](../plans/phase-01-as-shipped-delta.md)):
 
 - **Removed historical lookback** (90-day JSONL/Wakatime, 90-day / 20-PR GitHub
   first-sync cap). Only activity from install forward counts.

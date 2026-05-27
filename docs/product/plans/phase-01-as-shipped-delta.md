@@ -1,7 +1,7 @@
 # Phase 01 — as-shipped delta
 
 Snapshot of where the as-shipped phase diverges from
-[`phase-01.md`](phase-01.md), so Phase 02 planning reads the truth, not the
+[`phase-01-cli-convex-plumbing.md`](phase-01-cli-convex-plumbing.md), so Phase 02 planning reads the truth, not the
 intent.
 
 ## Material divergences

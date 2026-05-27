@@ -18,7 +18,7 @@ Red: skip
   - `README.md` — new commands, new file paths (`~/.codogotchi/config.json`), new menu items.
   - `docs/contracts/animation-state-vocabulary.md` — cross-reference verification against what the renderer actually implemented. Fix any drift between the spritesheet layout I wrote during this conversation and what P3.04 actually shipped.
   - `.son-of-anton/docs/template/overview/start-here.md` — phase status, delivered scope, current ladder. Per the SoA rule: this file is under `.son-of-anton/` and is read-only — sweep updates target the *consumer-repo equivalent* docs only, not the upstream template. If the consumer repo lacks an `start-here.md` equivalent, this bullet is N/A.
-  - `docs/product/plans/phase-02.md` (or `phase-02-as-shipped.md`) — strike-through or footnote on the closed open strategic question.
+  - `docs/product/plans/phase-02-menu-bar-pet-foundations.md` (or `phase-02-as-shipped-ci-macos-tests.md`) — strike-through or footnote on the closed open strategic question.
 - Out-of-scope for the sweep (explicitly): net-new docs that should have been their own ticket, cross-phase doc cleanup unrelated to Phase 03 work, speculative future-phase doc seeding.
 
 ## Red

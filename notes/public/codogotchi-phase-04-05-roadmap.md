@@ -2,7 +2,7 @@
 
 _Recommended ladder as of 2026-05-25_
 _Status: Draft — not yet through `/soa plan`_
-_Cross-reference: [codogotchi-alignment-draft](../../.son-of-anton/notes/public/codogotchi-alignment-draft.md) (son-of-anton subtree), [Phase 03 plan](../../docs/product/plans/phase-03.md)_
+_Cross-reference: [codogotchi-alignment-draft](../../.son-of-anton/notes/public/codogotchi-alignment-draft.md) (son-of-anton subtree), [Phase 03 plan](../../docs/product/plans/phase-03-soa-aware-pet-animation-coverage.md)_
 
 ---
 
@@ -97,7 +97,7 @@ The three drafts (`phase-1-cli-armory`, `phase-2-social-health-drama`, `phase-3-
 | **Integration** | Same `state.json` polling; shared renderer patterns from Phase 02–03 |
 | **Defers** | HP UI, public web, pet catalog |
 
-**Source:** Phase 03 plan deferrals and updated ladder in [`docs/product/plans/phase-03.md`](../../docs/product/plans/phase-03.md).
+**Source:** Phase 03 plan deferrals and updated ladder in [`docs/product/plans/phase-03-soa-aware-pet-animation-coverage.md`](../../docs/product/plans/phase-03-soa-aware-pet-animation-coverage.md).
 
 ---
 

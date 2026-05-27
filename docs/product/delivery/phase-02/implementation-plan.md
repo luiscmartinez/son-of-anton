@@ -4,7 +4,7 @@
 
 ## Epic
 
-Source product plan: [`docs/product/plans/phase-02.md`](../../plans/phase-02.md).
+Source product plan: [`docs/product/plans/phase-02-menu-bar-pet-foundations.md`](../../plans/phase-02-menu-bar-pet-foundations.md).
 
 ## Product contract
 

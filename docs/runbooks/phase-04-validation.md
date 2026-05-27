@@ -82,7 +82,7 @@ Work top to bottom. Mark each row **pass / fail / skip (reason)**.
 | Default floating size | 160×160 pt, bottom-right with 24 pt margin |
 | Transition log | `tail -f ~/.codogotchi/state-transitions.log` |
 | Build/test | `bun run mac:build`, `bun run mac:test` |
-| Phase plan exit conditions | [`docs/product/plans/phase-04.md`](../product/plans/phase-04.md) |
+| Phase plan exit conditions | [`docs/product/plans/phase-04-floating-pet.md`](../product/plans/phase-04-floating-pet.md) |
 
 ---
 
@@ -107,4 +107,4 @@ Do **not** treat absence of the following as Phase 04 failures during this runbo
 - Signed/notarized install, Sparkle updates, launch-at-login automation
 - Public README GIFs or marketing capture
 
-Those belong to later phases per [`docs/product/plans/phase-04.md`](../product/plans/phase-04.md#explicit-deferrals).
+Those belong to later phases per [`docs/product/plans/phase-04-floating-pet.md`](../product/plans/phase-04-floating-pet.md#explicit-deferrals).

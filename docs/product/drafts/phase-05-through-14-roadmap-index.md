@@ -2,7 +2,7 @@
 
 _Drafted: 2026-05-27_
 _Status: Draft index for `/soa ideate` output — not a product plan_
-_Prior shipped: Phase 01–04 ([phase-04.md](../plans/phase-04.md))_
+_Prior shipped: Phase 01–04 ([phase-04-floating-pet.md](../plans/phase-04-floating-pet.md))_
 
 ---
 

@@ -4,7 +4,7 @@
 
 ## Epic
 
-Source product plan: [`docs/product/plans/phase-03.md`](../../plans/phase-03.md).
+Source product plan: [`docs/product/plans/phase-03-soa-aware-pet-animation-coverage.md`](../../plans/phase-03-soa-aware-pet-animation-coverage.md).
 
 ## Product contract
 

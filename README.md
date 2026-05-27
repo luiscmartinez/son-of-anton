@@ -14,7 +14,7 @@ float-on-top SpriteKit surface (show/hide, drag, resize, persistence in
 `~/.codogotchi/app-state.json`), shared live/demo state fanout, and mouse-
 reactive reserved Codex rows. HP overlays, focus-aware visibility, catalog UI,
 and distribution polish remain deferred. See
-[`docs/product/plans/phase-04.md`](docs/product/plans/phase-04.md) and the
+[`docs/product/plans/phase-04-floating-pet.md`](docs/product/plans/phase-04-floating-pet.md) and the
 [`phase-04 validation runbook`](docs/runbooks/phase-04-validation.md).
 
 ## What ships in Phase 01
@@ -39,7 +39,7 @@ and distribution polish remain deferred. See
 
 Public surface (web armory, leaderboard, OAuth, OG image, install script,
 macOS pet, visible loot rendering) is intentionally deferred. See
-[`docs/product/plans/phase-01.md#explicit-deferrals`](docs/product/plans/phase-01.md#explicit-deferrals).
+[`docs/product/plans/phase-01-cli-convex-plumbing.md#explicit-deferrals`](docs/product/plans/phase-01-cli-convex-plumbing.md#explicit-deferrals).
 
 ## Repo layout
 
@@ -178,7 +178,7 @@ failures gate the orchestrator's `post-red` and `open-pr` steps in
 the same place TS regressions are caught. `apps/**` is still
 excluded from biome and from cspell's non-md scan per the toolchain
 seam decision; only `mac:test` crosses the boundary. See
-[`docs/product/plans/phase-02-as-shipped.md`](docs/product/plans/phase-02-as-shipped.md)
+[`docs/product/plans/phase-02-as-shipped-ci-macos-tests.md`](docs/product/plans/phase-02-as-shipped-ci-macos-tests.md)
 for the divergence from the original "ci stays TS-only" Phase 02
 plan.
 

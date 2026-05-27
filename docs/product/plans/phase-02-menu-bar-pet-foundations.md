@@ -106,7 +106,7 @@ Each deferral below is named with the reason it is *not* in Phase 02, not just t
 
 Phase 02 sits between the (now-shipped) Phase 01 data pipeline and the Phase 03 floating-window extension. The full ladder, repeated from Phase 01 for situational awareness:
 
-1. **Phase 01 — CLI + Convex Plumbing.** Shipped (with the validation-window shortfall recorded in `phase-01-as-shipped.md`).
+1. **Phase 01 — CLI + Convex Plumbing.** Shipped (with the validation-window shortfall recorded in `phase-01-as-shipped-delta.md`).
 2. **Phase 02 — macOS App Foundations: Menu bar pet.** This document.
 3. **Phase 03 — macOS App: Floating pet + SpriteKit.** Swift learning ramp #2. Full animation atlas, HP states render.
 4. **Phase 04 — Public Launch: Web Armory + Leaderboard.** First public surface.

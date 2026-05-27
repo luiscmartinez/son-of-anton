@@ -1,7 +1,7 @@
 # Phase 02 — as-shipped delta
 
 Snapshot of where the as-shipped phase diverges from
-[`phase-02.md`](phase-02.md), so Phase 03 planning reads the truth,
+[`phase-02-menu-bar-pet-foundations.md`](phase-02-menu-bar-pet-foundations.md), so Phase 03 planning reads the truth,
 not the intent.
 
 ## Material divergences

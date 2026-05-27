@@ -4,7 +4,7 @@
 
 ## Epic
 
-Source product plan: [`docs/product/plans/phase-01.md`](../../plans/phase-01.md).
+Source product plan: [`docs/product/plans/phase-01-cli-convex-plumbing.md`](../../plans/phase-01-cli-convex-plumbing.md).
 
 ## Product contract
 
@@ -27,7 +27,7 @@ When this phase is complete:
 - **Identity: handle + locally-generated UUID, no auth.** `codogotchi setup` prompts for a handle and generates a UUID; both register in Convex via the open HTTP action. OAuth is a Phase 04 precondition for public surface.
 - **Sync failure model: per-source isolation.** Each source runs in its own try/catch. Failed sources emit `null` in the payload; Convex treats `null` as "skip, preserve last seen totals." Exit code is 0 if any source succeeded, 1 only if all four failed. Errors append to `~/.codogotchi/sync.log` (10MB rotated).
 - **Server schema stores last-seen-totals-per-source.** `profile.xp_by_source = { claude, codex, github, wakatime }`; aggregate XP is the sum. A source going dark for a run does not zero its prior total.
-- **Forward-only signal ingest (post-closeout).** No 90-day / 20-PR first-sync backfill. First touch per source uses `since = now`; `syncProfile` accumulates XP per sync. Canonical delta: [`docs/product/plans/phase-01-as-shipped.md`](../../plans/phase-01-as-shipped.md).
+- **Forward-only signal ingest (post-closeout).** No 90-day / 20-PR first-sync backfill. First touch per source uses `since = now`; `syncProfile` accumulates XP per sync. Canonical delta: [`docs/product/plans/phase-01-as-shipped-delta.md`](../../plans/phase-01-as-shipped-delta.md).
 - **Health knobs as CLI commands.** `codogotchi config get|set|list` is the primitive; `codogotchi vacation on [--until DATE]|off|status` is sugar over `config set health.vacation_until`. All three knobs (`health.weekend_decay`, `health.grace_days`, `health.vacation_until`) persist in `~/.codogotchi/config.json`.
 - **CI scripts land as a pre-phase chore commit to main.** `format:quiet`, `lint:quiet`, `verify:quiet`, `ci`, `ci:quiet` are tooling-only and skip phase ceremony per `.son-of-anton/CLAUDE.md`.
 - **Retrospective + doc-drift sweep is a dedicated final ticket (P1.22)** to prevent README/AGENTS/CLAUDE/`docs/` drift after 20+ feature tickets.

@@ -1,6 +1,6 @@
 # Phase 02 — macOS Menu Bar Pet retrospective
 
-Source plan: [`docs/product/plans/phase-02.md`](../plans/phase-02.md).
+Source plan: [`docs/product/plans/phase-02-menu-bar-pet-foundations.md`](../plans/phase-02-menu-bar-pet-foundations.md).
 Delivery plan: [`docs/product/delivery/phase-02/implementation-plan.md`](../delivery/phase-02/implementation-plan.md).
 
 ## Scope delivered
@@ -88,7 +88,7 @@ companion docs (P2.03–P2.10) plus this phase's curated `INDEX.md`.
   which chains `mac:test` into `ci` and `ci:quiet`. The result is
   good — Swift regressions now gate `post-red` and `open-pr` the
   same way TS regressions do — but the locked Grill-Me decision was
-  overturned without an explicit Grill-Me revision. The `phase-02-as-shipped.md`
+  overturned without an explicit Grill-Me revision. The `phase-02-as-shipped-ci-macos-tests.md`
   doc captures this as a material divergence so Phase 03 planning
   reads the truth, not the original lock.
 - **(Avoidable waste) Multi-worktree `reviews/` and `handoffs/`
@@ -197,7 +197,7 @@ trivially — there is nothing to patch.
   conflict surfaced would have produced the same outcome with a
   paper trail and probably caught the broader question (do
   Phase 03's Swift surfaces also belong in ci?) before it lands as
-  another inline patch. See [`phase-02-as-shipped.md`](../plans/phase-02-as-shipped.md)
+  another inline patch. See [`phase-02-as-shipped-ci-macos-tests.md`](../plans/phase-02-as-shipped-ci-macos-tests.md)
   for the recorded delta.
 
 ## Net assessment

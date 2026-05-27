@@ -1,6 +1,6 @@
 # Phase 03 validation runbook
 
-Phase 03 is "done" when all five exit conditions in `docs/product/plans/phase-03.md` are demonstrably true. This runbook covers the two exit conditions that require deliberate operator action: triggering the four rare SoA-driven states (EC3) and triggering the two `v2`-only states via real Claude/Codex events (EC4). EC1, EC2, and EC5 are verified by reading existing artifacts.
+Phase 03 is "done" when all five exit conditions in `docs/product/plans/phase-03-soa-aware-pet-animation-coverage.md` are demonstrably true. This runbook covers the two exit conditions that require deliberate operator action: triggering the four rare SoA-driven states (EC3) and triggering the two `v2`-only states via real Claude/Codex events (EC4). EC1, EC2, and EC5 are verified by reading existing artifacts.
 
 The runbook is a one-session procedure. Owner runs it top-to-bottom once per machine, capturing evidence as they go.
 
