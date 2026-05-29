@@ -32,9 +32,7 @@
       "rationale": "Narrowed GateEvent.gate from `string` to `(typeof GATE_NAMES)[keyof typeof GATE_NAMES]` so passing an invalid gate name is a compile-time error. All call sites already use GATE_NAMES.* constants so no callers break.",
       "patch": {
         "commitSha": "bd029a2",
-        "files": [
-          "tools/delivery/codogotchi-gate.ts"
-        ]
+        "files": ["tools/delivery/codogotchi-gate.ts"]
       },
       "source": {
         "reportPath": "docs/product/delivery/phase-17/reviews/P17.01-subagent-review.report.md",
@@ -56,9 +54,7 @@
       "rationale": "P17.04 has landed and the stubs were not removed because test files (p15-02.test.ts, fix-worktree-event-routing.test.ts) still import emitSoaEventsForTransitions to assert the retired NDJSON path does nothing. Updated the stub comment to accurately reflect this: 'Retained as exported no-op: test files import it to assert the retired NDJSON path is gone.' Removes the stale 'will be removed in P17.04' promise.",
       "patch": {
         "commitSha": "bd029a2",
-        "files": [
-          "tools/delivery/cli-runner.ts"
-        ]
+        "files": ["tools/delivery/cli-runner.ts"]
       },
       "source": {
         "reportPath": "docs/product/delivery/phase-17/reviews/P17.02-subagent-review.report.md",
@@ -98,9 +94,7 @@
       "rationale": "P17.04 has landed. emitSoaEventForOpenPr stub still exists because p15-03.test.ts and p17-03.test.ts import it to assert the retired NDJSON path writes nothing. Updated the stub comment to reflect this accurately: 'Retained as exported no-op: test files import it to assert the retired NDJSON path is gone.'",
       "patch": {
         "commitSha": "bd029a2",
-        "files": [
-          "tools/delivery/cli-runner.ts"
-        ]
+        "files": ["tools/delivery/cli-runner.ts"]
       },
       "source": {
         "reportPath": "docs/product/delivery/phase-17/reviews/P17.03-subagent-review.report.md",
@@ -113,9 +107,7 @@
       "rationale": "Added a clarifying comment at the eventsForOpenPrCommand call site (cli-runner.ts:1232) stating it feeds the Telegram notifier, not the retired NDJSON pathway. Prevents a future reader from trying to retire this import as NDJSON cleanup.",
       "patch": {
         "commitSha": "bd029a2",
-        "files": [
-          "tools/delivery/cli-runner.ts"
-        ]
+        "files": ["tools/delivery/cli-runner.ts"]
       },
       "source": {
         "reportPath": "docs/product/delivery/phase-17/reviews/P17.03-subagent-review.report.md",
@@ -155,9 +147,7 @@
       "rationale": "Three observations were parsed as a single unit (consecutive lines, no blank separators). Items 1 and 2 (test parity for needs_patch and eventsForReconcileLateReviewCommand) are rejected — the single-filter implementation makes redundant negative tests unnecessary and the non-done guard is a trivial one-liner. Item 3 (docOnlyState.planKey asymmetry) was patched: changed state.planKey to docOnlyState.planKey at cli-runner.ts:1287 for consistency with the post-transition state idiom used elsewhere.",
       "patch": {
         "commitSha": "bd029a2",
-        "files": [
-          "tools/delivery/cli-runner.ts"
-        ]
+        "files": ["tools/delivery/cli-runner.ts"]
       },
       "source": {
         "reportPath": "docs/product/delivery/phase-17/reviews/P17.04-subagent-review.report.md",
