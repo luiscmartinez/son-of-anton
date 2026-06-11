@@ -4,6 +4,8 @@ Thanks for your interest. Son of Anton is a delivery orchestrator — the codeba
 
 **New here?** Read [How Son of Anton Works — A Newcomer's Mental Model](docs/how-son-of-anton-works.md) first. It builds the mental model (no prior knowledge assumed) and maps every concept to where it lives in the code, so the rest of this guide makes sense.
 
+By participating, you agree to abide by our [Code of Conduct](CODE_OF_CONDUCT.md). New here or contributing through a course? It opens with a short note for you.
+
 ## Prerequisites
 
 - [Bun](https://bun.sh) ≥ 1.0
