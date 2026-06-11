@@ -81,6 +81,25 @@ There is no formal review SLA. Smaller, focused PRs move faster.
 
 Several tools in the orchestrator run as "advisory" subagents — they report findings but do not commit or modify files. If you are building on the orchestrator, keep that invariant: subagent runners are stdout-only. The primary agent adjudicates and decides what to apply.
 
+## Picking an issue (difficulty points)
+
+Issues are labeled with a difficulty estimate on a Fibonacci scale, so you can match an issue to your comfort level. Higher is harder — it reflects breadth, design judgment, and how much of the codebase you have to hold in your head, not just lines of code.
+
+| Label           | Meaning                                                 |
+| --------------- | ------------------------------------------------------- |
+| `difficulty: 1` | Trivial — a one-liner or typo fix.                      |
+| `difficulty: 2` | Easy — a focused change with a clear pattern to copy.   |
+| `difficulty: 3` | Moderate — the sweet spot; some breadth or judgment.    |
+| `difficulty: 5` | Involved — touches multiple areas or needs design care. |
+| `difficulty: 8` | Hard — architectural; not a first issue.                |
+
+No issue is rated above `8`. **If you're new, start with a `2` or `3`** — that's the sweet spot for a satisfying first contribution. Save the `5`s and `8`s for after you've landed one. Browse open issues by difficulty:
+
+```bash
+gh issue list --label "difficulty: 2"
+gh issue list --label "difficulty: 3"
+```
+
 ## Getting oriented
 
 - **New to the workflow?** Start with the README, then `docs/template/overview/start-here.md`.
