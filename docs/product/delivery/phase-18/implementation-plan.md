@@ -42,7 +42,7 @@ Phase 18 is done when a maintained test suite can model `defaultBranch: "main"` 
 
 Run `bun run ci:quiet` on `main` before the first ticket starts and record the result here. This snapshot makes per-ticket CI diffs unambiguous - an agent can tell whether a failure is pre-existing or introduced.
 
-> Baseline recorded: not yet recorded - run before `P18.01` execution.
+> Baseline recorded: 2026-06-28 - `bun run ci:quiet` passed (621 tests, 0 failures).
 
 ## Review Rules
 
