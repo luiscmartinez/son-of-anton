@@ -331,8 +331,8 @@ bun run deliver --plan docs/product/delivery/phase-16/implementation-plan.md \
 
 **This is a primary-agent patching lane, not an advisory-only lane.** During
 triage, the primary agent reads each parsed advisory observation, decides
-whether it is prudent to fix, and **applies patches directly to `main`**
-where prudent. The `triage-advisory-observations` command itself is a state
+whether it is prudent to fix, and **applies patches directly to the configured
+`closeoutBranch`** where prudent. The `triage-advisory-observations` command itself is a state
 recorder — it scans completed subagent-review report sidecars, parses the
 `Advisory Observations` section (excluding `Actionable findings`), aligns
 the parsed observations with the operator's explicit dispositions, and
