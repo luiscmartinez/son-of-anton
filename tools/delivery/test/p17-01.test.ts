@@ -1,7 +1,8 @@
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
+import { execSync } from 'node:child_process';
 import { describe, expect, it } from 'bun:test';
 
 import type { ResolvedOrchestratorConfig } from '../config';
@@ -10,6 +11,8 @@ import { writeGateEvent } from '../codogotchi-gate';
 function enabledConfig(): ResolvedOrchestratorConfig {
   return {
     defaultBranch: 'main',
+    deliveryBaseBranch: 'main',
+    closeoutBranch: 'main',
     planRoot: 'docs',
     runtime: 'bun',
     packageManager: 'bun',
@@ -32,6 +35,14 @@ function makeTmpDir(): string {
   return dir;
 }
 
+function canonicalGitRoot(cwd: string): string {
+  const raw = execSync('git rev-parse --git-common-dir', {
+    cwd,
+    encoding: 'utf8',
+  }).trim();
+  return dirname(isAbsolute(raw) ? raw : join(cwd, raw));
+}
+
 describe('P17.01 — writeGateEvent produces gate.json with correct shape', () => {
   it('writes gate.json with the full { gate, since, expires_at, plan_key, ticket_id } shape', async () => {
     const home = makeTmpDir();
@@ -41,6 +52,7 @@ describe('P17.01 — writeGateEvent produces gate.json with correct shape', () =
         gate: 'ticket_started',
         planKey: 'phase-17',
         ticketId: 'P17.01',
+        repoRoot: '/tmp/soa-repo',
       });
 
       const gateFile = join(home, 'gate.json');
@@ -64,7 +76,7 @@ describe('P17.01 — writeGateEvent produces gate.json with correct shape', () =
       const context = JSON.parse(contextRaw);
       expect(context.owner).toBe('soa');
       expect(context.status).toBe('active');
-      expect(context.repo_root).toBe(process.cwd());
+      expect(context.repo_root).toBe('/tmp/soa-repo');
       expect(context.plan_key).toBe('phase-17');
       expect(context.ticket_id).toBe('P17.01');
       expect(context.last_gate).toBe('ticket_started');
@@ -106,6 +118,7 @@ describe('P17.01 — writeGateEvent produces gate.json with correct shape', () =
         gate: 'ticket_started',
         planKey: 'phase-17',
         ticketId: 'P17.01',
+        repoRoot: '/tmp/soa-repo',
       });
 
       const raw = await readFile(join(home, 'gate-transitions.log'), 'utf8');
@@ -133,6 +146,7 @@ describe('P17.01 — writeGateEvent produces gate.json with correct shape', () =
         gate: 'open_pr',
         planKey: 'phase-17',
         ticketId: 'P17.01',
+        repoRoot: '/tmp/soa-repo',
       });
 
       const raw = await readFile(join(home, 'gate.json'), 'utf8');
@@ -142,6 +156,69 @@ describe('P17.01 — writeGateEvent produces gate.json with correct shape', () =
       expect(expiresAt - since).toBe(30_000);
     } finally {
       delete process.env['CODOGOTCHI_HOME'];
+    }
+  });
+});
+
+describe('P17.01 — writeGateEvent with active-session.json redirection', () => {
+  it('redirects gate and delivery-context writes to state.d with origin and session_id', async () => {
+    const home = makeTmpDir();
+    process.env['CODOGOTCHI_HOME'] = home;
+    process.env['FORCE_ACTIVE_SESSION'] = '1';
+
+    // Create a dummy repository directory structure
+    const repo = makeTmpDir();
+    const soaDir = join(repo, '.soa');
+    mkdirSync(soaDir, { recursive: true });
+
+    const activeSession = {
+      origin: 'claude_code',
+      session_id: 'test_session_123',
+      updated_at: new Date().toISOString(),
+    };
+    writeFileSync(
+      join(soaDir, 'active-session.json'),
+      JSON.stringify(activeSession),
+      'utf8',
+    );
+
+    try {
+      await writeGateEvent(enabledConfig(), {
+        gate: 'ticket_started',
+        planKey: 'phase-17',
+        ticketId: 'P17.01',
+        repoRoot: repo,
+      });
+
+      const targetDir = join(home, 'state.d');
+      const gateFile = join(
+        targetDir,
+        'claude_code:test_session_123.gate.json',
+      );
+      const contextFile = join(
+        targetDir,
+        'claude_code:test_session_123.context.json',
+      );
+
+      expect(existsSync(gateFile)).toBe(true);
+      expect(existsSync(contextFile)).toBe(true);
+
+      const raw = await readFile(gateFile, 'utf8');
+      const parsed = JSON.parse(raw);
+      expect(parsed.gate).toBe('ticket_started');
+      expect(parsed.plan_key).toBe('phase-17');
+      expect(parsed.ticket_id).toBe('P17.01');
+
+      const contextRaw = await readFile(contextFile, 'utf8');
+      const context = JSON.parse(contextRaw);
+      expect(context.owner).toBe('soa');
+      expect(context.status).toBe('active');
+      expect(context.plan_key).toBe('phase-17');
+      expect(context.ticket_id).toBe('P17.01');
+      expect(context.last_gate).toBe('ticket_started');
+    } finally {
+      delete process.env['CODOGOTCHI_HOME'];
+      delete process.env['FORCE_ACTIVE_SESSION'];
     }
   });
 });
@@ -157,6 +234,7 @@ describe('P17.01 — writeGateEvent with codogotchi.enabled: false', () => {
         gate: 'ticket_started',
         planKey: 'phase-17',
         ticketId: 'P17.01',
+        repoRoot: '/tmp/soa-repo',
       });
 
       expect(existsSync(targetHome)).toBe(false);
@@ -180,6 +258,7 @@ describe('P17.01 — writeGateEvent error swallowing', () => {
           gate: 'ticket_started',
           planKey: 'phase-17',
           ticketId: 'P17.01',
+          repoRoot: '/tmp/soa-repo',
         }),
       ).resolves.toBeUndefined();
     } finally {
@@ -226,6 +305,7 @@ describe('P17.01 — CODOGOTCHI_HOME edge cases', () => {
         gate: 'ticket_started',
         planKey: 'phase-17',
         ticketId: 'P17.01',
+        repoRoot: '/tmp/soa-repo',
       });
       expect(existsSync(join(home, 'gate.json'))).toBe(true);
       expect(existsSync(join(home, 'gate-transitions.log'))).toBe(true);
